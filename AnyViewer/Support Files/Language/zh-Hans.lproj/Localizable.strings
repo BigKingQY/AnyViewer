@@ -1,0 +1,11 @@
+/* 
+ Localizable.strings
+  AnyViewer
+
+  Created by BigKing on 2021/8/24.
+  
+*/
+
+"DEVICE" = "设备";
+"CONNECT" = "连接";
+"SETTING" = "设置";
