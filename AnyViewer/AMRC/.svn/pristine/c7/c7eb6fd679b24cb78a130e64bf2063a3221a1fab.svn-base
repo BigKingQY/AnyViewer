@@ -1,0 +1,1349 @@
+/******************************************************************************
+* 
+* SSPAEPT
+* Version
+* Copyright (C) 2002, 2003 Ax3soft Co., Ltd.
+* All Rights Reserved
+* $Header: /cvsdata/vc/SaxIDE/Common/CalcNumericForm.cpp,v 1.5 2015/08/17 01:06:43 administrator Exp $
+* 
+*******************************************************************************
+* 
+* Description:条件表达式计算相关类实现
+******************************************************************************/
+#include "stdafx.h"
+// $Nokeywords: $
+#include "CalcNumericForm.h"
+#include <utility>
+#include <math.h>
+
+
+
+using namespace LOGIC_FORM;
+
+
+unsigned int     CTreeNode::s_nIndent = 0;
+
+bool CCalcLogicForm::IsCharacter(const char nChar)
+{	
+	bool l_bResult = ((nChar > 64 && nChar < 91) || (nChar > 96 && nChar < 123) || (46 == nChar));
+	return l_bResult;
+}
+
+bool CCalcLogicForm::IsDigital(const char nChar)
+{	
+	bool l_bResult = ((nChar > 47 && nChar < 58) || (46 == nChar));
+	return l_bResult;
+}
+
+
+///////////////////////////////////////////////////////////////////
+//CCalcLogicForm类的实现
+CCalcLogicForm::CCalcLogicForm(void)
+: m_nCurTokenIndex(0)
+, m_strLogicForm("")
+, m_bAvailabilitySyntaxTree(false)
+{
+	InitReservedKeywordHashMap();
+}
+
+CCalcLogicForm::~CCalcLogicForm(void)
+{
+	EmptyTreeNodePool();
+}
+
+
+/*********************************************************************
+*  函数名称  : CCalcLogicForm::DestroyTree
+*  描    述  : 摧毁语法分析树
+*  修改记录  : 2004-12-31 13:59:54   -huangdy-   创建
+*********************************************************************/
+void CCalcLogicForm::DestroyTree()
+{
+	for(size_t i = 0;i < m_aryTreeNodePool.size();i++)
+	{
+		m_aryTreeNodePool[i]->SetIsOnTree(false);
+	}	
+}
+/*********************************************************************
+*  函数名称  : CCalcLogicForm::EmptyTreeNodePool
+*  描    述  : 删除树形节点样本池中的所有节点
+*  修改记录  : 2004-12-31 13:57:24   -huangdy-   创建
+*********************************************************************/
+void CCalcLogicForm::EmptyTreeNodePool()
+{
+	for(size_t i = 0;i < m_aryTreeNodePool.size();i++)
+	{
+		delete m_aryTreeNodePool[i];
+	}
+	m_aryTreeNodePool.clear();
+}
+
+
+/*********************************************************************
+*  函数名称  : CCalcLogicForm::LookforTreeNode
+*  描    述  : 查询连接词节点
+*  参    数  : CSTOKEN_TYPE ttTokenType——连接词类型
+*  返 回 值  : 成功返回连接词节点指针
+*  修改记录  : 2004-12-31 14:36:32   -huangdy-   创建
+*********************************************************************/
+CTreeNode* CCalcLogicForm::LookforTreeNode(CSTOKEN_TYPE ttTokenType)
+{
+	CTreeNode* pResult = nullptr;	
+	for(size_t i = 0;i < m_aryTreeNodePool.size();i++)
+	{	
+		if(m_aryTreeNodePool[i]->GetTokenType() == ttTokenType
+			&& !m_aryTreeNodePool[i]->GetIsOnTree())
+		{
+			pResult = m_aryTreeNodePool[i];	
+			break;
+		}		
+	}
+	return pResult;
+}
+
+/*********************************************************************
+*  函数名称  : CCalcLogicForm::Create Factor Node
+*  描    述  : 根据序号指定的序号创建计算元素节点
+*  参    数  : size_t nTokenIndex——符号序号
+*  返 回 值  : 成功返回新建元素指针,否则返回nullptr
+*  修改记录  : 2004-12-29 13:21:54   -huangdy-   创建
+*********************************************************************/
+CTreeNode* CCalcLogicForm::CreateTreeNode(size_t nTokenIndex)
+{
+	assert(nTokenIndex < m_aryToken.size());	
+	if(nTokenIndex >= m_aryToken.size())
+	{
+		return nullptr;
+	}
+
+	CVaribleInfo objVar;
+	if(TT_UNKNOWN_VAR == m_aryToken[nTokenIndex].GetType())  //说明是未知类型的变量
+	{	
+		if(!LookUpVarible(m_aryToken[nTokenIndex].GetValueAsString(),objVar))
+			return nullptr;
+		m_aryToken[nTokenIndex].SetType(objVar.GetType());		
+	}	
+
+	CTreeNode* pNode = nullptr;
+	pNode = LookforTreeNode(m_aryToken[nTokenIndex].GetType());
+	if(nullptr != pNode)
+	{
+		switch(m_aryToken[nTokenIndex].GetType())
+		{
+		case TT_LONG_VAR:			
+			dynamic_cast<CIntVaribleFactor*>(pNode)->Init(objVar);				
+			break;
+		case TT_FLOAT_VAR:				
+			dynamic_cast<CFloatVaribleFactor*>(pNode)->Init(objVar);				
+			break;
+		case TT_STRING_VAR:
+			dynamic_cast<CStringVaribleFactor*>(pNode)->Init(objVar);
+			break;
+		case TT_PROTOCOLFUN:
+			dynamic_cast<CGetProtocolFactor*>(pNode)->Init(m_aryToken[nTokenIndex].GetValueAsString());
+			break;
+		case TT_NODFUN:
+			dynamic_cast<CGetNodeInfoFactor*>(pNode)->Init(m_aryToken[nTokenIndex].GetValueAsString());
+			break;
+		case TT_STR:			
+			dynamic_cast<CStringFactor*>(pNode)->SetInitVal(m_aryToken[nTokenIndex].GetValueAsString());
+			break;
+		case TT_INT:
+			dynamic_cast<CIntFactor*>(pNode)->SetInitVal(m_aryToken[nTokenIndex].GetValueAsInt());
+			break;
+		case TT_FLOAT:
+			dynamic_cast<CFloatFactor*>(pNode)->SetInitVal(m_aryToken[nTokenIndex].GetValueAsFloat());
+		}	
+	}
+	else
+	{
+		switch(m_aryToken[nTokenIndex].GetType())
+		{
+		case TT_STR:			
+			pNode = new CStringFactor(m_aryToken[nTokenIndex].GetValueAsString());
+			break;
+		case TT_INT:
+			pNode = new CIntFactor(m_aryToken[nTokenIndex].GetValueAsInt());
+			break;
+		case TT_FLOAT:
+			pNode = new CFloatFactor(m_aryToken[nTokenIndex].GetValueAsFloat());
+			break;			
+		case TT_NODFUN:
+			pNode = new CGetNodeInfoFactor(m_aryToken[nTokenIndex].GetValueAsString());
+			break;
+		case TT_PROTOCOLFUN:
+			pNode = new CGetProtocolFactor(m_aryToken[nTokenIndex].GetValueAsString());
+			break;	
+		case TT_LONG_VAR:
+			pNode = new CIntVaribleFactor(objVar.GetName(),objVar.GetIndex());
+			break;
+		case TT_FLOAT_VAR:
+			pNode = new CFloatVaribleFactor(objVar.GetName(),objVar.GetIndex());
+			break;
+		case TT_STRING_VAR:
+			pNode = new CStringVaribleFactor(objVar.GetName(),objVar.GetIndex());
+			break;
+		case TT_OR:
+			pNode = new CConjOR();
+			break;
+		case TT_AND:
+			pNode = new CConjAND();
+			break;
+		case TT_NOT:
+			pNode = new CConjNOT();
+			break;
+		case TT_MOR:
+			pNode = new CCompareMore();
+			break;
+		case TT_LES:
+			pNode = new CCompareLess();
+			break;
+		case TT_EQU:
+			pNode = new CCompareEqual();
+			break;
+		case TT_UNEQ:
+			pNode = new CCompareUnequal();
+			break;
+		case TT_MEQ:
+			pNode = new CCompareMoreEqual();
+			break;
+		case TT_LEQ:
+			pNode = new CCompareLessEqual();
+			break;
+		case TT_BITAND:
+			pNode = new CBitwiseAND();
+			break;
+		case TT_EXCOR:
+			pNode = new CBitwiseExclusiveOR();
+			break;
+		case TT_BITOR:
+			pNode = new CBitwiseOR();
+			break;
+		case TT_MULT:
+			pNode = new CMultiply();
+			break;
+		case TT_DIVI:
+			pNode = new CDivide();
+			break;
+		case TT_PLUS:
+			pNode = new CAdditive();
+			break;
+		case TT_MINUS:
+			pNode = new CSubtract();
+			break;		
+		}
+		if(nullptr != pNode)
+		{
+			m_aryTreeNodePool.push_back(pNode);
+			pNode->SetTokenType(m_aryToken[nTokenIndex].GetType());		
+		}
+	}
+	if(nullptr != pNode)
+	{		
+		pNode->SetIsOnTree(true);		
+	}
+	return pNode;
+}
+
+/*********************************************************************
+*  函数名称  : CCalcLogicForm::Factor
+*  描    述  : 得到单个操作数
+*  参    数  : CTreeNode* pParent——父结点
+*  返 回 值  : true----成功
+*              false---失败
+*  全局变量  : 
+*  修改记录  : 2004-12-30 16:07:22   -huangdy-   创建
+*********************************************************************/
+CTreeNode* CCalcLogicForm::Factor()
+{
+	if(m_nCurTokenIndex >= m_aryToken.size())
+	{
+		return nullptr;
+	}
+
+	CTreeNode* pTreeNode = nullptr;
+
+	if(m_aryToken[m_nCurTokenIndex].GetType() == TT_LPAREN)  //括号改变计算顺序
+	{
+		m_nCurTokenIndex++;
+		pTreeNode = AnalyseOR();
+		m_nCurTokenIndex++;
+
+		if(m_nCurTokenIndex >= m_aryToken.size()
+			|| m_aryToken[m_nCurTokenIndex].GetType() != TT_RPAREN)
+		{
+			LOG_DEBUG("错误的条件表达式，括号不匹配！\n");
+			return nullptr;
+		}
+	}
+	else
+	{
+		pTreeNode = CreateTreeNode(m_nCurTokenIndex);		
+	}
+
+	return pTreeNode;
+}
+
+
+/*-----------------------------------------------------------------
+|  函数名称  : CParser::ThirdExpression
+|  描    述  : Analyse a logical negation expression.
+|  返 回 值  :  If the function is successful,return a pointer to 
+|              a  node or child tree to be created,Otherwise null.
+|  修改记录  : 2007-4-23 17:06:44   -huangdy-   创建
+-----------------------------------------------------------------*/
+CTreeNode* CCalcLogicForm::ThirdExpression()
+{
+	CTreeNode *pExpressionNode = nullptr;
+	CTreeNode *pTempNode       = nullptr;
+
+	if(m_nCurTokenIndex < m_aryToken.size()
+		&& m_aryToken[m_nCurTokenIndex].GetType() == TT_NOT) 
+	{
+		pExpressionNode = CreateTreeNode(m_nCurTokenIndex);
+		if(!pExpressionNode)
+		{
+			return nullptr;
+		}
+		m_nCurTokenIndex++;	
+		pTempNode = Factor();
+		if(!pTempNode)
+		{
+			return nullptr;
+		}
+
+		pTempNode->SetParent(pExpressionNode);
+		pExpressionNode->SetLeft(pTempNode);
+	} 
+	else
+	{
+		pExpressionNode = Factor();
+	}
+
+	return pExpressionNode;
+}
+
+/*********************************************************************
+*  函数名称  : CCalcLogicForm::Term
+*  描    述  : 分析乘法和除法关系
+*  参    数  : CTreeNode* pParent——父结点指针
+*  返 回 值  : true----成功
+*              false---失败
+*  全局变量  : 
+*  修改记录  : 2004-12-29 11:17:24   -huangdy-   创建
+*********************************************************************/
+
+CTreeNode* CCalcLogicForm::Term()
+{
+	CTreeNode* pTempNode       = nullptr;
+	CTreeNode* pExpressionNode = ThirdExpression();
+
+	if(pExpressionNode)
+	{
+		m_nCurTokenIndex++;
+		while(m_nCurTokenIndex < m_aryToken.size()
+			&& (m_aryToken[m_nCurTokenIndex].GetType() == TT_MULT
+			|| m_aryToken[m_nCurTokenIndex].GetType() == TT_DIVI/*
+			|| m_aryToken[m_nCurTokenIndex].GetType() == TT_MOD*/))
+		{
+			pTempNode = CreateTreeNode(m_nCurTokenIndex);
+			if(!pTempNode)
+			{
+				return nullptr;
+			}
+
+			pExpressionNode->SetParent(pTempNode);
+			pTempNode->SetLeft(pExpressionNode);						
+			pExpressionNode = pTempNode;		
+
+			m_nCurTokenIndex++;
+			pTempNode = ThirdExpression();
+			if(!pTempNode)
+			{
+				return nullptr;
+			}
+			pTempNode->SetParent(pExpressionNode);
+			pExpressionNode->SetRight(pTempNode);
+
+			m_nCurTokenIndex++;	
+		}
+		m_nCurTokenIndex--;
+	}
+
+	return pExpressionNode;	
+}
+
+/*********************************************************************
+*  函数名称  : CCalcLogicForm::AdditiveExpression
+*  描    述  : 分析加或减操作
+*  返 回 值  : true----成功
+*              false---失败
+*  全局变量  : 
+*  修改记录  : 2004-12-29 11:05:17   -huangdy-   创建
+*********************************************************************/
+CTreeNode* CCalcLogicForm::AdditiveExpression()
+{
+	CTreeNode* pTempNode       = nullptr;
+	CTreeNode* pExpressionNode = Term();
+
+	if(pExpressionNode)
+	{
+		m_nCurTokenIndex++;
+		while(m_nCurTokenIndex < m_aryToken.size()
+			&& (m_aryToken[m_nCurTokenIndex].GetType() == TT_PLUS
+			|| m_aryToken[m_nCurTokenIndex].GetType() == TT_MINUS)) 
+		{
+			pTempNode = CreateTreeNode(m_nCurTokenIndex);
+			if(!pTempNode)
+			{
+				return nullptr;
+			}
+
+			pExpressionNode->SetParent(pTempNode);
+			pTempNode->SetLeft(pExpressionNode);						
+			pExpressionNode = pTempNode;
+
+
+			m_nCurTokenIndex++;
+			pTempNode = Term();
+			if(!pTempNode)
+			{
+				return nullptr;
+			}
+			pTempNode->SetParent(pExpressionNode);
+			pExpressionNode->SetRight(pTempNode);
+
+			m_nCurTokenIndex++;	
+		}
+		m_nCurTokenIndex--;	
+	}
+
+	return pExpressionNode;
+}
+
+/*********************************************************************
+*  函数名称  : CCalcLogicForm::AnalyseCompare
+*  描    述  : 分析表达式中的比较关系
+*  返 回 值  : true----成功
+*              false---失败
+*  修改记录  : 2004-12-29 10:35:14   -huangdy-   创建
+*********************************************************************/
+
+CTreeNode* CCalcLogicForm::AnalyseCompare()
+{
+	CTreeNode* pExpressionNode = AdditiveExpression();
+	if(pExpressionNode)
+	{
+		CTreeNode* pTempNode   = nullptr;
+
+		m_nCurTokenIndex++;	
+		if(m_nCurTokenIndex < m_aryToken.size())
+		{
+			CSTOKEN_TYPE nTokenType = m_aryToken[m_nCurTokenIndex].GetType();
+
+			if( nTokenType    == TT_MOR 
+				|| nTokenType == TT_LES 
+				|| nTokenType == TT_MEQ 
+				|| nTokenType == TT_LEQ 
+				|| nTokenType == TT_EQU 
+				|| nTokenType == TT_UNEQ ) 
+			{
+				pTempNode = CreateTreeNode(m_nCurTokenIndex);
+				if(!pTempNode)
+				{
+					return nullptr;
+				}
+
+				pExpressionNode->SetParent(pTempNode);
+				pTempNode->SetLeft(pExpressionNode);						
+				pExpressionNode = pTempNode;
+
+				m_nCurTokenIndex++;	
+				pTempNode = AdditiveExpression();
+				if(!pTempNode)
+				{
+					return nullptr;
+				}
+				pTempNode->SetParent(pExpressionNode);
+				pExpressionNode->SetRight(pTempNode);
+			}
+			else
+			{
+				m_nCurTokenIndex--;	
+			}
+		}
+	}
+
+	return pExpressionNode;
+}
+
+/*********************************************************************
+*  函数名称  : CCalcLogicForm::AnalyseBitwiseAND
+*  描    述  : 分析位与操作
+*  参    数  : CTreeNode* pParent——父结点指针
+*  返 回 值  : true----成功
+*              false---失败
+*  修改记录  : 2004-12-31 11:35:02   -huangdy-   创建
+*********************************************************************/
+CTreeNode* CCalcLogicForm::AnalyseBitwiseAND()
+{
+	CTreeNode* pExpressionNode= AnalyseCompare();
+	if(pExpressionNode)
+	{
+		CTreeNode* pTempNode = nullptr;
+		m_nCurTokenIndex++;
+		while(m_nCurTokenIndex < m_aryToken.size() &&
+			m_aryToken[m_nCurTokenIndex].GetType() == TT_BITAND)
+		{
+			pTempNode = CreateTreeNode(m_nCurTokenIndex);		
+			if(!pTempNode)
+			{
+				return nullptr;
+			}
+
+			pExpressionNode->SetParent(pTempNode);
+			pTempNode->SetLeft(pExpressionNode);	
+			pExpressionNode = pTempNode;
+
+			m_nCurTokenIndex++;
+			pTempNode = AnalyseCompare();
+			if(!pTempNode)
+			{
+				return nullptr;
+			}
+			pTempNode->SetParent(pExpressionNode);
+			pExpressionNode->SetRight(pTempNode);
+
+			m_nCurTokenIndex++;	
+		}
+		m_nCurTokenIndex--;	
+	}
+	return pExpressionNode;		
+}
+
+/*********************************************************************
+*  函数名称  : CCalcLogicForm::AnalyseBitwiseExcOR
+*  描    述  : 分析位异或操作
+*  参    数  : CTreeNode* pParent——父结点指针
+*  返 回 值  : true----成功
+*              false---失败
+*  修改记录  : 2004-12-31 11:33:05   -huangdy-   创建
+*********************************************************************/
+CTreeNode* CCalcLogicForm::AnalyseBitwiseExcOR()
+{
+	CTreeNode* pExpressionNode= AnalyseBitwiseAND();
+	if(pExpressionNode)
+	{
+		CTreeNode* pTempNode = nullptr;
+		m_nCurTokenIndex++;
+		while(m_nCurTokenIndex < m_aryToken.size() &&
+			m_aryToken[m_nCurTokenIndex].GetType() == TT_EXCOR)
+		{
+			pTempNode = CreateTreeNode(m_nCurTokenIndex);		
+			if(!pTempNode)
+			{
+				return nullptr;
+			}
+
+			pExpressionNode->SetParent(pTempNode);
+			pTempNode->SetLeft(pExpressionNode);	
+			pExpressionNode = pTempNode;
+
+			m_nCurTokenIndex++;
+			pTempNode = AnalyseBitwiseAND();
+			if(!pTempNode)
+			{
+				return nullptr;
+			}
+			pTempNode->SetParent(pExpressionNode);
+			pExpressionNode->SetRight(pTempNode);
+
+			m_nCurTokenIndex++;	
+		}
+		m_nCurTokenIndex--;	
+	}
+	return pExpressionNode;	
+}
+
+/*********************************************************************
+*  函数名称  : CCalcLogicForm::AnalyseBitwiseOR
+*  描    述  : 分析为或操作
+*  参    数  : CTreeNode* pParent——父结点指针
+*  返 回 值  : true----成功
+*              false---失败
+*  修改记录  : 2004-12-31 11:31:11   -huangdy-   创建
+*********************************************************************/
+CTreeNode*  CCalcLogicForm::AnalyseBitwiseOR()
+{
+	CTreeNode* pExpressionNode= AnalyseBitwiseExcOR();
+	if(pExpressionNode)
+	{
+		CTreeNode* pTempNode = nullptr;
+		m_nCurTokenIndex++;
+		while(m_nCurTokenIndex < m_aryToken.size() &&
+			m_aryToken[m_nCurTokenIndex].GetType() == TT_BITOR)
+		{
+			pTempNode = CreateTreeNode(m_nCurTokenIndex);		
+			if(!pTempNode)
+			{
+				return nullptr;
+			}
+
+			pExpressionNode->SetParent(pTempNode);
+			pTempNode->SetLeft(pExpressionNode);	
+			pExpressionNode = pTempNode;
+
+			m_nCurTokenIndex++;
+			pTempNode = AnalyseBitwiseExcOR();
+			if(!pTempNode)
+			{
+				return nullptr;
+			}
+			pTempNode->SetParent(pExpressionNode);
+			pExpressionNode->SetRight(pTempNode);
+
+			m_nCurTokenIndex++;	
+		}
+		m_nCurTokenIndex--;	
+	}
+	return pExpressionNode;	
+}
+
+/*********************************************************************
+*  函数名称  : CCalcLogicForm::AnalyseAND
+*  描    述  : 分析表达式中"与"关系
+*  参    数  : CTreeNode* pParent——父结点指针
+*  返 回 值  : true----成功
+*              false---失败
+*  修改记录  : 2004-12-29 10:31:52   -huangdy-   创建
+*********************************************************************/
+CTreeNode* CCalcLogicForm::AnalyseAND()
+{
+	CTreeNode* pExpressionNode= AnalyseBitwiseOR();
+	if(pExpressionNode)
+	{
+		CTreeNode* pTempNode = nullptr;
+		m_nCurTokenIndex++;
+		while(m_nCurTokenIndex < m_aryToken.size() &&
+			m_aryToken[m_nCurTokenIndex].GetType() == TT_AND)
+		{
+			pTempNode = CreateTreeNode(m_nCurTokenIndex);		
+			if(!pTempNode)
+			{
+				return nullptr;
+			}
+
+			pExpressionNode->SetParent(pTempNode);
+			pTempNode->SetLeft(pExpressionNode);	
+			pExpressionNode = pTempNode;
+
+			m_nCurTokenIndex++;
+			pTempNode = AnalyseBitwiseOR();
+
+			if(!pTempNode)
+			{
+				return nullptr;
+			}
+			pTempNode->SetParent(pExpressionNode);
+			pExpressionNode->SetRight(pTempNode);
+
+			m_nCurTokenIndex++;	
+		}
+		m_nCurTokenIndex--;	
+	}
+	return pExpressionNode;	
+}
+
+/*********************************************************************
+*  函数名称  : CCalcLogicForm::AnalyseOR
+*  描    述  : 分析条件表达式中的"OR"关系
+*  返 回 值  : true----成功
+*              false---失败
+*  修改记录  : 2004-12-29 10:30:22   -huangdy-   创建
+*********************************************************************/
+CTreeNode* CCalcLogicForm::AnalyseOR()
+{
+	CTreeNode* pExpressionNode= AnalyseAND();
+	if(pExpressionNode)
+	{
+		CTreeNode* pTempNode = nullptr;
+		m_nCurTokenIndex++;
+		while(m_nCurTokenIndex < m_aryToken.size() &&
+			m_aryToken[m_nCurTokenIndex].GetType() == TT_OR)
+		{
+			pTempNode = CreateTreeNode(m_nCurTokenIndex);		
+			if(!pTempNode)
+			{
+				return nullptr;
+			}
+
+			pExpressionNode->SetParent(pTempNode);
+			pTempNode->SetLeft(pExpressionNode);	
+			pExpressionNode = pTempNode;
+
+			m_nCurTokenIndex++;
+			pTempNode = AnalyseAND();
+			if(!pTempNode)
+			{
+				return nullptr;
+			}
+			pTempNode->SetParent(pExpressionNode);
+			pExpressionNode->SetRight(pTempNode);
+
+			m_nCurTokenIndex++;	
+		}
+		m_nCurTokenIndex--;	
+	}
+	return pExpressionNode;
+}
+
+
+/*********************************************************************
+*  函数名称  : CCalcLogicForm::CheckRepeatIndex
+*  描    述  : 查询重复的变量序号
+*  参    数  : int nIndex——序号
+*  返 回 值  : true----重复
+*              false---不重复
+*  修改记录  : 2004-12-31 15:33:12   -huangdy-   创建
+*********************************************************************/
+bool CCalcLogicForm::CheckRepeatIndex(int nIndex)
+{
+	bool bResult = false;
+	std::map <std::string,CVaribleInfo>::iterator itr;	
+
+	itr = m_mapVaribleInfo.begin();
+	while( m_mapVaribleInfo.end() != itr)
+	{		
+		if(itr->second.GetIndex() == nIndex)
+		{
+			bResult = true;
+			break;
+		}
+		itr++;
+	}
+	return bResult;	
+}
+
+/*********************************************************************
+*  函数名称  : CCalcLogicForm::AddVarible
+*  描    述  : 增加变量
+*  参    数  : std::string& strName——变量名称
+*              CSTOKEN_TYPE m_dtType——变量类型
+*  返 回 值  : 返回新增变量的序号
+*  修改记录  : 2004-12-28 13:23:08   -huangdy-   创建
+*********************************************************************/
+bool CCalcLogicForm::AddVarible(std::string& strName,CSTOKEN_TYPE m_dtType,int nIndex)
+{
+	bool bResult = false;
+
+	if(!CheckRepeatIndex(nIndex))
+	{
+		typedef std::pair<std::string,CVaribleInfo> Var_Pair;
+		CVaribleInfo objNewVar(strName,m_dtType,nIndex);
+
+		m_mapVaribleInfo.insert(Var_Pair(strName,objNewVar));
+
+		bResult = true;
+	}
+	return bResult;
+}
+
+
+/*********************************************************************
+*  函数名称  : CCalcLogicForm::LookUpVarible
+*  描    述  : 根据名称查找变量信息
+*  参    数  : std::string& strName——变量名字
+*              CVaribleInfo& objResult——变量信息对象
+*  返 回 值  : true----找到
+*              false---没找到
+*  修改记录  : 2004-12-28 13:35:40   -huangdy-   创建
+*********************************************************************/
+bool CCalcLogicForm::LookUpVarible(
+								   std::string strName,
+								   CVaribleInfo& objResult)
+{
+	bool nFind = false;
+	std::map <std::string,CVaribleInfo> :: const_iterator itr;
+
+	itr = m_mapVaribleInfo.find(strName);
+	if(m_mapVaribleInfo.end() != itr)
+	{
+		objResult.Copy(itr->second);
+		nFind = true;
+	}	
+	return nFind;
+}
+
+void CCalcLogicForm::EmptyVarible()
+{
+	m_mapVaribleInfo.clear();
+}
+
+void CCalcLogicForm::FormatLogicFml(std::string& beFmtLogFml)
+{
+	const int REPLACENUMB = 8;
+	const char* OLDSTR[REPLACENUMB] = {("=>"), ("=<"), ("{"), ("["), ("}"), ("]"), ("\n"), ("\t")};
+	const char* NEWSTR[REPLACENUMB] = {(">="), ("<="), ("("),("("), (")"), (")"), (""), ("")};
+
+	for(int i = 0;i < REPLACENUMB;i++)
+	{
+		StrReplace(beFmtLogFml,OLDSTR[i],NEWSTR[i]);
+	}
+}
+
+
+/*********************************************************************
+*  函数名称  : CCalcLogicForm::IPConvert
+*  描    述  : 执行表达式中的IP转换函数
+*  参    数  : std::string& strIpInfo——原始表达式信息
+*  返 回 值  : 转换后的值
+*  修改记录  : 2005-1-5 13:42:00   -huangdy-   创建
+*********************************************************************/
+std::string CCalcLogicForm::IPConvert(std::string& strIpInfo)
+{
+	std::string strIP;
+	std::stringstream ssResult;
+
+	strIP = strIpInfo.substr(7,strIpInfo.size() - 9);
+	ssResult << HTONL(IDE_IPv4_to_i(strIP));
+
+	return ssResult.str();
+}
+
+
+
+/*********************************************************************
+*  函数名称  : CCalcLogicForm::HexToDec
+*  描    述  : 把十六进制的字符串转换为十进制的正数
+*  参    数  : std::string& strHex——源字符串
+*  返 回 值  : 转换后的整数
+*  修改记录  : 2005-1-10 11:52:24   -huangdy-   创建
+*********************************************************************/
+int64_t CCalcLogicForm::HexToDec(std::string& strHex)
+{
+	int64_t nResult  = 0;
+	int      nCurChar = -1;
+	int      nIndex = 0;
+
+	for(int i = strHex.size() - 1;i >= 0;i--)
+	{
+		nCurChar = strHex.at(i);
+		if(nCurChar > 47 && nCurChar < 58)
+		{
+			nCurChar -= 48;
+		}
+		else if(nCurChar > 64 && nCurChar < 71)
+		{
+			nCurChar -= 55;
+		}
+		else if(nCurChar > 96 && nCurChar < 103)
+		{
+			nCurChar -= 87;
+		}	
+		else
+		{
+			nCurChar = -1;
+			break;
+		}
+		nResult += int(nCurChar * pow((float)16,nIndex));
+		nIndex++;
+	}
+	return nResult;
+}
+
+/*********************************************************************
+*  函数名称  : CCalcLogicForm::IPConvert
+*  描    述  : 执行表达式中的MAC地址转换函数,即把字符串转换为整数
+*  参    数  : std::string& strMacInfo——MAC地址
+*  返 回 值  : 转换后的值
+*  修改记录  : 2005-1-5 13:42:00   -huangdy-   创建
+*********************************************************************/
+std::string CCalcLogicForm::MacConvert(std::string& strMacInfo)
+{
+	unsigned char      nState = 1;
+	std::string   strTmp("");
+	int       nCur = 0;
+	unMacAddr nMacAddr;
+	std::string   strResult("");
+	int       nIndex = 0;
+
+	nMacAddr.nIntAddr = 0;
+
+	for(size_t i = 8;i < strMacInfo.size() - 1;i++)
+	{
+		nCur = strMacInfo.at(i);
+
+		switch(nState)
+		{
+		case 1:
+			if ((nCur > 47 && nCur < 58)
+				|| (nCur > 64 && nCur < 71)
+				|| (nCur > 96 && nCur < 103))
+			{
+				strTmp += char(nCur);
+
+				if(strTmp.size() == 2)
+				{
+					nMacAddr.aryAddr[nIndex] = (unsigned char)(HexToDec(strTmp));
+					strTmp = ("");
+					nState = 2;
+					nIndex++;
+				}
+			}
+			else
+			{
+				i = strMacInfo.size();
+			}
+			break;
+		case 2:
+			if(('.') != char(nCur) && (':') != char(nCur))
+			{
+				i = strMacInfo.size();				
+			}
+			else
+			{
+				nState = 1;
+			}
+			break;
+		}
+	}
+	std::stringstream strMac;
+
+	strMac << nMacAddr.nIntAddr;
+
+	return strMac.str();
+}
+
+
+enum STATETYPE
+{ 
+	ST_START,            //开始状态
+	ST_INMEQ,            //>=状态
+	ST_INLEQ,            //<=状态
+	ST_INNUM,            //数字状态
+	ST_INSTR,            //字符串状态
+	ST_INID,             //or,and,not和变量状态
+	ST_INUNEQ,           //不等于状态
+	ST_GETPROTOCOL,      //函数调用
+	ST_NODFUN,           //节点涵数
+	ST_IPFUN,            //函数调用
+	ST_MACFUN,           //函数调用
+	ST_DONE              //结束当前状态
+};
+
+/*-----------------------------------------------------------------
+|  函数名称  : CScaner::InitReservedKeywordHashMap
+|  描    述  : Initialize the reserved keyword GetHashKey map,
+|  修改记录  : 2007-4-21 15:55:46   -huangdy-   创建
+-----------------------------------------------------------------*/
+void CCalcLogicForm::InitReservedKeywordHashMap(void)
+{	
+	struct TOKEN_INFO
+	{
+		CSTOKEN_TYPE nType;
+		std::string      nName;
+	} arrReservedKeywords[] = 
+	{
+		{ TT_OR          , ("||")},    
+		{ TT_AND         , ("&&")},    
+		{ TT_NOT         , ("!")},    
+		{ TT_MOR         , (">")},     
+		{ TT_LES         , ("<")},     
+		{ TT_EQU         , ("=")},     
+		{ TT_UNEQ        , ("!=")},     
+		{ TT_MEQ         , (">=")},     
+		{ TT_LEQ         , ("<=")},     
+		{ TT_PLUS        , ("+")},    
+		{ TT_MINUS       , ("-")},   
+		{ TT_MULT        , ("*")},    
+		{ TT_DIVI        , ("/")},    
+		{ TT_BITAND      , ("&")},    
+		{ TT_EXCOR       , ("^")},   
+		{ TT_BITOR       , ("|")},   
+		{ TT_LPAREN      , ("(")},    
+		{ TT_RPAREN      , (")")},    
+		{ TT_NETIP       , ("NETIP")},    
+		{ TT_NETMAC      , ("NETMAC")},   
+		{ TT_NODFUN      , ("MatchNode")},    
+		{ TT_PROTOCOLFUN , ("GetProtocol")} 
+	};
+
+	for(size_t i = 0 ;i < sizeof(arrReservedKeywords) / sizeof(TOKEN_INFO); i++ )
+	{
+		m_hmReservedKeyword[arrReservedKeywords[i].nName] = arrReservedKeywords[i].nType;
+	}
+}
+
+/*-----------------------------------------------------------------
+|  函数名称  : CScaner::LookupReserverKeyword
+|  描    述  : Look up reserver keyword by name in GetHashKey map.
+|  参    数  : char* pString——A pointer to a string.
+|  返 回 值  : If find the reserver keyword,then return reserver keyword ID,
+|              Otherwise return symboy ID.
+|  修改记录  : 2007-4-22 9:31:59   -huangdy-   创建
+-----------------------------------------------------------------*/
+CSTOKEN_TYPE CCalcLogicForm::LookupReserverKeyword(std::string& strString)
+{
+	CSTOKEN_TYPE  ttResult = TT_ERR;
+
+	auto itr = m_hmReservedKeyword.find(strString);
+
+	if(m_hmReservedKeyword.end() != itr)
+	{
+		ttResult = itr->second;
+	}
+
+	return ttResult;
+}
+
+/*********************************************************************
+*  函数名称  : CCalcLogicForm::ScanToken
+*  描    述  : 采用有穷状态机进行词法扫描
+*  参    数  : std::string strExpression——被扫描的表达式
+*  返 回 值  : true----成功
+*              false---失败
+*  全局变量  : 分析得到的符号存放在＂m_aryToken＂数组中
+*  修改记录  : 2004-12-28 14:49:09   -huangdy-   创建
+*********************************************************************/
+bool CCalcLogicForm::ScanToken(std::string& strExpression)
+{
+	bool           bResult  = true;
+	STATETYPE      stState  = ST_START;
+	unsigned int           nCurChar = 0;  
+	bool           bSave    = false;
+	std::string        strTmp;
+	CTokenInfo     objNewToken;
+	CVaribleInfo   objVar;
+
+	const      int   EXPRLEN = strExpression.size();
+
+	m_aryToken.clear();	
+	int  i = 0;
+
+	while(i < EXPRLEN && bResult)
+	{
+		nCurChar = (unsigned int)strExpression.at(i);
+
+		switch(stState)
+		{
+		case ST_START:
+			if(isalpha(nCurChar) || (95/*char('_')*/ == nCurChar)) //表示符以字母或下画线开头
+			{
+                stState = ST_INID;
+				i--;
+			}
+			else if(isdigit(nCurChar) || (46/*char('.')*/ == nCurChar) 
+				|| ((45/*char('-')*/ == nCurChar)  //说明可能是负数
+				&& (objNewToken.GetType() >= TT_OR && objNewToken.GetType() <= TT_LPAREN)))
+			{				
+				stState = ST_INNUM;
+				i--;
+			}			
+			else if(34 /*char('"')*/ == nCurChar)
+			{
+				stState = ST_INSTR;
+			}
+			else if(32 /*char(' ')*/ != nCurChar)
+			{
+				stState = ST_DONE;
+
+				strTmp  = nCurChar;				
+				objNewToken.SetType(LookupReserverKeyword(strTmp));
+				if(objNewToken.GetType() == TT_ERR)
+				{
+					LOG_DEBUG("Index %d,Unknow operation.\n",i);		
+					bResult = false;
+					break;
+				}	
+
+				switch(nCurChar)
+				{ 
+				case 62/*char('>')*/:
+					if(i + 1 < EXPRLEN && strExpression.at(i + 1) == char('='))
+					{
+						objNewToken.SetType(TT_MEQ);
+						strTmp = (">=");
+						i++;
+					}
+					break;		
+
+				case 60/*char('<')*/:
+					if(i + 1 < EXPRLEN && strExpression.at(i + 1) == char('='))
+					{
+						objNewToken.SetType(TT_LEQ);
+						strTmp =(">=");
+						i++;
+					}
+					break;		
+				case 33/*char('!')*/:
+					if(i + 1 < EXPRLEN && strExpression.at(i + 1) == char('='))
+					{
+						objNewToken.SetType(TT_UNEQ);
+						strTmp = ("!=");
+						i++;
+					}
+					break;
+				case 124/*char('|')*/:
+					if(i + 1 < EXPRLEN && strExpression.at(i + 1) == char('|'))
+					{
+						objNewToken.SetType(TT_OR);
+						strTmp = ("||");
+						i++;
+					}
+					break;
+				case 38/*char('&')*/:
+					if(i + 1 < EXPRLEN && strExpression.at(i + 1) == char('&'))
+					{
+						objNewToken.SetType(TT_AND);
+						strTmp = ("&&");
+						i++;
+					}
+					break;
+				}
+			}
+			break;			
+
+		case ST_INNUM:
+			if(((46/*char('.')*/ != nCurChar) && !isdigit(nCurChar)) || (EXPRLEN == i + 1))
+			{	
+				if(46/*char('.')*/ != nCurChar && !isdigit(nCurChar))
+				{
+					bSave  = false;
+					i--;
+				}
+				else if(EXPRLEN == i + 1)
+				{
+					bSave = true;
+				}
+
+				stState = ST_DONE;			
+
+				if(strTmp.find(("."),0) != strTmp.npos)
+				{
+					objNewToken.SetType(TT_FLOAT);	
+				}
+				else		
+				{
+					objNewToken.SetType(TT_INT);
+				}			
+			}	
+			else
+			{
+				bSave = true;
+			}
+			break;
+
+		case ST_INSTR:
+			bSave   = true;
+			if(34/*char('"')*/ == nCurChar)
+			{
+				bSave   = false;
+				stState = ST_DONE;
+				objNewToken.SetType(TT_STR);				
+			}
+			else if(EXPRLEN == i + 1)
+			{
+				LOG_DEBUG("Index %d,Error define string.\n",i);		
+				bResult = false;
+			}
+			break;
+
+		case ST_INID:	
+			bSave   = true;
+			if((!isalnum( nCurChar ) && (95/*char('_')*/ != nCurChar)) || (EXPRLEN == i + 1))
+			{				
+				if((EXPRLEN == i + 1) && (isalnum(nCurChar ) || 95 == nCurChar))
+				{
+					strTmp += nCurChar;
+				}
+
+				objNewToken.SetType(LookupReserverKeyword(strTmp));
+				if(objNewToken.GetType() == TT_ERR)
+				{
+					if(LookUpVarible(strTmp,objVar))
+					{				
+						objNewToken.SetType(TT_UNKNOWN_VAR);				
+						bSave  = false;
+						i--;
+						stState = ST_DONE;	
+					}
+					else
+					{
+						LOG_DEBUG("Index %d,unknown field.\n",i);	
+						bResult = false;
+					}
+				}
+				else
+				{
+					switch(objNewToken.GetType())
+					{
+					case TT_NETIP:
+						stState = ST_IPFUN;	
+						break;
+
+					case TT_NETMAC:
+						stState = ST_MACFUN;
+						break;
+					case TT_NODFUN:
+						stState = ST_NODFUN;
+						break;
+
+					case TT_PROTOCOLFUN:
+						stState = ST_GETPROTOCOL;
+						break;
+
+					default:
+						LOG_DEBUG("Index %d,unknown field.\n",i);	
+						bResult = false;
+					}
+				}				
+			}
+			break;
+
+		case ST_NODFUN:
+			if(41/*char(')')*/ == nCurChar)
+			{
+				objNewToken.SetType(TT_NODFUN);				
+				stState = ST_DONE;
+			}
+			break;
+
+		case ST_GETPROTOCOL:
+			if(41/*char(')')*/ == nCurChar)
+			{
+				objNewToken.SetType(TT_PROTOCOLFUN);				
+				stState = ST_DONE;
+			}
+			break;
+
+		case ST_IPFUN:
+			if(41/*char(')')*/ == nCurChar)
+			{
+				objNewToken.SetType(TT_NETIP);
+				stState = ST_DONE;
+			}
+			break;
+
+		case ST_MACFUN:
+			if(41/*char(')')*/ == nCurChar)
+			{
+				objNewToken.SetType(TT_NETMAC);
+				stState = ST_DONE;
+			}
+			break;
+		default:
+			assert(false);
+		};
+
+		if(bSave)
+		{
+			strTmp += nCurChar;
+		}
+
+		if(ST_DONE == stState)
+		{
+			switch(objNewToken.GetType())
+			{
+			case TT_NETIP:
+				objNewToken.SetValue(IPConvert(strTmp));
+				objNewToken.SetType(TT_INT);
+				break;
+
+			case TT_NETMAC:
+				objNewToken.SetValue(MacConvert(strTmp));
+				objNewToken.SetType(TT_INT);
+				break;
+			default:
+				objNewToken.SetValue(strTmp);
+			}
+
+			m_aryToken.push_back(objNewToken);			
+			strTmp  = ("");
+			stState = ST_START;
+			bSave   = false; 
+		}
+		i++;
+	}
+
+	return bResult;
+}
+
+
+/*********************************************************************
+*  函数名称  : CCalcLogicForm::CreateSyntaxTree
+*  描    述  : 通过递归下降法分析表达式并创造语法树  
+*  返 回 值  : true----成功
+*              false---失败
+*  修改记录  : 2004-12-29 9:51:36   -huangdy-   创建
+*********************************************************************/
+bool CCalcLogicForm::CreateSyntaxTree()
+{
+	m_nCurTokenIndex = 0;
+
+	m_pTreeRoot = AnalyseOR();
+	return (nullptr != m_pTreeRoot );
+}
+//#define SHOW_TREE
+/*********************************************************************
+*  函数名称  : CCalcLogicForm::AnalyseExpression
+*  描    述  : 分析表达式,主要包含词法分析和语义分析两部分,最终形成
+*              语法树        
+*  参    数  : std::string strExpression——被扫描的表达式
+*  返 回 值  : true----成功
+*              false---失败
+*  修改记录  : 2004-12-28 16:48:45   -huangdy-   创建
+*********************************************************************/
+bool CCalcLogicForm::AnalyseExpression(std::string& strExpression)
+{	
+	if(("") == strExpression)
+	{
+		m_bAvailabilitySyntaxTree = false;	
+		return false;
+	}
+
+	FormatLogicFml(strExpression);
+	if(m_strLogicForm == strExpression)      //如果表达式和上次相同就不用分析了
+		return true;
+
+	m_bAvailabilitySyntaxTree = false;	
+	m_bAvailabilitySyntaxTree = ScanToken(strExpression);
+	if(m_bAvailabilitySyntaxTree)
+	{
+		DestroyTree();
+		m_pTreeRoot = nullptr;
+		
+		m_bAvailabilitySyntaxTree = CreateSyntaxTree();
+
+		if(m_bAvailabilitySyntaxTree)
+		{
+			m_strLogicForm = strExpression;
+			CTreeNode::s_nIndent = 0;
+			
+#ifdef _DEBUG
+#ifdef SHOW_TREE
+			m_pTreeRoot->ShowTree();
+#endif
+#endif		
+		}
+	}
+	return m_bAvailabilitySyntaxTree;
+}
+
+bool CCalcLogicForm::Calculate(CContext* objContext)
+{
+	bool bResult =false;
+
+	if(m_bAvailabilitySyntaxTree)
+	{
+		if(m_pTreeRoot)
+		{
+			m_pTreeRoot->Reset();
+			bResult = dynamic_cast<CCondition*>(m_pTreeRoot)->Evaluate(objContext);
+		}
+		else
+		{	
+			LOG_DEBUG("在函数Calculate内数据类型转换错误!\n");
+		}
+	}
+	return bResult;
+}

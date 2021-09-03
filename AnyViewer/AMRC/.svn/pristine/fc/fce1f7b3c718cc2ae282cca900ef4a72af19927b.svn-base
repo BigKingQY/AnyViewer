@@ -1,0 +1,491 @@
+/////////////////////////////////////////////////////////////////////
+/// @file CHTTPPacket.h
+/// @brief http数据包实现
+/// 
+/// @author andy
+/// @version 1.0
+/// @date 2020.4.1
+/////////////////////////////////////////////////////////////////////
+
+
+#include "stdafx.h"
+#include "CHTTPPacket.h"
+#include <boost/format.hpp>
+
+
+const unsigned int KB = 1024;
+
+const char* CONTENT_LENGTH_TAG = "content-length:";
+const unsigned int CONTENT_LENGTH_TAG_LEN = 15;
+
+
+
+/*---------------------------CHTTPPacket-------------------*/
+
+CHTTPPacket::CHTTPPacket()
+{
+}
+
+CHTTPPacket::CHTTPPacket(
+	const char*  lpMothed
+	, const char*  lpURL
+	, const char*  lpProtocolVer
+	, const char*  lpBody)
+	: m_strMothed(lpMothed)
+	, m_strURL(lpURL)
+	, m_strProtocolVer(lpProtocolVer)
+	, m_strBody(lpBody)
+{
+}
+
+
+CHTTPPacket::~CHTTPPacket()
+{
+}
+
+
+
+void CHTTPPacket::ResetContent()
+{
+	if (GetBodyBeginPos() + GetContentLen() == m_objDataBuffer.GetDataLen())
+	{
+		m_strMothed = "GET";
+		m_strURL.clear();
+		m_strProtocolVer = "HTTP/1.1";
+		m_strBody.clear();
+		m_strRawData.clear();
+		m_strStatusMsg = "OK";
+
+		m_mapOptions.clear();
+		m_mapPara.clear();
+
+		m_nContentLen = 0;
+		m_nBodyBeginPos = 0;
+		m_nStatusCode = 0;
+		m_bHeaderAnalyzed = false;
+
+		CNetPacketBase::ResetContent();
+	}
+}
+
+NET_EXTRACT_DATA_PACKET_RESULT CHTTPPacket::ExtractData(CDataStreamBuffer & refDataBuffer)
+{
+	NET_EXTRACT_DATA_PACKET_RESULT nResult = NEDPR_INCOMPLETE_PACKET;
+	//const BYTE* pData = (BYTE*)refDataBuffer.GetDataHeadPtr();
+	const size_t  DATA_LENGTH = refDataBuffer.GetDataLen();
+
+	if (size_t(m_objDataBuffer.GetFreeSize()) < DATA_LENGTH)
+	{
+		const size_t nNewSize = m_objDataBuffer.GetSize() + ((DATA_LENGTH < 10 * KB) ? 10 * KB : DATA_LENGTH);
+		m_objDataBuffer.Reallocate(nNewSize);
+	}
+
+	refDataBuffer.Read(m_objDataBuffer, DATA_LENGTH);
+	InitShiftTable();
+
+	if (!GetHeaderAnalyzed())
+	{
+		const int nContentLenIndex = m_objContentLenSundaySearch->Search(
+			(const char*)m_objDataBuffer.GetDataHeadPtr()
+			, m_objDataBuffer.GetDataLen());
+
+		if (nContentLenIndex > 0)
+		{
+			// 分析出内容的长度
+			std::string strContentLen;
+			char* pDataPtr = ((char*)m_objDataBuffer.GetDataHeadPtr()) + nContentLenIndex + CONTENT_LENGTH_TAG_LEN;
+			const int nRemainedDataLen = m_objDataBuffer.GetDataLen() - (nContentLenIndex + CONTENT_LENGTH_TAG_LEN + 1);
+
+			for (int i = 0; i < nRemainedDataLen; i++)
+			{
+				const char chCur = pDataPtr[i];
+
+				if (chCur == '\r' || chCur == '\n')
+				{
+					break;
+				}
+
+				strContentLen += chCur;
+			}
+
+			SetContentLen(std::atoi(strContentLen.c_str()));		
+		}
+
+		// 找到头与正文的分割位置
+		const int nSeparationIndex = m_objSeparationSundaySearch->Search(
+			(const char*)m_objDataBuffer.GetDataHeadPtr()
+			, m_objDataBuffer.GetDataLen());
+
+		if (nSeparationIndex > 0)
+		{
+			SetBodyBeginPos(nSeparationIndex + 4);
+			SetHeaderAnalyzed(true);
+		}
+	}
+
+
+	if (GetBodyBeginPos() > 0)
+	{
+		if (GetBodyBeginPos() + GetContentLen() == m_objDataBuffer.GetDataLen())
+		{
+			nResult = NEDPR_JUST_A_PACKET;
+			SetHeaderAnalyzed(false);
+		}
+		else if (GetBodyBeginPos() + GetContentLen() < m_objDataBuffer.GetDataLen())
+		{
+			nResult = NEDPR_JUST_A_PACKET;
+			SetHeaderAnalyzed(false);
+		}
+	}
+
+
+	return nResult;
+}
+
+//--------------------------------------------------------------------------------
+/// <summary>
+/// 得到参数值
+/// </summary>
+/// <param name="lpKey">参数名称</param>
+/// <returns>参数的值</returns>
+/// <created>Andy,2020/8/17</created>
+/// <changed>Andy,2020/8/17</changed>
+//--------------------------------------------------------------------------------
+std::string CHTTPPacket::GetParaValue(const char * lpKey) const
+{
+	std::string strResult;
+	auto itr = m_mapPara.find(lpKey);
+
+	if (m_mapPara.end() != itr)
+	{
+		strResult = (*itr).second;
+	}
+
+	return strResult;
+}
+
+CHTTPPacket & CHTTPPacket::AppendOption(
+	const char*  lpName
+	, const char*  lpValue)
+{
+	m_mapOptions[lpName] = lpValue;
+
+	return *this;
+}
+
+
+
+
+//--------------------------------------------------------------------------------
+/// <summary>
+/// 组装http请求
+/// </summary>
+/// <param name="bRequest">true:请求数据包,false:应答数据包</param>
+/// <created>Andy,2019/10/10</created>
+/// <changed>Andy,2020/8/15</changed>
+//--------------------------------------------------------------------------------
+void CHTTPPacket::Assemble(const bool bRequest)
+{
+	if (bRequest)
+	{
+		boost::format fmtCmd("%s %s %s\r\n");
+
+		fmtCmd % m_strMothed % m_strURL % m_strProtocolVer;
+		m_strRawData = fmtCmd.str();
+	}
+	else
+	{
+		boost::format fmtCmd("%s %d %s\r\n");
+
+		fmtCmd % m_strProtocolVer % m_nStatusCode % m_strStatusMsg;
+		m_strRawData = fmtCmd.str();
+	}
+
+	boost::format fmtContentLen("Content-Length: %u\r\n");
+
+	fmtContentLen % m_strBody.size();
+	m_strRawData += fmtContentLen.str();
+
+	auto itr = m_mapOptions.begin();
+
+	for (; m_mapOptions.end() != itr; itr++)
+	{
+		boost::format fmtOption("%s: %s\r\n");
+
+		fmtOption % (*itr).first % (*itr).second;
+		m_strRawData += fmtOption.str();
+	}
+
+	m_strRawData += "\r\n";
+	m_strRawData += m_strBody;
+
+	Copy((BYTE*)m_strRawData.c_str(), m_strRawData.size());
+}
+
+//--------------------------------------------------------------------------------
+/// <summary>
+/// 解析应答信息
+/// </summary>
+/// <created>Andy,2020/4/3</created>
+/// <changed>Andy,2020/4/3</changed>
+//--------------------------------------------------------------------------------
+void CHTTPPacket::AnalyzeReponse()
+{
+	/// <summary>分析状态</summary>
+	enum ANALYSIS_STATUS
+	{
+		AS_INIT = 0,                  ///< 初始化状态
+		AS_STATUS_CODE = 1,           ///< 分析状态吗
+	};
+
+	char* pDataPtr = ((char*)m_objDataBuffer.GetDataHeadPtr());
+	const int DATA_LENGTH = m_objDataBuffer.GetDataLen();
+
+	bool bDone = false;
+	ANALYSIS_STATUS nStatus = AS_INIT;
+	std::string strStatusCode;
+
+	for (int i = 0; i < DATA_LENGTH && !bDone; i++)
+	{
+		const char chCur = pDataPtr[i];
+
+		switch (nStatus)
+		{
+		case AS_INIT:
+			if (chCur == ' ')
+			{
+				nStatus = AS_STATUS_CODE;
+			}
+			break;
+
+		case AS_STATUS_CODE:
+		{
+			if (chCur == ' ')
+			{
+				bDone = true;
+			}
+			else
+			{
+				strStatusCode += chCur;
+			}
+		}
+		break;
+
+		default:
+			break;
+		}
+	}
+
+	if (bDone)
+	{
+		SetStatusCode(std::atoi(strStatusCode.c_str()));
+	}
+
+	if (GetContentLen() > 0)
+	{
+		m_strBody = std::string(&pDataPtr[GetBodyBeginPos()], GetContentLen());
+	}
+}
+
+//--------------------------------------------------------------------------------
+/// <summary>
+/// 分析请求数据包
+/// </summary>
+/// <created>Andy,2020/8/14</created>
+/// <changed>Andy,2020/8/14</changed>
+//--------------------------------------------------------------------------------
+void CHTTPPacket::AnalyzeRequest()
+{
+	enum  HTTP_PARSE_STATE
+	{
+		HPS_METHOD = 0,  //分析方法
+		HPS_URL = 1,  //分析URL
+		HPS_PROTOCOL = 2,  //分析协议
+		HPS_OPTION_NAME = 3,  //分析属性名称
+		HPS_OPTION_VALUE = 4,  //分析属性值
+	};
+
+
+	HTTP_PARSE_STATE nState = HPS_METHOD;
+	char* pDataPtr = ((char*)m_objDataBuffer.GetDataHeadPtr());
+	const int TEXT_LEN = m_objDataBuffer.GetDataLen();
+	std::string strField;
+	std::string strValue;
+	bool bDone = false;
+
+	m_strMothed.clear();
+	m_strURL.clear();
+	m_strProtocolVer.clear();
+
+	for (int i = 0; i < TEXT_LEN && !bDone; i++)
+	{
+		const char chCur = pDataPtr[i];
+
+		if (chCur == '\r')
+		{
+			continue;
+		}
+
+		switch (nState)
+		{
+		case HPS_METHOD:
+		{
+			if (' ' == chCur)
+			{
+				nState = HPS_URL;
+			}
+			else
+			{
+				m_strMothed += chCur;
+			}
+		}
+		break;
+
+		case HPS_URL:
+		{
+			if (' ' == chCur)
+			{
+				nState = HPS_PROTOCOL;
+			}
+			else
+			{
+				m_strURL += chCur;
+			}
+		}
+		break;
+
+		case HPS_PROTOCOL:
+		{
+			if ('\n' == chCur)
+			{
+				nState = HPS_OPTION_NAME;
+			}
+			else
+			{
+				m_strProtocolVer += chCur;
+			}
+		}
+		break;
+
+		case HPS_OPTION_NAME:
+		{
+			if (':' == chCur)
+			{
+				nState = HPS_OPTION_VALUE;
+			}
+			else if ('\n' == chCur)
+			{
+				bDone = true;
+			}
+			else
+			{
+				strField += chCur;
+			}
+
+		}
+		break;
+
+		case HPS_OPTION_VALUE:
+		{
+			if ('\n' == chCur)
+			{
+				m_mapOptions[strField] = strValue;
+
+				strField.clear();
+				strValue.clear();
+				nState = HPS_OPTION_NAME;
+
+			}
+			else
+			{
+				strValue += chCur;
+			}
+		}
+		}
+	}
+
+	if (GetBodyBeginPos() + GetContentLen() <= m_objDataBuffer.GetDataLen())
+	{
+		m_strBody = std::string(&pDataPtr[GetBodyBeginPos()], GetContentLen());
+	}
+}
+
+//--------------------------------------------------------------------------------
+/// <summary>
+/// 分析提交的参数
+/// </summary>
+/// <param name="strPara"></param>
+/// <created>Andy,2020/8/17</created>
+/// <changed>Andy,2020/8/17</changed>
+//--------------------------------------------------------------------------------
+void CHTTPPacket::AnalyzePara(const std::string & strPara)
+{
+	m_mapPara.clear();
+
+	enum ANALYSIS_STATUS
+	{
+		AS_PARA_NAME = 0,      ///< 参数名称
+		AS_PARA_VALUE = 1,     ///< 参数值
+	};
+
+	std::string strName;
+	std::string strValue;
+	ANALYSIS_STATUS nStatus = AS_PARA_NAME;
+	const size_t PARA_LEN = strPara.size();
+
+	for (size_t i = 0; i < PARA_LEN; i++)
+	{
+		const char chCur = strPara[i];
+
+		switch (nStatus)
+		{
+		case AS_PARA_NAME:
+		{
+			if ('=' == chCur)
+			{
+				nStatus = AS_PARA_VALUE;
+				break;
+			}
+			else
+			{
+				strName += chCur;
+			}
+		}
+		break;
+
+		case AS_PARA_VALUE:
+		{
+			if ('&' == chCur || i + 1 == PARA_LEN)
+			{
+				m_mapPara[strName] = strValue;
+
+				strName.clear();
+				strValue.clear();
+				nStatus = AS_PARA_NAME;
+			}
+			else
+			{
+				strValue += chCur;
+			}
+		}
+		break;
+		}
+	}
+
+
+}
+
+void CHTTPPacket::InitShiftTable()
+{
+	if (nullptr == m_objContentLenSundaySearch)
+	{
+		m_objContentLenSundaySearch = std::make_shared<CSundaySearch>();
+		m_objContentLenSundaySearch->InitShiftTable(CONTENT_LENGTH_TAG, false);
+	}
+
+	if (nullptr == m_objSeparationSundaySearch)
+	{
+		m_objSeparationSundaySearch = std::make_shared<CSundaySearch>();
+		m_objSeparationSundaySearch->InitShiftTable("\r\n\r\n", true);
+	}
+}

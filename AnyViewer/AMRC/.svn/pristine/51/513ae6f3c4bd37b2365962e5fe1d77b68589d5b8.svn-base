@@ -1,0 +1,5 @@
+#pragma once
+
+extern bool OpenSource(const std::string& refPath);
+
+

@@ -1,9 +1,12 @@
 //
-//  MessageBus.h
+//  MessageBusManager.h
 //  AnyViewer
 //
 //  Created by Aomei on 2021/9/2.
 //
+
+#ifndef MessageBusManager_h
+#define MessageBusManager_h
 
 #include "SDPMessageBus.h"
 
@@ -19,6 +22,7 @@ public:
     
 };
 
+#endif
 
 
 

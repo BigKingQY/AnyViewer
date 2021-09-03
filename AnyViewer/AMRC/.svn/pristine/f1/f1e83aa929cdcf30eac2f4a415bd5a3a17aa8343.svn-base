@@ -1,0 +1,182 @@
+#include "config.h"
+#include<fstream>
+#include<assert.h>
+#include<unordered_map>
+#include <string>
+#include <string.h>
+
+CConfig::CConfig(const std::string& strFile)
+    :m_strFile(strFile)
+{
+}
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// 从文件中度取配置信息
+/// </summary>
+/// <returns>true:成功,false:失败</returns>
+/// <created>黄丽云,2019/1/19</created>
+/// <changed>黄丽云,2019/1/19</changed>
+// --------------------------------------------------------------------------------
+bool CConfig::Read()
+{
+    std::ifstream rf(m_strFile);
+    if (!rf.is_open())
+    {
+        return false;
+    }
+
+    std::string strLine;
+
+    while (std::getline(rf, strLine))
+    {
+        while (strLine.size() > 0)
+        {
+            if ('\r' == strLine.back() || '\n' == strLine.back())
+            {
+                strLine.pop_back();
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        if (0 == strLine.size())
+        {
+            continue;
+        }
+
+        char* pLine = (char*)strLine.data();
+        unsigned int nSpace = 0;
+        //去掉开头空格
+        while (' ' == *pLine)
+        {
+            ++pLine;
+            ++nSpace;
+        }
+
+        if (nSpace == strLine.size() || '#' == *pLine)
+        {
+            continue;
+        }
+
+        char* pValue = strchr(pLine, '=');
+        if (nullptr == pValue)
+        {
+            continue;
+        }
+
+        std::string strKey(pLine, pValue - pLine);
+        while (' ' == strKey.back())
+        {
+            strKey.pop_back();
+        }
+        if (strKey.empty())
+        {
+            continue;
+        }
+
+        //去掉开头空格
+        ++pValue;
+        while (' ' == *pValue)
+        {
+            ++pValue;
+        }
+        
+        std::string strValue(pValue);
+        while (' ' == strValue.back())
+        {
+            strValue.pop_back();
+        }
+
+        m_mapKey2Value[strKey] = strValue;
+    }
+ 
+    return true;
+}
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// 把配置信息写到磁盘文件中
+/// </summary>
+/// <created>黄丽云,2019/1/19</created>
+/// <changed>黄丽云,2019/1/19</changed>
+// --------------------------------------------------------------------------------
+void CConfig::Write()
+{
+    if(0 == m_mapKey2Value.size())
+    {
+        return;
+    }
+
+    std::ofstream of(m_strFile);
+
+    for(auto& rValue : m_mapKey2Value)
+    {
+        of.write(rValue.first.c_str(), rValue.first.size());
+        of<<'=';
+        of<<rValue.second;
+        of<<'\n';
+    }
+    of.close();
+}
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// 得到指定的值
+/// </summary>
+/// <param name="strKey">字段名称</param>
+/// <param name="strDefault">缺省值</param>
+/// <returns>值</returns>
+/// <created>黄丽云,2019/1/19</created>
+/// <changed>黄丽云,2019/1/19</changed>
+// --------------------------------------------------------------------------------
+std::string CConfig::GetValue(const std::string& strKey, const std::string& strDefault)
+{
+    auto it = m_mapKey2Value.find(strKey);
+
+    if(it != m_mapKey2Value.end())
+    {
+        return it->second;
+    }
+
+    return strDefault;
+}
+
+//--------------------------------------------------------------------------------
+/// <summary>
+/// 得到指定的值
+/// </summary>
+/// <param name="strKey"></param>
+/// <param name="nDefault"></param>
+/// <returns></returns>
+/// <created>Andy,2020/6/1</created>
+/// <changed>Andy,2020/6/1</changed>
+//--------------------------------------------------------------------------------
+int CConfig::GetValue(const std::string & strKey, const int nDefault)
+{
+	int nResult = nDefault;
+	auto it = m_mapKey2Value.find(strKey);
+
+	if (it != m_mapKey2Value.end())
+	{
+		nResult = std::atoi(it->second.c_str());
+	}
+
+	return nResult;
+}
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// 设置值
+/// </summary>
+/// <param name="strKey">字段名称</param>
+/// <param name="strValue">新的值</param>
+/// <created>黄丽云,2019/1/19</created>
+/// <changed>黄丽云,2019/1/19</changed>
+// --------------------------------------------------------------------------------
+void CConfig::SetValue(const std::string& strKey, const std::string& strValue)
+{
+    m_mapKey2Value[strKey] = strValue;
+}

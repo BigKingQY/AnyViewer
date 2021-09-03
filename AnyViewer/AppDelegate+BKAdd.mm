@@ -10,8 +10,11 @@
 #import "AMSocketHeader.h"
 #import <AFNetworking.h>
 #import <IQKeyboardManager.h>
-#import "AMSocketManager.h"
-#import "AMSocket.h"
+#include "CNetTransactionEngine.h"
+
+@interface AppDelegate ()
+
+@end
 
 @implementation AppDelegate (BKAdd)
 
@@ -56,15 +59,27 @@
     }];
     
     [[AFNetworkReachabilityManager sharedManager] startMonitoring];
+    
+    
 }
 
 - (void)configSocketConnect {
-//    [AMSocketManager.shared connectToRemoteServer];
     
     
-    AMSocketService ser = AMSocketService();
-    ser.startConnect();
+    NSError *error;
+    NSString *html = [NSString stringWithContentsOfURL:[NSURL URLWithString:@"https://ip138.com/iplookup.asp?ip=118.113.100.39&action=2"] encoding:NSUnicodeStringEncoding error:&error];
     
+    NSData *data = [NSData dataWithContentsOfURL:[NSURL URLWithString:@"https://ip138.com/iplookup.asp?ip=118.113.100.39&action=2"]];
+    
+
+    //初始化日志
+    CNetTransactionEngine::Instance()->InitLogWithPath(kLogPath);
+
+    //初始化IP查询文件下载路径
+    CNetTransactionEngine::Instance()->SetIPRegionPath(kIPRegionPath);
+    
+    //连接控制服务器
+    CNetTransactionEngine::Instance()->StartConnect();
 }
 
 @end

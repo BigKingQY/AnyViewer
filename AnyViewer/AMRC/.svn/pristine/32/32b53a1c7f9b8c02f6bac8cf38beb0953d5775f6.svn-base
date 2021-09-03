@@ -1,0 +1,1116 @@
+#include "VNCProxy.h"
+#include "VNCProxy.h"
+/////////////////////////////////////////////////////////////////////
+/// @file VNCProxy.h
+/// @brief 虚拟网络控制台类实现
+/// 
+///
+/// @author andy
+/// @version 1
+/// @date 2020-11-26
+/////////////////////////////////////////////////////////////////////
+#include "stdafx.h"
+#include "VNCProxy.h"
+#include "PrjSettings.h"
+#include "PixelFormat.h"
+#include "Point.h"
+#include "Log.h"
+#include "ThreadPool.h"
+
+// 创建一个线程任务
+extern bool CreateThreadTask(const THREAD_POOL_FUN& refThreadFun, CTaskSink* pTaskSink = nullptr);
+
+
+const unsigned int CONNECTION_TIMEOUT_MAX = 3;    ///< 最大连接超时阈值(单位:秒)
+
+
+
+CVNCProxy::CVNCProxy(
+	const U32 nSessionID /*= 0*/
+	, const U32 nPeerID/* = 0*/
+	, const U32 nPeerIP/* = 0*/
+	, const U16 nPeerPort/* = 0*/
+	, const U32 nCommunicationMode/* = 0*/
+	, const U32 nRoleType/* = RCT_CONTROLLER*/
+	, const unsigned int nProtocolVer)
+	: m_nSessionID(nSessionID)
+	, m_nPeerID(nPeerID)
+	, m_nPeerIP(nPeerIP)
+	, m_nPeerPort(nPeerPort)
+	, m_nCommunicationMode(nCommunicationMode)
+	, m_nRoleType(nRoleType)
+	, m_nProtocolVer(nProtocolVer)
+{
+}
+
+CVNCProxy::~CVNCProxy()
+{
+	if (nullptr != m_pVNCTCPClient)
+	{
+		m_pVNCTCPClient->Stop();
+		m_pVNCTCPClient = nullptr;
+	}
+
+	if (nullptr != m_pVNCUDPClient)
+	{
+		m_pVNCUDPClient->Stop();
+		m_pVNCUDPClient = nullptr;
+	}
+}
+
+// ********************************************************************************
+/// <summary>
+/// 
+/// </summary>
+/// <returns></returns>
+/// <created>Andy,2021/4/2</created>
+/// <changed>Andy,2021/4/2</changed>
+// ********************************************************************************
+double CVNCProxy::GetReceivingLasttime()
+{
+	double nResult = 0.0;
+
+	if (nullptr != m_pVNCTCPClient)
+	{
+		nResult = m_pVNCTCPClient->GetReceivingLasttime();
+	}
+	else if (nullptr != m_pVNCUDPClient)
+	{
+		nResult = m_pVNCUDPClient->GetReceivingLasttime();
+	}
+
+	return nResult;
+}
+
+// ********************************************************************************
+/// <summary>
+/// 得到连接消耗的时间
+/// </summary>
+/// <returns></returns>
+/// <created>Andy,2021/6/18</created>
+/// <changed>Andy,2021/6/18</changed>
+// ********************************************************************************
+double CVNCProxy::GetConnecitonTime()
+{
+	double nResult = 0.0;
+
+	if (nullptr != m_pVNCTCPClient)
+	{
+		nResult = m_pVNCTCPClient->GetConnectionTime();
+	}
+	else if (nullptr != m_pVNCUDPClient)
+	{
+		nResult = m_pVNCUDPClient->GetConnectionTime();
+	}
+
+	return nResult;
+}
+
+CONVERSATION_STATE CVNCProxy::GetConversationStatus()
+{
+	CONVERSATION_STATE nResult = RS_INVALID;
+
+	if (nullptr != m_pVNCTCPClient)
+	{
+		nResult = m_pVNCTCPClient->GetConversationStatus();
+	}
+	else if (nullptr != m_pVNCUDPClient)
+	{
+		nResult = m_pVNCUDPClient->GetConversationStatus();
+	}
+
+	return nResult;
+}
+
+
+// ********************************************************************************
+/// <summary>
+/// 注册到信使服务器,主要目的是告诉信使服务器NAT设备的IP地址和端口
+/// 注册服务器的端口是RC主控服务器端口+1,这是一个约定
+/// </summary>
+/// <returns></returns>
+/// <created>Andy,2021/1/5</created>
+/// <changed>Andy,2021/1/5</changed>
+// ********************************************************************************
+bool CVNCProxy::RegistUDPHoleServer()
+{
+	bool bResult = false;
+	CPrjSettings* pPrjSettings = GetPrjSettings();
+	CString strIP(pPrjSettings->GetServerIP().c_str());
+
+	if (!ValidIP(CT2A(strIP)))
+	{
+		std::string astrIP((char*)CT2A(strIP));
+
+		strIP = QueryDomainIP(astrIP).c_str();
+	}
+
+	// 注意UDP服务器的端口是TCP端口+1
+	m_pVNCUDPClient = std::make_shared<CVNCClient<CVNCUDPEndpoint>>(
+		IDE_IPv4_to_i(std::string(CT2A(strIP)))
+		, pPrjSettings->GetPort() + 1);
+
+	if (nullptr != m_pVNCUDPClient)
+	{
+		m_pVNCUDPClient->SetEndpointEventSink(this);
+		bResult = m_pVNCUDPClient->Initial();
+
+		if (bResult)
+		{
+			m_pEndpoint = m_pVNCUDPClient->GetEndpoint();
+
+			CNetUDPDataTransfer* pUDPDataTransfer = m_pVNCUDPClient->GetEndpoint()->GetDataTransfer();
+
+			if (nullptr != pUDPDataTransfer)
+			{
+				pUDPDataTransfer->Connect();
+				pUDPDataTransfer->SetIP(IDE_IPv4_to_i(std::string(CT2A(strIP))));
+				pUDPDataTransfer->SetPort(pPrjSettings->GetPort() + 1);
+
+				CVNCPacket objRequestPacket;
+
+				objRequestPacket.InitialT<VNCP::VNC_MESSAGE_HEADER, VNCP::REGIST_TO_HOLE_SERVER_REQUEST>(
+					VNCP::MT_REGIST_TO_UDP_HOLE_SERVER
+					, GetSessionID()
+					, VNCP::OT_REQUEST
+					, 0);
+
+				VNCP::REGIST_TO_HOLE_SERVER_REQUEST* pRequestPacket = (VNCP::REGIST_TO_HOLE_SERVER_REQUEST*)objRequestPacket.GetPayloadPtr<VNCP::VNC_MESSAGE_HEADER>();
+
+				pRequestPacket->nDeviceID = NTOHQ(std::atoll(pPrjSettings->GetDeviceID().c_str()));
+
+				// 发送注册请求，最多连续三次
+				int nCount = 3;
+				BYTE szBuffer[128] = { 0 };
+
+				do
+				{
+					pUDPDataTransfer->Send(
+						objRequestPacket.GetPacketBuffer().GetBufferHeadPtr()
+						, objRequestPacket.GetPacketBuffer().GetDataLen());
+
+					const int nByteRecved = pUDPDataTransfer->Recv(szBuffer, sizeof(szBuffer));
+
+					if (nByteRecved > 0)
+					{
+						bResult = (((VNCP::VNC_MESSAGE_HEADER*)szBuffer)->nFlag & OR_SUCCESS);
+						break;
+					}
+
+					::Sleep(1000);
+					nCount--;
+				} while (nCount > 0);
+			}
+		}
+	}
+
+	return bResult;	
+}
+
+bool CVNCProxy::OnEventHandle(
+	PTR_NET_ENDPOINT_INTERFACE pEndpoint
+	, SEVERITY_LEVEL nSeverity
+	, SERVICE_EVENT nEvent
+	, LPCTSTR lpTips)
+{
+
+	switch (nEvent)
+	{
+	case SE_CONNECTED:
+	{
+		// 虽然打洞和中转连接的时候，通信上方都有可能发送连接，都有可能会成功，但是不确定，因此
+		// 因此需要发送hello消息
+		SendHelloRequest();
+	}
+	break;
+
+	case SE_FAILT_TO_CONNECT:
+	{
+		char szBuffer[20] = { 0 };
+
+		LOG_ERROR("Try to re-connect the Controlled(%s:%d)...", FormatHostIPAddressAnsi(GetPeerIP(), szBuffer), GetPeerPort());
+	}
+	break;
+
+	default:
+		break;
+	}
+
+	return true;
+}
+
+// ********************************************************************************
+/// <summary>
+/// 成功建立通道事件
+/// </summary>
+/// <created>Andy,2021/6/30</created>
+/// <changed>Andy,2021/6/30</changed>
+// ********************************************************************************
+void CVNCProxy::OnEstablished()
+{
+	m_objDuration.restart();
+	SetEstablishVNCConnection(true);
+}
+
+// ********************************************************************************
+/// <summary>
+/// 采用TCP连接到目标设备
+/// </summary>
+/// <param name="bTCP">true:采用TCP,false:采用UDP</param>
+/// <returns></returns>
+/// <created>Andy,2020/11/27</created>
+/// <changed>Andy,2020/12/23</changed>
+// ********************************************************************************
+bool CVNCProxy::TCPConnect()
+{
+	CPrjSettings* pPrjSettings = GetPrjSettings();
+	bool bResult = false;
+
+	m_pVNCTCPClient = std::make_shared<CVNCClient<CVNCTCPEndpoint>>(GetPeerIP(), GetPeerPort());
+
+	if (nullptr != m_pVNCTCPClient)
+	{
+		m_pVNCTCPClient->SetEndpointEventSink(this);
+		bResult = m_pVNCTCPClient->Initial();
+
+		if (bResult)
+		{
+			m_pVNCTCPClient->SetConectionTimeout(CONNECTION_TIMEOUT_MAX);
+			m_pEndpoint = m_pVNCTCPClient->GetEndpoint();
+			bResult = m_pVNCTCPClient->Connect();
+			
+			{
+				// 不管连接的结果如何，都要立即发送消息，目的显示窗口和分配桌面，做好连接转杯，也可以
+				// 在桌面窗口显示连接进度
+				CreateThreadTask([this]()
+				{
+					CMessageBus& refMessageBus = GetMessageBus();
+					refMessageBus.SendReq<void, CVNCProxyPtr>(
+						LMBS_ESTABLISH_VNC_CONNECTION
+						, std::forward <CVNCProxyPtr>(shared_from_this()));
+				});
+
+
+			}
+
+			if (bResult)
+			{
+				m_pEndpoint->GetTransfer()->EnableNaggleAlgorithm(false);
+				
+				
+
+			}
+			else if(GetCommunicationMode() != RCP::ST_RELAY)
+			{
+				// 如果连接失败，立即通知服务器改变通信方式通信方式
+				m_pRCSvrProxy->SendChangeCommModeRequest(GetSessionID());
+				
+				// 必须调用Stop函数来停止客户端，否则它将不断的重新尝试连接
+				m_pVNCTCPClient->Stop();
+				m_pVNCTCPClient = nullptr;
+			}
+			
+			char szBuffer[20] = { 0 };
+
+			LOG_INFO("TCPConnect the Dst device (%s:%d) %s!"
+				, FormatHostIPAddressAnsi(GetPeerIP(), szBuffer)
+				, pPrjSettings->GetRFBPort()
+				, bResult ? "successfully" : "unsuccessfully");
+		}
+	}
+
+	return bResult;
+}
+
+// ********************************************************************************
+/// <summary>
+/// 
+/// </summary>
+/// <returns></returns>
+/// <created>Andy,2020/12/23</created>
+/// <changed>Andy,2020/12/23</changed>
+// ********************************************************************************
+bool CVNCProxy::UDPConnect(const unsigned int nIP, const unsigned int nPort)
+{
+	bool bResult = false;
+
+	if (nullptr != m_pVNCUDPClient)
+	{
+		SetPeerIP(nIP);
+		SetPeerPort(nPort);
+		m_pVNCUDPClient->SetIP(nIP);
+		m_pVNCUDPClient->SetPort(nPort);
+		m_pVNCUDPClient->SetConectionTimeout(CONNECTION_TIMEOUT_MAX);		
+		bResult = m_pVNCUDPClient->Connect();
+
+		if (bResult)
+		{
+			if (GetRoleType() == RCP::RCT_CONTROLLER)
+			{
+				CreateThreadTask([this]()
+				{
+					CMessageBus& refMessageBus = GetMessageBus();
+					refMessageBus.SendReq<void, CVNCProxyPtr>(
+						LMBS_ESTABLISH_VNC_CONNECTION
+						, std::forward <CVNCProxyPtr>(shared_from_this()));
+				}
+				);
+			}
+
+		}
+		else
+		{
+			// 如果连接失败，立即通知服务器改变通信方式通信方式
+			m_pRCSvrProxy->SendChangeCommModeRequest(GetSessionID());
+
+			// 必须调用Stop函数来停止客户端，否则它将不断的重新尝试连接
+			m_pVNCUDPClient->Stop();
+			m_pVNCUDPClient = nullptr;
+		}
+
+		char szBuffer[20] = { 0 };
+
+		LOG_INFO("UDPConnect the Dst device (%s:%d) %s!"
+			, FormatHostIPAddressAnsi(nIP, szBuffer)
+			, nPort
+			, bResult ? "successfully" : "unsuccessfully");
+
+	}
+
+	return bResult;
+}
+
+
+// ********************************************************************************
+/// <summary>
+/// 启动代理
+/// 
+/// 根据不同的角色和不同的通信方式来做响应的处理
+/// </summary>
+/// <returns></returns>
+/// <created>Andy,2020/11/27</created>
+/// <changed>Andy,2020/11/27</changed>
+// ********************************************************************************
+bool CVNCProxy::Start()
+{
+	bool bResult = true;
+	CPrjSettings* pPrjSettings = GetPrjSettings();
+
+	if (nullptr != m_pVNCTCPClient)
+	{
+		m_pVNCTCPClient->Stop();
+		m_pEndpoint = nullptr;
+		m_pVNCTCPClient = nullptr;
+	}	
+
+	if (nullptr != m_pVNCUDPClient)
+	{
+		m_pVNCUDPClient->Stop();
+		m_pEndpoint = nullptr;
+		m_pVNCUDPClient = nullptr;
+	}
+
+	switch (GetCommunicationMode())
+	{
+	case RCP::ST_SRC_TO_DST:   ///< 枚举常量,源向目标发起的直连
+		if (GetRoleType() == RCP::RCT_CONTROLLER)
+		{
+			bResult = TCPConnect();
+		}
+		else
+		{
+			//该会话方式，被控制者只需要静静的等待控制者的连接请求(在30193端口)
+		}
+		break;
+
+	case RCP::ST_DST_TO_SRC:   ///< 枚举常量,目标向源发起的直连
+		if (GetRoleType() == RCP::RCT_CONTROLLED)
+		{
+			bResult = TCPConnect();
+		}
+		else
+		{
+			//该会话方式，控制者只需要静静的等待被控制者的连接请求(在30193端口)
+		}
+		break;
+
+	case RCP::ST_HOLE:        ///< 枚举常量,打洞直连
+		bResult = RegistUDPHoleServer();
+		break;
+
+	case RCP::ST_RELAY:        ///< 枚举常量,中转
+		bResult = TCPConnect();
+		break;
+
+	default:
+		assert(false);
+	}	
+
+
+	return bResult;
+}
+
+// ********************************************************************************
+/// <summary>
+/// 发送简单的消息
+/// </summary>
+/// <param name="nType">消息类型</param>
+/// <returns></returns>
+/// <created>Andy,2020/11/30</created>
+/// <changed>Andy,2020/11/30</changed>
+// ********************************************************************************
+bool CVNCProxy::SendCommonRequest(const unsigned int nType)
+{
+	CHECK_POINTER_EX(m_pEndpoint, false);
+
+	bool bResult = false;
+	CVNCPacket objRequestPacket;
+	
+	objRequestPacket.Initial(nType, GetSessionID(), VNCP::OT_REQUEST, 0);
+	bResult = m_pEndpoint->Send(&objRequestPacket);
+
+	return bResult;
+}
+
+// ********************************************************************************
+/// <summary>
+/// 发送简单的应答消息
+/// </summary>
+/// <param name="nType">消息类型</param>
+/// <returns></returns>
+/// <created>Andy,2020/11/30</created>
+/// <changed>Andy,2020/11/30</changed>
+// ********************************************************************************
+bool CVNCProxy::SendCommonResponse(const unsigned int nType)
+{
+	CHECK_POINTER_EX(m_pEndpoint, false);
+
+	bool bResult = false;
+	CVNCPacket objRequestPacket;
+
+	objRequestPacket.Initial(nType, GetSessionID(), VNCP::OT_RESPONSE | VNCP::OR_SUCCESS, 0);
+	bResult = m_pEndpoint->Send(&objRequestPacket);
+
+	return bResult;
+}
+
+// ********************************************************************************
+/// <summary>
+/// 发Hello请求
+/// </summary>
+/// <returns></returns>
+/// <created>Andy,2020/12/14</created>
+/// <changed>Andy,2020/12/14</changed>
+// ********************************************************************************
+bool CVNCProxy::SendHelloRequest()
+{
+	CHECK_POINTER_EX(m_pEndpoint, false);
+
+	bool bResult = false;
+	CVNCPacket objRequestPacket;
+
+	objRequestPacket.InitialT<VNCP::VNC_MESSAGE_HEADER, VNCP::HELLO_MESSAGE_REQUEST>(
+		VNCP::MT_HELLO
+		, GetSessionID()
+		, VNCP::OT_REQUEST
+		, 0);
+
+	VNCP::HELLO_MESSAGE_REQUEST* pHelloRequest = (VNCP::HELLO_MESSAGE_REQUEST*)objRequestPacket.GetPayloadPtr<VNCP::VNC_MESSAGE_HEADER>();
+	CPrjSettings* pPrjSettings = GetPrjSettings();
+
+	assert(nullptr != pPrjSettings);
+	pHelloRequest->nID = NTOHQ(std::atoll(pPrjSettings->GetDeviceID().c_str()));
+	bResult = m_pEndpoint->Send(&objRequestPacket);
+
+	return bResult;
+}
+
+// ********************************************************************************
+/// <summary>
+/// 发送客户端初始化
+/// </summary>
+/// <param name="nSharedFlag">共享标志</param>
+/// <param name="nHideWallPage">隐藏桌面设置(1：隐藏,0:不隐藏)</param>
+/// <param name="nImageQuality">控制端发送来图形质量类型设置（不需要保存）,@see IMAGE_QUALITY_TYPE</param>
+/// <returns></returns>
+/// <created>Andy,2020/11/27</created>
+/// <changed>Andy,2021/2/22</changed>
+// ********************************************************************************
+bool CVNCProxy::SendClientInit(
+	const U8 nSharedFlag
+	, const U8 nHideWallPage
+	, const U8 nImageQuality)
+{
+	CHECK_POINTER_EX(m_pEndpoint, false);
+
+	bool bResult = false;
+	CVNCPacket objRequestPacket;
+
+	objRequestPacket.InitialT<VNCP::VNC_MESSAGE_HEADER, VNCP::CLIENT_INIT_REQUEST>(
+		VNCP::MT_CLIENT_INIT_REQUEST
+		, GetSessionID()
+		, VNCP::OT_REQUEST
+		, 0);
+
+	VNCP::CLIENT_INIT_REQUEST* pClientInitRequest = (VNCP::CLIENT_INIT_REQUEST*)objRequestPacket.GetPayloadPtr<VNCP::VNC_MESSAGE_HEADER>();
+
+	pClientInitRequest->nSharedFlag = nSharedFlag;
+	pClientInitRequest->nHideWallPage = nHideWallPage;
+	pClientInitRequest->nImageQuality = nImageQuality;
+	bResult = m_pEndpoint->Send(&objRequestPacket);
+
+	return bResult;
+}
+
+// ********************************************************************************
+/// <summary>
+/// 发送客户端设置（主要是画面质量和桌面壁纸）
+/// </summary>
+/// <param name="nHideWallPage">隐藏桌面设置(1：隐藏,0:不隐藏)</param>
+/// <param name="nImageQuality">控制端发送来图形质量类型设置（不需要保存）,@see IMAGE_QUALITY_TYPE</param>
+/// <returns></returns>
+/// <created>Andy,2021/2/22</created>
+/// <changed>Andy,2021/2/22</changed>
+// ********************************************************************************
+bool CVNCProxy::SendClientSettings(const U8 nHideWallPage, const U8 nImageQuality)
+{
+	CHECK_POINTER_EX(m_pEndpoint, false);
+
+	bool bResult = false;
+	CVNCPacket objRequestPacket;
+
+	objRequestPacket.InitialT<VNCP::VNC_MESSAGE_HEADER, VNCP::CLIENT_SETTINGS_REQUEST>(
+		VNCP::MT_CLIENT_SETTING_REQUEST
+		, GetSessionID()
+		, VNCP::OT_REQUEST
+		, 0);
+
+	VNCP::CLIENT_SETTINGS_REQUEST* pSettingsRequest = (VNCP::CLIENT_SETTINGS_REQUEST*)objRequestPacket.GetPayloadPtr<VNCP::VNC_MESSAGE_HEADER>();
+
+	pSettingsRequest->nHideWallPage = nHideWallPage;
+	pSettingsRequest->nImageQuality = nImageQuality;
+	bResult = m_pEndpoint->Send(&objRequestPacket);
+
+	return bResult;
+}
+
+// ********************************************************************************
+/// <summary>
+/// 发送初始化消息
+/// </summary>
+/// <param name="nResponse">1:应答，0:请求</param>
+/// <returns></returns>
+/// <created>Andy,2020/12/3</created>
+/// <changed>Andy,2021/2/22</changed>
+// ********************************************************************************
+bool CVNCProxy::SendReadyRequest(const U8 nResponse)
+{
+	CHECK_POINTER_EX(m_pEndpoint, false);
+
+	bool bResult = false;
+	CVNCPacket objRequestPacket;
+
+	objRequestPacket.InitialT<VNCP::VNC_MESSAGE_HEADER, VNCP::READY_REQUEST>(
+		VNCP::MT_READY
+		, GetSessionID()
+		, VNCP::OT_REQUEST
+		, 0);
+
+	VNCP::READY_REQUEST* pReadyInfo = (VNCP::READY_REQUEST*)objRequestPacket.GetPayloadPtr<VNCP::VNC_MESSAGE_HEADER>();
+
+	pReadyInfo->bResponse = nResponse;
+	bResult = m_pEndpoint->Send(&objRequestPacket);
+
+	return bResult;
+}
+
+// ********************************************************************************
+/// <summary>
+/// 发送更新帧缓冲区请求
+/// </summary>
+/// <param name="bIncremental">增量标志</param>
+/// <param name="refUpdateRect">请求变化的区域</param>
+/// <returns>true:成功,false:失败</returns>
+/// <created>Andy,2020/12/3</created>
+/// <changed>Andy,2020/12/3</changed>
+// ********************************************************************************
+bool CVNCProxy::SendFBUpdateRequest(const bool bIncremental, const Rect & refUpdateRect)
+{
+	bool bResult = false;
+	CVNCPacket objRequestPacket;
+
+	objRequestPacket.InitialT<VNCP::VNC_MESSAGE_HEADER, VNCP::FRAME_BUFFER_UPDATE_REQUEST>(
+		VNCP::MT_CLIENT_FRAME_BUF_UPDATE_REQUEST
+		, GetSessionID()
+		, VNCP::OT_REQUEST
+		,0);
+
+	VNCP::FRAME_BUFFER_UPDATE_REQUEST* pUpdateRequest = (VNCP::FRAME_BUFFER_UPDATE_REQUEST*)objRequestPacket.GetPayloadPtr<VNCP::VNC_MESSAGE_HEADER>();
+
+	pUpdateRequest->nInc = bIncremental;
+	pUpdateRequest->nX = refUpdateRect.left;
+	pUpdateRequest->nY = refUpdateRect.top;
+	pUpdateRequest->nWidth = refUpdateRect.getWidth();
+	pUpdateRequest->nHeight = refUpdateRect.getHeight();
+
+	bResult = m_pEndpoint->Send(&objRequestPacket);
+
+	return bResult;
+}
+
+// ********************************************************************************
+/// <summary>
+/// 
+/// </summary>
+/// <param name="refPixelFormat"></param>
+/// <returns></returns>
+/// <created>Andy,2020/12/3</created>
+/// <changed>Andy,2020/12/3</changed>
+// ********************************************************************************
+bool CVNCProxy::SendPixelFormatUpdateRequest(const CPixelFormat & refPixelFormat)
+{
+	bool bResult = false;
+	CVNCPacket objRequestPacket;
+
+	objRequestPacket.InitialT<VNCP::VNC_MESSAGE_HEADER, VNCP::PIXEL_FORMAT_SETTINGS_REQUEST>(
+		VNCP::MT_CLIENT_SET_PIXEL_FORMAT
+		, GetSessionID()
+		, VNCP::OT_REQUEST
+		,0);
+
+	VNCP::PIXEL_FORMAT_SETTINGS_REQUEST* pPixelFormatInfo = (VNCP::PIXEL_FORMAT_SETTINGS_REQUEST*)objRequestPacket.GetPayloadPtr<VNCP::VNC_MESSAGE_HEADER>();
+
+	pPixelFormatInfo->objPixelFormat.nBitsPerPixel = refPixelFormat.nBitsPerPixel;
+	pPixelFormatInfo->objPixelFormat.nColorDepth = refPixelFormat.colorDepth;
+	pPixelFormatInfo->objPixelFormat.nBigEndianFlag = refPixelFormat.bigEndian;
+	pPixelFormatInfo->objPixelFormat.nTrueColourFlag = true;              ///< 总是为true
+	pPixelFormatInfo->objPixelFormat.nRedMax = refPixelFormat.redMax;
+	pPixelFormatInfo->objPixelFormat.nGreenMax = refPixelFormat.greenMax;
+	pPixelFormatInfo->objPixelFormat.nBlueMax = refPixelFormat.blueMax;
+
+	pPixelFormatInfo->objPixelFormat.nRedShift = refPixelFormat.redShift;
+	pPixelFormatInfo->objPixelFormat.nGreenShift = refPixelFormat.greenShift;
+	pPixelFormatInfo->objPixelFormat.nBlueShift = refPixelFormat.blueShift;
+
+	bResult = m_pEndpoint->Send(&objRequestPacket);
+
+	return bResult;
+}
+
+// ********************************************************************************
+/// <summary>
+/// 发送键盘事件请求
+/// </summary>
+/// <param name="bDownFlag">按下标志</param>
+/// <param name="nKey">键盘编码</param>
+/// <created>Andy,2020/12/3</created>
+/// <changed>Andy,2020/12/3</changed>
+// ********************************************************************************
+bool CVNCProxy::SendKeyboardEventRequest(const bool bDownFlag, const UINT32 nKey)
+{
+	bool bResult = false;
+	CVNCPacket objRequestPacket;
+
+	objRequestPacket.InitialT<VNCP::VNC_MESSAGE_HEADER, VNCP::KEY_EVENT_REQUEST>(
+		VNCP::MT_CLIENT_KEY_EVENT
+		, GetSessionID()
+		, VNCP::OT_REQUEST
+		,0);
+
+	VNCP::KEY_EVENT_REQUEST* pKeyEventInfo = (VNCP::KEY_EVENT_REQUEST*)objRequestPacket.GetPayloadPtr<VNCP::VNC_MESSAGE_HEADER>();
+
+	pKeyEventInfo->nDowndFlag = bDownFlag;
+	pKeyEventInfo->nKey = nKey;
+
+	bResult = m_pEndpoint->Send(&objRequestPacket);
+
+	return bResult;
+}
+
+// ********************************************************************************
+/// <summary>
+/// 发送鼠标事件请求
+/// </summary>
+/// <param name="nButtonMask"></param>
+/// <param name="refPosition"></param>
+/// <created>Andy,2020/12/3</created>
+/// <changed>Andy,2020/12/3</changed>
+// ********************************************************************************
+bool CVNCProxy::SendPointerEventRequest(const UINT8 nButtonMask, const Point & refPosition)
+{
+	bool bResult = false;
+	CVNCPacket objRequestPacket;
+
+	objRequestPacket.InitialT<VNCP::VNC_MESSAGE_HEADER, VNCP::MT_POINTER_EVENT_REQUEST>(
+		VNCP::MT_CLIENT_POINTER_EVENT
+		, GetSessionID()
+		, VNCP::OT_REQUEST
+		,0);
+
+	VNCP::MT_POINTER_EVENT_REQUEST* pPointerEventInfo = (VNCP::MT_POINTER_EVENT_REQUEST*)objRequestPacket.GetPayloadPtr<VNCP::VNC_MESSAGE_HEADER>();
+
+	pPointerEventInfo->nX = refPosition.x;
+	pPointerEventInfo->nY = refPosition.y;
+	pPointerEventInfo->nButtonMask = nButtonMask;
+
+	bResult = m_pEndpoint->Send(&objRequestPacket);
+
+	return bResult;
+}
+
+// ********************************************************************************
+/// <summary>
+/// 发送剪切文本事件请求
+/// </summary>
+/// <param name="refCutText"></param>
+/// <returns></returns>
+/// <created>Andy,2020/12/3</created>
+/// <changed>Andy,2020/12/3</changed>
+// ********************************************************************************
+bool CVNCProxy::SendCutTextEventRequest(const std::string & refCutText)
+{
+	bool bResult = false;
+	CVNCPacket objRequestPacket;
+
+	objRequestPacket.InitialT<VNCP::VNC_MESSAGE_HEADER, VNCP::CUT_TEXT_EVENT>(
+		VNCP::MT_CLIENT_CUT_TEXT
+		, GetSessionID()
+		, VNCP::OT_REQUEST
+		, refCutText.size());
+
+	VNCP::CUT_TEXT_EVENT* pCutTextInfo = (VNCP::CUT_TEXT_EVENT*)objRequestPacket.GetPayloadPtr<VNCP::VNC_MESSAGE_HEADER>();
+
+	pCutTextInfo->nLength = refCutText.size();
+	memcpy(pCutTextInfo->pText, refCutText.c_str(), refCutText.size());
+	bResult = m_pEndpoint->Send(&objRequestPacket);
+
+	return bResult;
+}
+
+// ********************************************************************************
+/// <summary>
+/// 服务端发送客户端，静止或启用用户输入控制
+/// </summary>
+/// <param name="bEnableCtrl"></param>
+/// <returns></returns>
+/// <created>Andy,2021/1/5</created>
+/// <changed>Andy,2021/1/5</changed>
+// ********************************************************************************
+bool CVNCProxy::SendEnableInputRequest(const bool bEnableCtrl)
+{
+	bool bResult = false;
+	CVNCPacket objRequestPacket;
+
+	objRequestPacket.InitialT<VNCP::VNC_MESSAGE_HEADER, VNCP::ENABLE_INPUT_REQUEST>(
+		VNCP::MT_SERVER_ENABLE_REQUEST
+		, GetSessionID()
+		, VNCP::OT_REQUEST
+		, 0);
+
+	VNCP::ENABLE_INPUT_REQUEST* pEnableRequest = (VNCP::ENABLE_INPUT_REQUEST*)objRequestPacket.GetPayloadPtr<VNCP::VNC_MESSAGE_HEADER>();
+
+	pEnableRequest->bEnable = bEnableCtrl;
+	bResult = m_pEndpoint->Send(&objRequestPacket);
+
+	return bResult;	
+}
+
+// ********************************************************************************
+/// <summary>
+/// 发送一个帧数据
+/// </summary>
+/// <param name="pData">指向数据的指针</param>
+/// <param name="nLen">需要发送数据的长度</param>
+/// <returns></returns>
+/// <created>Andy,2021/4/6</created>
+/// <changed>Andy,2021/4/6</changed>
+// ********************************************************************************
+bool CVNCProxy::SendFrameData(const BYTE* pData, const unsigned int nLen)
+{
+	bool bResult = false;
+	const unsigned int PAYLOAD_LEN_MAX = CVNCPacket::PACKET_LEN_MAX - sizeof(VNCP::VNC_MESSAGE_HEADER) - sizeof(VNCP::FRAME_DATA_FRAG);
+	unsigned int nLenSent = 0;     ///< 已经发送的长度
+
+	do
+	{
+		m_objFrameRequestPacket.InitialT<VNCP::VNC_MESSAGE_HEADER, VNCP::FRAME_DATA_FRAG>(
+			VNCP::MT_SERVER_FRAME_DATA_FRAG
+			, GetSessionID()
+			, VNCP::OT_REQUEST
+			, min(nLen, PAYLOAD_LEN_MAX));   
+
+		VNCP::FRAME_DATA_FRAG* pDataFrag = (VNCP::FRAME_DATA_FRAG*)m_objFrameRequestPacket.GetPayloadPtr<VNCP::VNC_MESSAGE_HEADER>();
+		const int nFragLen = min(nLen - nLenSent, PAYLOAD_LEN_MAX);
+
+		pDataFrag->nTotal = HTONL(nLen);
+		pDataFrag->nPayloadLen = HTONL(nFragLen);		
+		pDataFrag->nOffset = HTONL(nLenSent);
+		memcpy(pDataFrag->pData, &pData[nLenSent], nFragLen);
+		bResult = m_pEndpoint->Send(&m_objFrameRequestPacket);
+
+		nLenSent += nFragLen;
+		m_objFrameRequestPacket.ResetContent();
+	} while (nLenSent < nLen);
+
+	return bResult;
+}
+
+
+// ********************************************************************************
+/// <summary>
+/// 发送服务器初始化
+/// </summary>
+/// <param name="refDim"></param>
+/// <param name="refPixelFormat"></param>
+/// <created>Andy,2020/12/2</created>
+/// <changed>Andy,2020/12/2</changed>
+// ********************************************************************************
+void CVNCProxy::SendFrameProperty(const CSize& refDim, const CPixelFormat& refPixelFormat)
+{
+	CVNCPacket objRequestPacket;
+
+	// 数据包是空的就初始化数据包
+	objRequestPacket.InitialT<VNCP::VNC_MESSAGE_HEADER, VNCP::SERVER_INIT_REQUEST>(
+		VNCP::MT_SERVER_INIT_REQUEST
+		, GetSessionID()
+		, VNCP::OT_REQUEST
+		, 0);
+
+	VNCP::SERVER_INIT_REQUEST* pInitRequest = (VNCP::SERVER_INIT_REQUEST*)objRequestPacket.GetPayloadPtr<VNCP::VNC_MESSAGE_HEADER>();
+
+	pInitRequest->nFrameBufWidth = refDim.width;
+	pInitRequest->nFrameBufHeight = refDim.height;
+
+	pInitRequest->objServerPixelFormat.nBitsPerPixel = refPixelFormat.nBitsPerPixel;
+	pInitRequest->objServerPixelFormat.nColorDepth = refPixelFormat.colorDepth;
+	pInitRequest->objServerPixelFormat.nRedMax = refPixelFormat.redMax;
+	pInitRequest->objServerPixelFormat.nGreenMax = refPixelFormat.greenMax;
+	pInitRequest->objServerPixelFormat.nBlueMax = refPixelFormat.blueMax;
+	pInitRequest->objServerPixelFormat.nRedShift = refPixelFormat.redShift;
+	pInitRequest->objServerPixelFormat.nGreenShift = refPixelFormat.greenShift;
+	pInitRequest->objServerPixelFormat.nBlueShift = refPixelFormat.blueShift;
+	pInitRequest->objServerPixelFormat.nBigEndianFlag = refPixelFormat.bigEndian;
+
+	m_pEndpoint->Send(&objRequestPacket);	
+}
+
+// ********************************************************************************
+/// <summary>
+/// 设置新的帧缓冲区的尺寸
+/// </summary>
+/// <param name="pDim"></param>
+/// <created>Andy,2020/9/28</created>
+/// <changed>Andy,2020/9/28</changed>
+// ********************************************************************************
+void CVNCProxy::SendFrameBufSize(const CSize* pDim)
+{
+	CHECK_POINTER(pDim);
+
+	if (pDim->Area() > 0)
+	{
+		CVNCPacket objRequestPacket;
+
+		objRequestPacket.InitialT<VNCP::VNC_MESSAGE_HEADER, VNCP::DESKTOP_SIZE>(
+			VNCP::MT_SERVER_DESKTOP_SIZE
+			, GetSessionID()
+			, VNCP::OT_REQUEST
+			, 0);
+
+		VNCP::DESKTOP_SIZE* pDeskSizeInfo = (VNCP::DESKTOP_SIZE*)objRequestPacket.GetPayloadPtr<VNCP::VNC_MESSAGE_HEADER>();
+
+		pDeskSizeInfo->nWidth = pDim->width;
+		pDeskSizeInfo->nHeight = pDim->height;
+		m_pEndpoint->Send(&objRequestPacket);
+		LOG_DEBUG("Send new frame buffer size %d * %d", pDim->width, pDim->height);
+	}
+	else
+	{
+		LOG_ERROR("The frame buffer size is zero!");
+	}
+}
+
+// ********************************************************************************
+/// <summary>
+/// 发送帧缓冲区像素格式
+/// </summary>
+/// <param name="refPixelFormat"></param>
+/// <created>Andy,2021/6/15</created>
+/// <changed>Andy,2021/6/15</changed>
+// ********************************************************************************
+void CVNCProxy::SendFramePixelFormat(const CPixelFormat& refPixelFormat)
+{
+	CVNCPacket objRequestPacket;
+
+	objRequestPacket.InitialT<VNCP::VNC_MESSAGE_HEADER, VNCP::PIXEL_FORMAT>(
+		VNCP::MT_SERVER_DESKTOP_PIXEL_FORMAT
+		, GetSessionID()
+		, VNCP::OT_REQUEST
+		, 0);
+
+	VNCP::PIXEL_FORMAT* pPixelFormat = (VNCP::PIXEL_FORMAT*)objRequestPacket.GetPayloadPtr<VNCP::VNC_MESSAGE_HEADER>();
+
+	pPixelFormat->nBitsPerPixel = refPixelFormat.nBitsPerPixel;
+	pPixelFormat->nColorDepth = refPixelFormat.colorDepth;
+	pPixelFormat->nRedMax = refPixelFormat.redMax;
+	pPixelFormat->nGreenMax = refPixelFormat.greenMax;
+	pPixelFormat->nBlueMax = refPixelFormat.blueMax;
+	pPixelFormat->nRedShift = refPixelFormat.redShift;
+	pPixelFormat->nGreenShift = refPixelFormat.greenShift;
+	pPixelFormat->nBlueShift = refPixelFormat.blueShift;
+	pPixelFormat->nBigEndianFlag = refPixelFormat.bigEndian;
+
+	m_pEndpoint->Send(&objRequestPacket);
+	LOG_DEBUG("Send new frame buffer pixel format");
+}
+
+// ********************************************************************************
+/// <summary>
+/// 发送操作系统属性
+/// </summary>
+/// <param name="refOSInfo">操作系统信息</param>
+/// <created>Andy,2021/7/14</created>
+/// <changed>Andy,2021/7/14</changed>
+// ********************************************************************************
+bool CVNCProxy::SendOSInfo(const VNCP::COSInfo& refOSInfo)
+{
+	CVNCPacket objRequestPacket;
+
+	objRequestPacket.InitialJsonT<>(
+		VNCP::MT_SERVER_OS_INFO
+		, GetSessionID()
+		, VNCP::OT_REQUEST
+		, &refOSInfo);
+	LOG_DEBUG("Send OS information");
+
+	return m_pEndpoint->Send(&objRequestPacket);	
+}
+
+// ********************************************************************************
+/// <summary>
+/// 发送当前会话状态到控制端
+/// </summary>
+/// <param name="nState">当前的状态</param>
+/// <returns></returns>
+/// <created>Andy,2021/7/15</created>
+/// <changed>Andy,2021/7/15</changed>
+// ********************************************************************************
+bool CVNCProxy::SendSessionStateRequest(const unsigned int nState)
+{
+	if (nullptr == m_pEndpoint)
+	{
+		return false;
+	}
+
+	CVNCPacket objRequestPacket;
+
+	objRequestPacket.InitialT<VNCP::VNC_MESSAGE_HEADER, VNCP::SESSION_STATE_REQUEST>(
+		VNCP::MT_SERVER_SESSION_STATE
+		, GetSessionID()
+		, VNCP::OT_REQUEST
+		, 0);
+
+	VNCP::SESSION_STATE_REQUEST* pSessionState = (VNCP::SESSION_STATE_REQUEST*)objRequestPacket.GetPayloadPtr<VNCP::VNC_MESSAGE_HEADER>();
+
+	pSessionState->nState = nState;	
+	LOG_DEBUG("Send session state");
+
+	return m_pEndpoint->Send(&objRequestPacket);	
+}
+
+// ********************************************************************************
+/// <summary>
+/// 发送改变被控制计算分辨率的请求
+/// </summary>
+/// <param name="pDevMode"></param>
+/// <created>Andy,2021/8/4</created>
+/// <changed>Andy,2021/8/4</changed>
+// ********************************************************************************
+bool CVNCProxy::SendChangingResolutionRequest(const VNCP::CDevMode& refDevMode)
+{
+	CVNCPacket objRequestPacket;
+
+
+	objRequestPacket.InitialJsonT<>(
+		VNCP::MT_CLIENT_CHANGE_RESOLUTION
+		, GetSessionID()
+		, VNCP::OT_REQUEST
+		, &refDevMode);
+
+	return m_pEndpoint->Send(&objRequestPacket);
+}
+
+// ********************************************************************************
+/// <summary>
+/// 关闭当前VNC代理
+/// </summary>
+/// <returns></returns>
+/// <created>Andy,2020/11/30</created>
+/// <changed>Andy,2020/11/30</changed>
+// ********************************************************************************
+bool CVNCProxy::Close()
+{
+	CHECK_POINTER_EX(m_pEndpoint,false);
+
+	m_pEndpoint->Close();
+
+	return true;
+}
+
+// ********************************************************************************
+/// <summary>
+/// 发送数据
+/// </summary>
+/// <param name="pData">指向被发送的指针</param>
+/// <param name="nLen">被发送数据的长度</param>
+/// <returns>true:成功,false:失败</returns>
+/// <created>Andy,2020/12/1</created>
+/// <changed>Andy,2020/12/1</changed>
+// ********************************************************************************
+bool CVNCProxy::Send(CNetPacket* pPacket)
+{
+	CHECK_POINTER_EX(m_pEndpoint, false);
+	CHECK_POINTER_EX(pPacket, false);
+
+	return m_pEndpoint->Send(pPacket);
+}
+
+
+// ********************************************************************************
+/// <summary>
+/// 发送数据
+/// </summary>
+/// <param name="pData">指向被发送的指针</param>
+/// <param name="nLen">被发送数据的长度</param>
+/// <returns>true:成功,false:失败</returns>
+/// <created>Andy,2020/12/1</created>
+/// <changed>Andy,2020/12/1</changed>
+// ********************************************************************************
+bool CVNCProxy::Send(const BYTE* pData, const unsigned int nLen)
+{
+	CHECK_POINTER_EX(m_pEndpoint, false);
+
+	return m_pEndpoint->Send(pData, nLen);
+}
+
+
+bool CVNCProxy::Flush()
+{
+	return true;
+}
+
+bool CVNCProxy::PreClose()
+{
+	SetClosing(true);
+
+	if (nullptr != m_pVNCTCPClient)
+	{
+		m_pVNCTCPClient->Stop();
+	}
+
+	if (nullptr != m_pVNCUDPClient)
+	{
+		m_pVNCUDPClient->Stop();
+	}
+
+	return true;
+}

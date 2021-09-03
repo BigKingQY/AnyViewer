@@ -1,0 +1,9 @@
+#pragma once
+
+class CScreanEventListener
+{
+public:
+	virtual void onHelloEvent() = 0;
+};
+
+

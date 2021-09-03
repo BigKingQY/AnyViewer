@@ -1,0 +1,30 @@
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// @file  
+/// 字符串查找器类定义
+/// 
+///
+/// @author 黄丽云
+/// @version 1.0
+/// @date        2019-8-5
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#pragma once
+#include <boost/locale.hpp>
+#include <boost/regex.hpp>
+
+class CStrFinder
+{
+public:
+	CStrFinder();
+	~CStrFinder();
+
+public:
+	// 初始化查找器
+	bool Init(const std::string& strPatterString);
+
+	// 在指定的字符串中查找初始化的模式
+	bool Lookup(const std::string& strSrc);
+private:
+	std::shared_ptr<boost::regex>  m_objPatter{nullptr};
+};
+

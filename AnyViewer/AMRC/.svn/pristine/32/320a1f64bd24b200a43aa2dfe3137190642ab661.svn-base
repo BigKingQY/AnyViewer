@@ -1,0 +1,43 @@
+#pragma once
+
+#include "DateTime.h"
+#include <vector>
+#include <map>
+#include <mutex>
+
+
+
+struct CProcessorTimes
+{
+	double process{0.0};
+	double kernel{0.0};
+	ULONG64 cycle{0};
+	CDateTime wall;
+};
+
+// Ñlass for acquiring processor load metrics.
+class CProfileLogger
+{
+public:
+	CProfileLogger(double rate = 5.)
+		: m_nDropRate(rate)
+	{
+		m_objLastDrop = CDateTime::now();
+	};
+
+	~CProfileLogger();
+
+public:
+	// returns cycles and times deltas from previouse checkpoint
+	CProcessorTimes checkPoint(const TCHAR *tag);
+	std::vector<std::vector<TCHAR>> dropStat();
+
+private:
+	std::recursive_mutex               m_objMapMutex;
+	std::map<const TCHAR *, std::vector<CProcessorTimes>> m_mapCheckPoints;
+	CProcessorTimes          m_objLastProcTime;
+	double                   m_nDropRate = 0; // time interval in seconds to log statistics
+	CDateTime                m_objLastDrop;
+};
+
+extern CProfileLogger* GetProfileLogger();

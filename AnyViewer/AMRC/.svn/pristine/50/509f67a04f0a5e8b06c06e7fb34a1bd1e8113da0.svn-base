@@ -1,0 +1,67 @@
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// @file  
+/// @brief 防水墙探头部分
+/// 
+/// 防水墙探头与服务器之间通信所需要的消息类型定义.所有的消息都由消息头和消息\n
+/// 数据量部分组成，消息头的结构都是相同的，但是消息数据根据消息类型的不同而\n
+/// 不同.整个协议请求&应答的模式。
+///
+/// @author 黄丽云
+/// @version 1.0
+/// @date        2016-9-1
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#pragma once
+#include <vector>
+#include "MiscellaneousFunctions.h"
+
+class CStrIPRange
+{
+public:
+	CStrIPRange()
+	{}
+	CStrIPRange(unsigned int nType, const char* pIP1, const char* pIPMask)
+		: m_strIP1(pIP1)
+		, m_strIPMask(pIPMask)
+		, m_nType(nType)
+		, m_nIP1(0)
+		, m_nIP2(0)
+	{
+	}
+	~CStrIPRange() {}
+
+	enum
+	{
+		IR_UNKNOWN = 0,     ///< 未知类型
+		IR_RANGE = 1,       ///< IP范围
+		IR_MASK_CODE = 2,   ///< 掩码
+		IR_DOMAIN = 3,      ///< 域名
+	};
+public:
+	void SetIP1(const char* lpIP1) { m_strIP1 = lpIP1; }
+
+public:
+	// 校验范围是否有效
+	bool Valid();
+
+	// 初始化
+	void Init();
+
+	int Size() { return (GetIP2() - GetIP1() + 1); }
+
+	bool In(const unsigned int nIP) { return GetIP1() <= nIP && nIP <= GetIP2(); }
+
+
+private:
+	std::string                 m_strIP1;     ///< 开始IP
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strIPMask, IPMask);   ///< 结束IP或者掩码
+	DECLARE_MEMBER_AND_METHOD_V11(unsigned int, m_nType, Type, 0);
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strDomain, Domain);   ///< 结束IP或者掩码
+	DECLARE_MEMBER_AND_GET_METHOD_V11(unsigned int, m_nIP1, IP1, 0);   ///< 结束IP或者掩码
+	DECLARE_MEMBER_AND_GET_METHOD_V11(unsigned int, m_nIP2, IP2, 0);   ///< 结束IP或者掩码
+};
+
+typedef std::vector<CStrIPRange>        STR_IP_RANGE_ARRAY;   ///< 字符串IP范围
+
+	// 提取ip范围设置信息
+extern bool ExtractIPRange(const std::string& refSettings, STR_IP_RANGE_ARRAY& refIPRange);

@@ -1,0 +1,83 @@
+/////////////////////////////////////////////////////////////////////
+/// @file IniConfig.h
+/// @brief INI格式文件操作类实现
+/// 
+/// @author andy
+/// @version 1.0
+/// @date 2021.3.18
+/////////////////////////////////////////////////////////////////////
+
+#include "stdafx.h"
+#include "IniConfig.h"
+#include <boost/filesystem.hpp>
+
+CIniConfig::CIniConfig()
+{
+
+}
+
+// ********************************************************************************
+/// <summary>
+/// 加载配置信息
+/// </summary>
+/// <param name="strPath">文件路劲</param>
+/// <returns>true:成功，false:失败</returns>
+/// <created>Andy,2021/3/18</created>
+/// <changed>Andy,2021/3/18</changed>
+// ********************************************************************************
+bool CIniConfig::Load(std::string strPath)
+{
+	bool bResult = false;
+
+	try
+	{
+		boost::filesystem::path objPath(strPath.c_str());
+
+		// 调用boost 文件系统接口，先检查文件是否存在。
+
+		if (boost::filesystem::exists(strPath))
+		{
+			// 调用read_ini接口，将ini文件内容读入 m_pRootNode树节点中。
+			// root_node类型为：boost::property_tree::ptree
+			m_pRootNode.empty();
+
+			boost::property_tree::ini_parser::read_ini(strPath, m_pRootNode);
+			bResult = (m_pRootNode.size() > 0);
+		}
+	}
+	catch (std::exception e)
+	{
+		LOG_ERROR("%s",e.what());
+	}
+
+	return bResult;
+}
+
+// ********************************************************************************
+/// <summary>
+/// 保存配置信息
+/// </summary>
+/// <param name="strPath">文件路劲</param>
+/// <returns>true:成功，false:失败</returns>
+/// <created>Andy,2021/3/18</created>
+/// <changed>Andy,2021/3/18</changed>
+// ********************************************************************************
+bool CIniConfig::Save(std::string strPath)
+{
+	bool bResult = true;
+
+	try
+	{
+
+		boost::property_tree::ini_parser::write_ini(strPath, m_pRootNode);
+	}
+	catch (std::exception e)
+	{
+		LOG_ERROR("%s", e.what());
+		bResult = false;
+	}
+
+	return bResult;
+}
+
+

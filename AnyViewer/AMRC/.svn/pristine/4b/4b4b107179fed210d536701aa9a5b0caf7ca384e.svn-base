@@ -1,0 +1,79 @@
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// @file  KCPUDPDataTransfer.h
+/// @brief 可靠的UDP传输器定义
+/// 
+///
+/// @author 黄丽云
+/// @version 1.0
+///    -v$VerNO$    $YEAR$ / $MONTH_02$ / $DAY_02$ $HOUR_02$ : $MINUTE$    黄历云    $VerNoBrief$
+/// @date        2016-9-1
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#pragma once
+#ifdef WIN32
+#include "..\..\Common\NetServiceImpl.h"
+#else
+#include "..\..\Common\ServiceImpl.h"
+#endif
+#include "ikcp.h"
+#include "AIMTime.h"
+#include "Channel.h"
+
+class CKCPUDPDataTransfer
+	: public CNetUDPDataTransfer
+	, public CKCP
+	//, public CChannel
+{
+public:
+	CKCPUDPDataTransfer(const bool  bServer = false);
+	~CKCPUDPDataTransfer();
+
+public:
+	bool Init(const USHORT nPort);
+
+	bool Init(const UINT nIP, const USHORT nPort);
+
+
+public:
+	/// @brief 发送数据， 返回实际发送大小
+	virtual int Send(const BYTE* pBuffer, int nLen) override;
+
+	virtual int Recv(BYTE* pBuffer, int nLen) override;
+
+	/// @brief 关闭当前的传输对象
+	virtual void Close() override;
+
+	// 输出数据
+	virtual int KCPOutput(const char *pBuffer, const int nLen) override;
+
+public: // CInputStream
+	virtual size_t read(void *buffer, size_t len);
+
+	virtual size_t available();
+
+	/**
+ * Writes data to stream.
+ * @param buffer buffer with data to write.
+ * @param len count of bytes to write.
+ * @return count of written bytes.
+ * @throws any kind of exception (depends on implementation).
+ */
+	virtual int write(const void *buffer, const size_t len) ;
+
+	virtual void close() ;
+private:
+	bool InitSocket();
+
+	void KCPRecevingThread();
+private:
+	DECLARE_MEMBER_AND_METHOD_V11(bool, m_bServer, Server, false);     /// < 是否是服务端
+	DECLARE_MEMBER_AND_METHOD_V11(bool, m_bEstablished, Established, false);     /// < 是否是服务端
+	std::atomic_bool         m_bStopReceving{ false };
+	std::thread              m_objRecevingThread;
+	CDataStreamBuffer        m_objKCPIntputBuffer;                    ///< 存放从KCP接收数据的缓冲区
+	CDataStreamBuffer        m_objKCPOutBuffer;                       ///< 存放从KCP接收数据的缓冲区
+
+	CAx3Event                m_objInputingEvent;                     ///< 接收到数据事件
+};
+
+using CKCPUDPDataTransferPtr = std::shared_ptr<CKCPUDPDataTransfer>;

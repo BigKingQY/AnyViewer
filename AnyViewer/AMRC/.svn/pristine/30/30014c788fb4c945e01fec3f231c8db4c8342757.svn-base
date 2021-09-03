@@ -1,0 +1,22 @@
+#pragma once
+
+#include "Desktop.h"
+#include "RfbClient.h"
+
+class CClientAuthListener
+{
+public:
+  // Interface function
+  // This function returns zero if a server refuse a client
+  // connection, else returns pointer to a WinDesktop object
+  virtual void OnShareRequest(CRFBClientPtr client) = 0;
+
+  //// Checks the client to ban.
+  //// Return true if client is banned else reurns false.
+  //virtual bool onCheckForBan(CRFBClient *client) = 0;
+  //// This function notifies about auth failed of the client.
+  //virtual void onAuthFailed(CRFBClient *client) = 0;
+  //virtual void onCheckAccessControl(CRFBClient *client) throw(CAuthException) = 0;
+};
+
+

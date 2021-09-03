@@ -1,0 +1,140 @@
+/////////////////////////////////////////////////////////////////////
+/// @file CSyslog.h
+/// @brief Syslog 日志类实现
+/// 
+///
+/// @author andy
+/// @version 1.0
+/// @date 2020.3.10
+//  字符串: string
+//	整数 : byte, short, integer, long
+//	浮点数 : float, double
+//	布尔型 : boolean
+//	日期 : date
+/////////////////////////////////////////////////////////////////////
+#include "stdafx.h"
+#include "CSyslog.h"
+#include <ratio>
+#include <chrono>
+#include "JsonHelper.h"
+
+REGISTER_CLASS(CSyslog)
+//INIT_MEMORY_POOL(CSyslog)
+
+const char  CSYSLOG_ID[] = "CSyslog";
+
+CSyslogBase::CSyslogBase()
+{
+	std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds> objNew =
+		std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now());
+	m_nCaptureTime = objNew.time_since_epoch().count();
+}
+
+void CSyslogBase::Serialize(CJSONSerializer & refJsonSerializer) const
+{
+	CSerializeEntry::Serialize(refJsonSerializer);
+
+	refJsonSerializer.Serialize("type", m_nType);
+	refJsonSerializer.Serialize("os", m_nOS);
+	refJsonSerializer.Serialize("app_type", m_nAppType);
+	refJsonSerializer.Serialize("severity", m_nSeverity);
+	refJsonSerializer.Serialize("capture_time", m_nCaptureTime);
+	refJsonSerializer.Serialize("legitimacy", m_nLegitimacy);
+}
+
+void CSyslogBase::DeSerialize(CJSONSerializer & refJsonSerializer)
+{
+	CSerializeEntry::DeSerialize(refJsonSerializer);
+
+	refJsonSerializer.DeSerialize("type", m_nType);
+	refJsonSerializer.DeSerialize("os", m_nOS);
+	refJsonSerializer.DeSerialize("app_type", m_nAppType);
+	refJsonSerializer.DeSerialize("severity", m_nSeverity);
+	refJsonSerializer.DeSerialize("capture_time", m_nCaptureTime);
+	refJsonSerializer.DeSerialize("legitimacy", m_nLegitimacy);
+}
+
+
+/*----------------------CSyslog-------------------*/
+CSyslog::CSyslog()
+{
+}
+
+
+CSyslog::~CSyslog()
+{
+}
+
+void CSyslog::Serialize(CJSONSerializer & refJsonSerializer) const
+{
+	CSyslogBase::Serialize(refJsonSerializer);
+
+	refJsonSerializer.Serialize("facility", m_nFacility);
+	refJsonSerializer.Serialize("date_time", m_strDateTime);
+	refJsonSerializer.Serialize("host", m_strHost);
+	refJsonSerializer.Serialize("process", m_strProcess);
+	refJsonSerializer.Serialize("pid", m_strPID);
+	refJsonSerializer.Serialize("content", m_strContent);
+	refJsonSerializer.Serialize("version", m_strVersion);
+	refJsonSerializer.Serialize("msg_id", m_strMsgID);
+}
+
+void CSyslog::DeSerialize(CJSONSerializer & refJsonSerializer)
+{
+	CSyslogBase::DeSerialize(refJsonSerializer);
+
+	refJsonSerializer.DeSerialize("facility", m_nFacility);
+	refJsonSerializer.DeSerialize("date_time", m_strDateTime);
+	refJsonSerializer.DeSerialize("host", m_strHost);
+	refJsonSerializer.DeSerialize("process", m_strProcess);
+	refJsonSerializer.DeSerialize("pid", m_strPID);
+	refJsonSerializer.DeSerialize("content", m_strContent);
+	refJsonSerializer.DeSerialize("version", m_strVersion);
+	refJsonSerializer.DeSerialize("msg_id", m_strMsgID);
+}
+
+
+
+
+//--------------------------------------------------------------------------------
+/// <summary>
+/// 得到字段定义映射信息
+/// </summary>
+/// <param name="refFields"></param>
+/// <created>Andy,2020/4/5</created>
+/// <changed>Andy,2020/4/5</changed>
+//--------------------------------------------------------------------------------
+void CSyslog::GetMapDef(CKeyValueList* pFields)
+{
+	CHECK_POINTER(pFields);
+
+	std::shared_ptr<CKeyValueList> pFieldProperty = pFields->CreateFieldProp("type", "integer");
+	pFieldProperty = pFields->CreateFieldProp("app_type", "integer");
+	pFieldProperty = pFields->CreateFieldProp("severity", "integer");
+	pFieldProperty = pFields->CreateFieldProp("capture_time", "date");
+	pFieldProperty = pFields->CreateFieldProp("legitimacy", "integer");
+	pFieldProperty = pFields->CreateFieldProp("facility", "integer");
+	pFieldProperty = pFields->CreateFieldProp("date_time", "text");
+	pFieldProperty = pFields->CreateFieldProp("host", "keyword");
+	pFieldProperty = pFields->CreateFieldProp("process", "keyword");
+	pFieldProperty = pFields->CreateFieldProp("pid", "keyword");	
+	pFieldProperty = pFields->CreateFieldProp("content", "text");
+
+	if (nullptr != pFieldProperty)
+	{
+		pFieldProperty->CreateKV<std::string>("analyzer", std::make_shared<std::string>("ik_max_word"));
+		pFieldProperty->CreateKV<std::string>("search_analyzer", std::make_shared<std::string>("ik_smart"));
+		pFieldProperty->CreateKV<bool>("fielddata", std::make_shared<bool>(true));
+		
+		using FIELDS_VALUE = CKeyValue<CKeyValue<std::string>>;
+
+		pFieldProperty->CreateKV<FIELDS_VALUE>("fields", std::make_shared<FIELDS_VALUE>("raw"
+			, std::make_shared<CKeyValue<std::string>>("type", std::make_shared<std::string>("keyword"))));
+	}
+
+	pFieldProperty = pFields->CreateFieldProp("version", "keyword");
+	pFieldProperty = pFields->CreateFieldProp("msg_id", "keyword");
+}
+
+
+

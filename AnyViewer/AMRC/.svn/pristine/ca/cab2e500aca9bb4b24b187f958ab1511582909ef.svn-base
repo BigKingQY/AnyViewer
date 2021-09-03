@@ -1,0 +1,215 @@
+﻿///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// @file  
+/// 单位转换类实现
+/// 
+///
+/// @author  黄丽云
+/// @version 1.0
+/// @date    2019-7-25
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#include "UnitConvert.h"
+#include "JsonOperator.h"
+#include <algorithm>
+#include <iostream>
+#include <string>
+#include <boost/algorithm/string.hpp>
+
+
+const char* UNIT_CONVERT_INFO_FILE_UUID = "843700F1-A646-46CE-B6DE-618633A611B9";
+const UINT UNIT_CONVERT_INFO_FILE_VERSION = 1;
+const char* UNIT_CONVERT_INFO_FILE_DESC = "单位转换信息设置";
+
+
+REGISTER_CLASS(CUnitConvertEntry)
+
+
+void CUnitConvertEntry::Serialize(CJSONSerializer& refJsonSerializer) const
+{
+	CSerializeEntry::Serialize(refJsonSerializer);
+
+	refJsonSerializer.Serialize("m11", m_strKey);
+	refJsonSerializer.Serialize("m12", m_nScale);
+}
+
+void CUnitConvertEntry::DeSerialize(CJSONSerializer& refJsonSerializer)
+{
+	CSerializeEntry::DeSerialize(refJsonSerializer);
+
+	refJsonSerializer.DeSerialize("m11", m_strKey);
+	refJsonSerializer.DeSerialize("m12", m_nScale);
+}
+
+/*-----------------------CUnitConvert---------------------------*/
+CUnitConvert::CUnitConvert()
+{
+}
+
+
+CUnitConvert::~CUnitConvert()
+{
+	
+}
+
+//--------------------------------------------------------------------------------
+/// <summary>
+/// 初始化单位费率映射表
+/// </summary>
+/// <param name="strSettingsFile">配置文件路径</param>
+/// <created>Andy,2019/7/25</created>
+/// <changed>Andy,2019/8/1</changed>
+//--------------------------------------------------------------------------------
+void CUnitConvert::Init(const std::wstring& strSettingsFile)
+{
+	UNIT_CONVERT_ENTRY_ARRAY arrEntries(TRUE);
+	CJsonHelper objJsonHelper;
+
+	objJsonHelper.Load<UNIT_CONVERT_ENTRY_ARRAY>(
+		strSettingsFile
+		, UNIT_CONVERT_INFO_FILE_UUID
+		, arrEntries);
+
+	for (auto pEntry : arrEntries)
+	{
+		m_mapUnitScale[pEntry->GetKey()] = pEntry->GetScale();
+	}	
+
+	const static wchar_t* strUnits[] = 
+	{
+		L"付",L"件", L"副", L"只", L"台", L"块", L"套", L"对" 
+		, L"幅", L"座", L"张", L"把", L"支", L"条", L"架", L"根" 
+		, L"片", L"瓶", L"盒", L"盘", L"筒", L"管", L"组", L"节" 
+		, L"袋", L"部", L"颗", L"株", L"樘", L"芯", L"次", L"点" 
+		, L"丛", L"个", L"列", L"束", L"榀", L"段", L"箱", L"系统"
+		, L"站", L"项", L"面", L"道", L"口", L"链路", L"门", L"跨"
+		, L"端", L"端口", L"端头", L"环", L"户", L"扇", L"处", L"株丛"
+		, L"桩", L"串", L"头", L"排", L"列", L"攒", L"接头", L"本", L"包", L"匹" 
+	};
+
+	for (size_t i = 0; i < sizeof(strUnits) / sizeof(wchar_t*); i++)
+	{
+		m_mapWhole[strUnits[i]] = i;
+	}
+}
+
+//--------------------------------------------------------------------------------
+/// <summary>
+/// 转换单位1到单位2
+/// </summary>
+/// <param name="strUnit1">单位1</param>
+/// <param name="strUnit2">单位2</param>
+/// <returns>小于零表示无法转换,否则单位1到单位2的倍率</returns>
+/// <created>Andy,2019/7/25</created>
+/// <changed>Andy,2019/7/25</changed>
+//--------------------------------------------------------------------------------
+double CUnitConvert::Convert(const std::wstring & refUnit1, const std::wstring & refUnit2)
+{
+	double nResult = -1;
+	std::wstring strUnit1 = refUnit1;
+	const double nFactor1 = ExtractClearFactor(strUnit1);
+
+	PreProcess(strUnit1);
+
+	std::wstring strUnit2 = refUnit2;	
+	const double nFactor2 = ExtractClearFactor(strUnit2);
+	
+	PreProcess(strUnit2);
+	
+	if (strUnit1 == strUnit2)
+	{
+		nResult = nFactor1 / nFactor2;
+	}
+	else
+	{
+		auto itr1 = m_mapUnitScale.find(strUnit1 + L"-" + strUnit2);
+
+		if (m_mapUnitScale.end() != itr1)
+		{
+			nResult = (nFactor1 * (*itr1).second) / nFactor2;
+		}
+		else
+		{
+			if (m_mapWhole.find(strUnit1) != m_mapWhole.end()
+				&& m_mapWhole.find(strUnit2) != m_mapWhole.end())
+			{
+				nResult = nFactor1 / nFactor2;
+			}
+		}
+	}
+
+
+	return nResult;
+}
+
+//--------------------------------------------------------------------------------
+/// <summary>
+/// 提取并清除单位前面的系数
+/// </summary>
+/// <param name="refUnit">被处理的单位</param>
+/// <returns>单位前面的系数</returns>
+/// <created>Andy,2019/7/25</created>
+/// <changed>Andy,2019/7/25</changed>
+//--------------------------------------------------------------------------------
+double CUnitConvert::ExtractClearFactor(std::wstring & refUnit)
+{
+	std::wstring strFactor;
+	double nFactor = 1;
+	const size_t STR_LEN = refUnit.size();
+
+	for (size_t i = 0; i < STR_LEN; i++)
+	{
+		const wchar_t chCurrent = refUnit[i];
+
+		if (!(chCurrent >= L'0' && chCurrent <= L'9'))
+		{
+			break;
+		}
+
+		strFactor += chCurrent;
+	}
+
+
+	if (strFactor.size() > 0)
+	{
+		nFactor = stod(strFactor);
+		refUnit.erase(0, strFactor.size());
+	}
+
+
+	return nFactor;
+}
+
+//--------------------------------------------------------------------------------
+/// <summary>
+/// 预处理单位
+/// </summary>
+/// <param name="refUnit">被处理的单位</param>
+/// <created>Andy,2019/8/2</created>
+/// <changed>Andy,2019/8/2</changed>
+//--------------------------------------------------------------------------------
+void CUnitConvert::PreProcess(std::wstring & refUnit)
+{
+	boost::replace_all(refUnit, L"㎡", L"m2");
+	boost::replace_all(refUnit, L"m³", L"m3");
+
+	boost::replace_all(refUnit, L"千米", L"km");
+	boost::replace_all(refUnit, L"米", L"m");
+	boost::replace_all(refUnit, L"分米", L"dm");
+	boost::replace_all(refUnit, L"厘米", L"cm");
+
+	boost::replace_all(refUnit, L"平方米", L"m2");
+	boost::replace_all(refUnit, L"平方分米", L"dm2");
+	boost::replace_all(refUnit, L"平方厘米", L"cm2");
+
+	boost::replace_all(refUnit, L"立方米", L"m3");
+	boost::replace_all(refUnit, L"立方分米", L"dm3");
+	boost::replace_all(refUnit, L"立方厘米", L"cm3");
+	
+	boost::replace_all(refUnit, L"升", L"l");
+	boost::replace_all(refUnit, L"毫升", L"ml");
+	boost::replace_all(refUnit, L"吨", L"t");
+	boost::replace_all(refUnit, L"公斤", L"kg");
+	boost::replace_all(refUnit, L"千克", L"kg");
+
+	std::transform(refUnit.begin(), refUnit.end(), refUnit.begin(), ::tolower);
+}

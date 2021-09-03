@@ -1,0 +1,143 @@
+/////////////////////////////////////////////////////////////////////
+/// @file UdpServerBase.cpp
+/// @brief UDP服务器基类定义
+/// 
+///
+/// @author andy
+/// @version 1.0
+/// @date 2020.3.9
+/////////////////////////////////////////////////////////////////////
+#include "stdafx.h"
+#include "UDPServerBase.h"
+#include "Application.h"
+#include <stdexcept>
+#include <boost/bind.hpp>
+#include <boost/system/error_code.hpp>
+#include <boost/array.hpp>
+
+const UINT RECEIVING_BUFFER_LEN_MAX = 10240;    ///< 接受数据缓冲区的最大值
+
+CUDPServerBase::CUDPServerBase(U16 nPort)
+    : m_nPort(nPort)
+	, m_objBuffer(RECEIVING_BUFFER_LEN_MAX)
+    , m_objSocket(nullptr)
+{
+}
+
+
+CUDPServerBase::~CUDPServerBase()
+{
+}
+
+
+//--------------------------------------------------------------------------------
+/// <summary>
+/// 
+/// </summary>
+/// <param name="refDataStream"></param>
+/// <created>Andy,2020/3/9</created>
+/// <changed>Andy,2020/3/10</changed>
+//--------------------------------------------------------------------------------
+void CUDPServerBase::OnReceived(const CUDPDataStream & refDataStream, udp::endpoint& refEndpoint)
+{
+    
+}
+
+
+//--------------------------------------------------------------------------------
+/// <summary>
+/// 接收数据包线程
+/// </summary>
+/// <created>Andy,2020/3/10</created>
+/// <changed>Andy,2020/3/10</changed>
+//--------------------------------------------------------------------------------
+void CUDPServerBase::ReceivingThread()
+{	
+	m_objSocket = std::make_shared<udp::socket>(m_ioService, udp::endpoint(udp::v4(), m_nPort)) ;
+
+	while(!m_bOver)
+	{
+		udp::endpoint objRemoteEndpoint;
+		boost::system::error_code objError;
+		
+		m_objBuffer.Empty();
+
+		// 接收一个字符，这样就得到了远程端点(objRemoteEndpoint)
+		const size_t nBytesReceived = m_objSocket->receive_from(
+			boost::asio::buffer((char*)(m_objBuffer.GetDataHeadPtr()), RECEIVING_BUFFER_LEN_MAX),
+			objRemoteEndpoint,
+			0,
+			objError);
+
+
+		if (objError && objError != boost::asio::error::message_size)
+		{
+			continue;
+		}
+		
+		m_objBuffer.IncreaseDataLen(nBytesReceived);
+		OnReceived(m_objBuffer, objRemoteEndpoint);
+	}	
+}
+//--------------------------------------------------------------------------------
+/// <summary>
+/// 启动服务器
+/// </summary>
+/// <returns></returns>
+/// <created>Andy,2020/3/9</created>
+/// <changed>Andy,2020/3/9</changed>
+//--------------------------------------------------------------------------------
+bool CUDPServerBase::Start()
+{
+	bool bResult = true;
+
+	m_bOver = false;		
+	m_ptrThread = std::make_shared<std::thread>(std::thread(&CUDPServerBase::ReceivingThread,this));
+
+    return bResult;
+}
+
+//--------------------------------------------------------------------------------
+/// <summary>
+/// 停止服务器
+/// </summary>
+/// <returns></returns>
+/// <created>Andy,2020/3/9</created>
+/// <changed>Andy,2020/3/9</changed>
+//--------------------------------------------------------------------------------
+bool CUDPServerBase::Stop()
+{
+	m_bOver = true;
+	
+    if (nullptr != m_ptrThread)
+    {
+        m_ptrThread->join();        
+    }
+
+    if (m_objSocket->is_open())
+    {
+        m_objSocket->close();
+    }
+
+    return true;
+}
+
+
+
+
+
+//--------------------------------------------------------------------------------
+/// <summary>
+/// 
+/// </summary>
+/// <param name="refDataStream"></param>
+/// <param name="ptrEndpoint"></param>
+/// <created>Andy,2020/3/9</created>
+/// <changed>Andy,2020/3/9</changed>
+//--------------------------------------------------------------------------------
+void CUDPServerBase::Send(CUDPDataStream& refDataStream, udp::endpoint& refEndpoint)
+{    
+	m_objSocket->send_to(
+        boost::asio::buffer(refDataStream.GetDataHeadPtr(), refDataStream.GetDataLen()),
+		refEndpoint);
+}

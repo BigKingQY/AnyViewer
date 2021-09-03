@@ -1,0 +1,364 @@
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// @file  DataPacket.cpp
+/// @brief 防水墙探头服务使用的数据包
+/// 
+///
+/// @author 黄丽云
+/// @version 1.0
+/// @date        2016-9-1
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#include "stdafx.h"
+#include <exception>
+#include "DataPacket.h"
+#include "ECC.h"
+
+char const CDATAPACKET_ID[] = "CDataPacket";
+const unsigned int  ENCRYPTED_DATA_BLOCK_LENGTH = 16; ///< 加密数据快的长度
+
+CDataPacket::CDataPacket()
+	: m_bEnableEncipher(true)
+{
+}
+
+CDataPacket::CDataPacket(BYTE* pBuffer, int nLen)
+	: CNetPacketBase(pBuffer,nLen)
+	, m_bEnableEncipher(true)
+{
+
+}
+
+CDataPacket::CDataPacket(CDataPacket& rDataPacket)
+	: CNetPacketBase(rDataPacket)
+	, m_bEnableEncipher(rDataPacket.GetEnableEncipher())
+{
+}
+
+CDataPacket& CDataPacket::operator=( CDataPacket& rDataPacket)
+{
+	if (this != &rDataPacket)
+	{
+		*((CNetPacketBase*)this) = rDataPacket;
+		m_bEnableEncipher         = rDataPacket.GetEnableEncipher();
+	}
+
+	return *this;
+}
+
+
+CDataPacket::~CDataPacket()
+{
+}
+
+//------------------------------------------------------------------------------------
+// 函数名称：Initial
+/// @brief 初始化数据包
+/// 
+/// @param _in UINT nID->数据包的ID
+/// @param _in WORD nType->数据包的类型
+/// @param _in WORD nFlags->数据包的标志
+/// @param _in UINT nDataLen->携带的载荷数据的长度 (默认是0)
+/// @return true->成功,false->失败 (主要是分配内存失败)
+/// @author 黄丽云
+//------------------------------------------------------------------------------------
+bool CDataPacket::Initial(UINT nID, WORD nType, BYTE nFlags, UINT nDataLen)
+{
+	bool bResult = m_objDataBuffer.Reallocate(nDataLen + sizeof(MESSAGE_HEADER));
+	if (bResult)
+	{
+		m_objDataBuffer.Empty();
+
+		MESSAGE_HEADER* pMsgHeader = (MESSAGE_HEADER*)m_objDataBuffer.GetDataHeadPtr();
+
+		pMsgHeader->nMagic        = HTONS((U32)HEADER_MAGIC);
+		pMsgHeader->nID            = HTONL(nID);
+		pMsgHeader->nType        = HTONS(nType);
+		pMsgHeader->nFlags        = (nFlags | BYTE(VERSION_ONE));
+		pMsgHeader->nPayloadLen    = HTONL(nDataLen);
+		pMsgHeader->nChecksum = 0;
+
+		m_objDataBuffer.IncreaseDataLen(nDataLen + sizeof(MESSAGE_HEADER));  //该代码不能少
+	}
+
+	return bResult;
+}
+
+//------------------------------------------------------------------------------------
+// 函数名称：CalculateCRC32
+/// @brief计算数据包的CRC32校验值(注意：所有的数据必须是网络字节序)
+/// 
+/// @param _in const BYTE* pBuffer->一个指向缓冲区的指针
+/// @param _in  int nLen->数据长度
+/// @return 返回数据的CRC32校验值
+/// @author 黄丽云
+//------------------------------------------------------------------------------------
+unsigned int CDataPacket::CalculateCRC32()  
+{ 
+	const BYTE* pBuffer  = m_objDataBuffer.GetDataHeadPtr();
+	const UINT nDataLen = m_objDataBuffer.GetDataLen();
+	const MESSAGE_HEADER* pMsgHeader = (MESSAGE_HEADER*)pBuffer;
+
+
+	// 此处的nPayloadLen已经是经过填充对齐加密的，因此不要加填充数据
+	assert(nDataLen == sizeof(MESSAGE_HEADER) + HTONL(pMsgHeader->nPayloadLen));
+	((MESSAGE_HEADER*)pBuffer)->nChecksum = 0;
+	
+	const unsigned int nCRC = CNetPacketBase::CalculateCRC32(pBuffer, nDataLen);
+
+	((MESSAGE_HEADER*)pBuffer)->nChecksum = HTONL(nCRC);  //转化为网络字节序
+
+	//ATLTRACE(_T("ID = %u,Len = %u,CheckSum = %u\r\n")
+	//	,GetPacketId()
+	//	,nDataLen
+	//	,((MESSAGE_HEADER*)pBuffer)->nChecksum);
+    return nCRC ;  
+}  
+
+//------------------------------------------------------------------------------------
+// 函数名称：VerifyCRC32
+/// @brief 验证数据包的CRC32值是否正确,注意所有的数据是网络字节序
+/// 
+/// @return true->正确,false->错误
+/// @author 黄丽云
+//------------------------------------------------------------------------------------
+bool CDataPacket::VerifyCRC32()
+{
+	const BYTE* pBuffer = (BYTE*)m_objDataBuffer.GetDataHeadPtr();
+	const UINT nDataLen = m_objDataBuffer.GetDataLen();
+
+	if (nDataLen > PACKET_LEN_MAX)
+	{
+		return false;
+	}
+
+	const UINT nOldCRC = ((MESSAGE_HEADER*)pBuffer)->nChecksum;
+	((MESSAGE_HEADER*)pBuffer)->nChecksum = 0;
+	unsigned int nCRC = HTONL(CNetPacketBase::CalculateCRC32(pBuffer, nDataLen));
+	((MESSAGE_HEADER*)pBuffer)->nChecksum = nOldCRC;
+
+	assert(nOldCRC == nCRC);
+   /* if (nOldCRC != nCRC)
+    {
+        LOG_ERROR("CRC32校验失败old:%0X, clac:%0X", nOldCRC, nCRC);
+    }*/
+	return (nOldCRC == nCRC); 
+}
+
+//------------------------------------------------------------------------------------
+// 函数名称：Encipher
+/// @brief 加密数据包
+/// 
+/// 用指定的加密对象加密当前缓冲区中的数据，加密后的数据\n
+/// 有可能大于实际的数据，因为我们是按块加密的，所以机密后\n
+/// 需要调整包头的长度和缓冲区中的长度
+/// @param _in struct aes_ctx& refCAES->AES加密对象
+/// @note 该函数在发送之前调用，那时所有的数据都转换为了网络字节序
+/// @author 黄丽云
+//------------------------------------------------------------------------------------
+void CDataPacket::Encipher(struct aes_ctx& refCAES)
+{
+	BYTE* pBuffer               = (BYTE*)m_objDataBuffer.GetDataHeadPtr();
+	MESSAGE_HEADER* pMsgHeader  = (MESSAGE_HEADER*)pBuffer;
+	const UINT nDataLen         = HTONL(pMsgHeader->nPayloadLen);
+	const WORD nEncipherDataLen = WORD(CalcAlign(nDataLen, ENCRYPTED_DATA_BLOCK_LENGTH));    ///< 计算加密后数据的长度
+
+	pMsgHeader->nPayloadLen = HTONL(nEncipherDataLen);
+	pMsgHeader->nPadding = (BYTE)(nEncipherDataLen - nDataLen);
+	m_objDataBuffer.FillPadding(pMsgHeader->nPadding, 0);
+
+
+	//下面的代码不能去除，因为FillPadding有可能重新分配缓冲区
+	pBuffer                     = (BYTE*)m_objDataBuffer.GetDataHeadPtr();
+
+	aes_aes(&refCAES, &pBuffer[sizeof(MESSAGE_HEADER)],nEncipherDataLen , &pBuffer[sizeof(MESSAGE_HEADER)], AES_ENCRYPT);
+	//refCAES.Encipher(&pBuffer[sizeof(MESSAGE_HEADER) - sizeof(DATA_HEADER)],nEncipherDataLen);
+}
+
+//------------------------------------------------------------------------------------
+// 函数名称：Decipherer
+/// @brief 用指定的解密对象解密当前缓冲区的数据，并且调整包头的数据长度
+/// 
+/// @param _in struct aes_ctx& refCAES>AES加密对象
+/// @note 该函数在接受数据报后就立即调用
+/// @author 黄丽云
+//------------------------------------------------------------------------------------
+bool CDataPacket::Decipherer(struct aes_ctx& refCAES)
+{	
+    bool bResult = false;
+
+	if (refCAES.key_length > 0)
+	{
+		BYTE* pBuffer  = (BYTE*)m_objDataBuffer.GetDataHeadPtr();
+		MESSAGE_HEADER* pMsgHeader  = (MESSAGE_HEADER*)pBuffer;
+		const UINT nDataLen = HTONL(pMsgHeader->nPayloadLen);
+
+		//refCAES.Decipherer(&pBuffer[sizeof(MESSAGE_HEADER) - sizeof(DATA_HEADER)],nDataLen);
+		aes_aes(&refCAES, &pBuffer[sizeof(MESSAGE_HEADER)], nDataLen, &pBuffer[sizeof(MESSAGE_HEADER)], AES_DECRYPT);        
+
+		//下面的两行代码是改变有效数据的长度,因为解密会改变整个有效数据的长度
+		const DWORD nRawDataLen = HTONL(pMsgHeader->nPayloadLen) - pMsgHeader->nPadding;
+
+		m_objDataBuffer.SetDataLen(nRawDataLen + sizeof(MESSAGE_HEADER));
+		pMsgHeader->nPayloadLen = HTONL(nRawDataLen);
+		pMsgHeader->nPadding = 0;      ///< 解密后会去掉填充数据，因此填充数据应该设为0
+		bResult = true;
+      
+	}	
+
+    return bResult;
+}
+
+//------------------------------------------------------------------------------------
+// 函数名称：IsValid
+/// @brief 判断当前的数据包是否有效(该函数必须在解密后调用)
+/// 
+/// @return true->有效,false->无效
+/// @author 黄丽云
+//------------------------------------------------------------------------------------
+bool CDataPacket::IsValid()
+{
+	//BYTE* pBuffer  = (BYTE*)m_objDataBuffer.GetDataHeadPtr();
+	//MESSAGE_HEADER* pMsgHeader  = (MESSAGE_HEADER*)pBuffer;
+
+	return true;
+}
+
+//------------------------------------------------------------------------------------
+// 函数名称：ExtractData
+/// @brief 从缓冲区中提取数据包(被提取的数据一定是大于包头的长度的，否则出错)
+/// 
+/// @param _in CDataStreamBuffer& refDataBuffer->一个指向缓冲区的指针
+/// @return 成功返回提取数据包的个数
+/// @author 黄丽云
+//------------------------------------------------------------------------------------
+NET_EXTRACT_DATA_PACKET_RESULT CDataPacket::ExtractData(CDataStreamBuffer& refDataBuffer)
+{
+	NET_EXTRACT_DATA_PACKET_RESULT nResult = NEDPR_INVALID;
+	const BYTE* pData         = (BYTE*)refDataBuffer.GetDataHeadPtr();
+	const UINT   DATA_LENGTH   = refDataBuffer.GetDataLen();
+
+	for (UINT i = 0; i < DATA_LENGTH; i++)
+	{
+        //剩余数据长度
+        const int nRemainDateLen = int(DATA_LENGTH - i);
+
+        if (nRemainDateLen < sizeof(MESSAGE_HEADER))
+        {
+            nResult = NEDPR_INCOMPLETE_PACKET;
+            break;
+        }
+
+		const MESSAGE_HEADER* pMsgHeader = reinterpret_cast<const MESSAGE_HEADER*>(&pData[i]);
+       
+		//找到报头特征码 
+        assert(HEADER_MAGIC == NTOHS(pMsgHeader->nMagic));
+
+		if (HEADER_MAGIC == NTOHS(pMsgHeader->nMagic))
+		{
+			assert(((pMsgHeader->nFlags) & FLAG_VERSION) == BYTE(VERSION_ONE));
+
+			if (((pMsgHeader->nFlags) & FLAG_VERSION) == BYTE(VERSION_ONE))
+			{
+				//该数据报长度
+				const int PACKET_LENGTH = HTONL(pMsgHeader->nPayloadLen) + MESSAGE_HEADER_LEN;
+
+				if (PACKET_LENGTH == nRemainDateLen)
+				{
+					m_objDataBuffer.Empty();
+
+					if (m_objDataBuffer.GetSize() < PACKET_LENGTH)
+					{
+						m_objDataBuffer.Reallocate(PACKET_LENGTH);
+					}	
+
+					refDataBuffer.Read(m_objDataBuffer, PACKET_LENGTH);
+					nResult = NEDPR_JUST_A_PACKET;
+				}
+				else if (PACKET_LENGTH < nRemainDateLen)
+				{
+					m_objDataBuffer.Empty();
+
+					if (m_objDataBuffer.GetSize() < PACKET_LENGTH)
+					{
+						m_objDataBuffer.Reallocate(PACKET_LENGTH);
+					}
+
+					refDataBuffer.Read(m_objDataBuffer, PACKET_LENGTH);
+					nResult = NEDPR_MORE_PACKETS;
+				}
+				else
+				{
+					nResult = NEDPR_INCOMPLETE_PACKET;
+				}
+
+				// break很重要，一次只提取一个数据报
+				break;
+			}
+			else
+			{
+				nResult = NEDPR_INVALID;
+			}		
+		}
+
+		refDataBuffer.MoveReadingPos(1);
+	}
+
+	return nResult;
+}
+
+int CDataPacket::GetPacketLen()
+{
+	if (!m_objDataBuffer.IsValidity())
+	{
+		return 0;
+	}
+	
+	MESSAGE_HEADER* pMsgHead = (MESSAGE_HEADER*)m_objDataBuffer.GetDataHeadPtr();
+
+	return HTONL(pMsgHead->nPayloadLen) + MESSAGE_HEADER_LEN;
+}
+
+int CDataPacket::GetPacketType()
+{
+	if (!m_objDataBuffer.IsValidity())
+	{
+		return -1;
+	}
+	MESSAGE_HEADER* pMsgHead = (MESSAGE_HEADER*)m_objDataBuffer.GetDataHeadPtr();
+	return NTOHS(pMsgHead->nType);
+}
+
+int CDataPacket::GetPacketId()
+{
+	if (!m_objDataBuffer.IsValidity())
+	{
+		return -1;
+	}
+	MESSAGE_HEADER* pMsgHead = (MESSAGE_HEADER*)m_objDataBuffer.GetDataHeadPtr();
+	return NTOHL(pMsgHead->nID);
+}
+
+int CDataPacket::GetPacketFlag()
+{
+	if (!m_objDataBuffer.IsValidity())
+	{
+		return -1;
+	}
+	MESSAGE_HEADER* pMsgHead = (MESSAGE_HEADER*)m_objDataBuffer.GetDataHeadPtr();
+	return pMsgHead->nFlags;
+}
+
+int CDataPacket::GetPacketVer()
+{
+	if (!m_objDataBuffer.IsValidity())
+	{
+		return -1;
+	}
+	MESSAGE_HEADER* pMsgHead = (MESSAGE_HEADER*)m_objDataBuffer.GetDataHeadPtr();
+	return pMsgHead->nFlags&FLAG_VERSION;
+}
+
+BYTE* CDataPacket::GetBuffer()
+{
+	return (BYTE*)m_objDataBuffer.GetDataHeadPtr();
+}

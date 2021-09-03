@@ -1,0 +1,34 @@
+/////////////////////////////////////////////////////////////////////
+/// @file Sunday.h
+/// @brief Sunday字符串查找算法类定义
+/// 
+/// @author andy
+/// @version 1.0
+/// @date 2020.4.1
+/////////////////////////////////////////////////////////////////////
+
+#pragma once
+#include <string>
+#include <memory> // shared_ptr
+
+#define SHIFT_TABLE_SIZE 256
+
+
+class CSundaySearch
+{
+public:
+	CSundaySearch();
+	~CSundaySearch();
+
+public:
+	void InitShiftTable(const std::string strPattern, const bool bCase);
+
+	int Search(const char* pSrc, const size_t Length);
+	
+private:
+	short                    m_arrShiftTable[SHIFT_TABLE_SIZE];  ///< 查找移动表
+	std::string              m_strPattern;
+	bool                     m_bCase;
+};
+
+using CSundaySearchPtr = std::shared_ptr<CSundaySearch>;

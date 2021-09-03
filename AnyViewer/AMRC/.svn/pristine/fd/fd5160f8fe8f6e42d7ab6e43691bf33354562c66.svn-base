@@ -1,0 +1,10 @@
+#pragma once
+
+class CNewConnectionEvents
+{
+public:
+  virtual void onSuccAuth(const TCHAR *ip) = 0;
+  virtual void onAuthFailed(const TCHAR *ip) = 0;
+  virtual void OnDisconnect(const TCHAR *message) = 0;
+};
+

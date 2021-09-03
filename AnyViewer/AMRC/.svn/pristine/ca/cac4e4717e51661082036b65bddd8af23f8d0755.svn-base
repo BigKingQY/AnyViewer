@@ -1,0 +1,10 @@
+#pragma once
+
+
+class CUpdateListener
+{
+public:
+	// Interface function
+	virtual void OnUpdate() = 0;
+};
+

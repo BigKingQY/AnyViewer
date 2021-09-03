@@ -1,0 +1,12 @@
+#include "PythonHelper.h"
+
+
+
+CPythonHelper::CPythonHelper()
+{
+}
+
+
+CPythonHelper::~CPythonHelper()
+{
+}

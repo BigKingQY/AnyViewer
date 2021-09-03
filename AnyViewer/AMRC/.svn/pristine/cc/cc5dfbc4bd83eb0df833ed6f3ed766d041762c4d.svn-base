@@ -1,0 +1,52 @@
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// @file  
+/// @brief 单实例模板类
+/// 
+///
+/// @author 黄丽云
+/// @version 1.0
+/// @date        2018-10-19
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#pragma once
+
+template <typename T>
+class CSingleton
+{
+public:
+	template<typename...Args>
+	static T * Instance(Args&&... args)
+	{
+		if (nullptr == m_pInstance)
+		{			
+			m_pInstance = new T(std::forward<Args>(args)...);
+		}
+
+		return m_pInstance;
+	}
+
+	static T* GetInstance()
+	{
+		if (nullptr == m_pInstance)
+		{
+			throw std::logic_error("The instance is not init, please initialize the instance first.");
+		}
+
+		return m_pInstance;
+	}
+
+	static void DestoryInstance()
+	{
+		delete m_pInstance;
+		m_pInstance = nullptr;
+	}
+
+private:
+	CSingleton();
+	virtual ~CSingleton();
+	CSingleton(const CSingleton& rhs);
+	CSingleton& operator=(const CSingleton& rhs);
+
+private:
+	static T* m_pInstance;
+};

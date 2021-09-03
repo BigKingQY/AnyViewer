@@ -1,0 +1,115 @@
+#pragma once
+#include "NetServiceImpl.h"
+#include "DataPacket.h"
+#include "ECC.h"
+#include "RCProtocol.h"
+#include "TransactionService.h"
+
+#include <boost/timer.hpp>
+
+
+#define ECC_KEY_LEN   24
+
+using PTR_WAIT_TASK = std::shared_ptr<CWaitingResponseTask<CDataPacket>>;
+
+class CConsoleEndpoint : public CNetEndpoint< CDataPacket>
+{
+public:
+	CConsoleEndpoint(CNetEndpointEventSink* pNetEndpointEventSink);
+
+public:
+	virtual bool Send(CNetPacket* pPacket) override;
+
+};
+
+
+class CConsoleProxy : public CNetClientImpl< CConsoleEndpoint >
+{
+public:
+	CConsoleProxy(UINT nIP, USHORT nPort);
+	~CConsoleProxy(void);
+
+	/// <summary>会话状态类型枚举定义</summary>
+	enum RCSVR_PROXY_STATUS
+	{
+		RPS_INVALID = 0,
+		RPS_ESTABLISHMENT = 1,
+		RPS_REGISTERED = 2,       ///< 枚举常量,成功注册到服务器
+		RPS_CLOSE = 3,
+	};
+
+public:
+	/// @brief 连接到服务器
+	bool Connect();
+
+	//  重新连接到服务器
+	bool ReConnect();
+
+
+	// 发送通用请求消息
+	bool SendCommonRequest(UINT nMsg, U64 nStatus = 0);
+
+	void SendCommonResponse(CDataPacket* pDataPacket, bool bStatus, const U64 nStatusCode = 0);
+
+	template<class T>
+	void SendCommonResponse(CDataPacket* pDataPacket, const T& refObj, const OPERATOR_RESULT nOpResult)
+	{
+		CDataPacket objResponsePacket;
+
+		objResponsePacket.InitialJsonT<MESSAGE_HEADER>(
+			pDataPacket->GetPacketId()
+			, (WORD)pDataPacket->GetPacketType()
+			, BYTE(OT_RESPONSE | nOpResult)
+			, &refObj);
+
+		Send(&objResponsePacket);
+	}
+
+	// 向控制服务器注册
+	bool Regist(const RCP::CRCClientInfo& refRCClientInfo);
+
+	// 更新客户端信息
+	bool UpdateClient(const RCP::CRCClientInfo& refRCClientInfo);
+
+	// 连接目标设备
+	bool ConnectRemoteClient(const RCP::CConnectionRequest& refConnRequest);
+
+	// 同步连接目标设备
+	bool SyncConnectRemoteClient(const RCP::CConnectionRequest& refConnRequest, int& nStatusCode1, int& nStatusCode2, const int nTimeout = 60);
+
+
+	// 发送认证消息到服务器
+	bool Authenticate(const RCP::CAuthenticationRequest& refRequest/*, const int nTimeout = 10 * 60*/);
+
+	// 同步发送认证消息到服务器
+	bool SyncAuthenticate(const RCP::CAuthenticationRequest& refRequest, U32& nStatusCode1, U32& nStatusCode2, const int nTimeout = 10 * 60);
+
+	// 发送改变通信方式请求
+	bool SendChangeCommModeRequest(const U32 nSessionID);
+protected:
+	virtual bool OnPreSendPacketEventHandle(PTR_NET_ENDPOINT_INTERFACE pEndpoint, CNetPacket* pPacket);
+	virtual bool OnProReceivedPacketEventHandle(PTR_NET_ENDPOINT_INTERFACE pNetEndpointInterface, CNetPacket* pNetPacket);
+	virtual bool OnReceivedPacketEventHandle(PTR_NET_ENDPOINT_INTERFACE pEndpoint, CNetPacket* pPacket);
+	virtual bool OnEventHandle(PTR_NET_ENDPOINT_INTERFACE pEndpoint, SEVERITY_LEVEL nSeverity, SERVICE_EVENT nEvent, LPCTSTR lpTips);
+	virtual bool OnReconnectEventHandle(PTR_NET_ENDPOINT_INTERFACE pEndpoint);
+	//virtual bool OnCloseEventHandle(PTR_NET_ENDPOINT_INTERFACE);
+
+protected:   // 应答数据包
+
+	// 注册应答数据包
+	void OnRegistResponse(CDataPacket* pDataPacket);
+
+private:
+
+	RCP::EXCEPTION_STATUS SyncSend(CDataPacket& refSend, PTR_WAIT_TASK ptrWaitTask, std::shared_ptr<CDataPacket>& refAckPacket);
+private:
+
+private:
+	//DECLARE_MEMBER_AND_METHOD(CString, m_strAccount, Account)      ///< 账号 
+	DECLARE_MEMBER_AND_METHOD(I64, m_nID, ID);
+	DECLARE_MEMBER_AND_METHOD(unsigned int, m_nType, Type);  ///<@see COST_CLIENT_TYPE
+	DECLARE_MEMBER_AND_METHOD_V11(RCSVR_PROXY_STATUS, m_nConversationStatus, ConversationStatus, RPS_INVALID);  ///< 状态
+	boost::timer               m_objSendingLastTime;
+};
+
+using CConsoleProxyPtr = std::shared_ptr<CConsoleProxy>;

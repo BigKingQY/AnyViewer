@@ -5,6 +5,9 @@
 //  Created by BigKing on 2021/8/23.
 //
 
+#import <UIKit/UIKit.h>
+#import <Foundation/Foundation.h>
+
 #ifndef ConstHeader_h
 #define ConstHeader_h
 
@@ -25,6 +28,14 @@
 // 配置类宏定义
 #define GKConfigure          [GKNavigationBarConfigure sharedInstance]
 
+#define NSLog(format, ...) printf("[%s] %s [第%d行] %s\n", __TIME__, __FUNCTION__, __LINE__, [[NSString stringWithFormat:format, ## __VA_ARGS__] UTF8String]);
+
+#define kLogPath [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).lastObject stringByAppendingPathComponent:@"Log"].UTF8String
+
+#define kIPRegionPath [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).lastObject stringByAppendingPathComponent:@"TmpIPRegion.htm"].UTF8String
+
+
+#define kAppVersion [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"]
 
 //网络变化的监听通知
 static NSString *kAFNetworkReachabilityNotification = @"kAFNetworkReachabilityNotification";

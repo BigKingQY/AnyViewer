@@ -1,0 +1,9 @@
+#pragma once
+
+class CAnEventListener
+{
+public:
+	virtual void OnAnObjectEvent() = 0;
+};
+
+

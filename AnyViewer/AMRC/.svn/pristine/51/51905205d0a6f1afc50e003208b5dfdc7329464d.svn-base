@@ -1,0 +1,36 @@
+#ifndef CONFIG_H
+#define CONFIG_H
+
+#include<unordered_map>
+#include<string>
+
+//*******************************************************************
+/// <summary>
+/// 简单的应用程序配置类定义
+/// </summary>
+//*******************************************************************
+class CConfig
+{
+public:
+    CConfig(const std::string& strFile);
+
+public:
+	std::string GetValue(const std::string& strKey, const std::string& strDefault);
+	
+	int GetValue(const std::string& strKey, const int nDefault);
+
+	void SetValue(const std::string& strKey, const std::string& strValue);
+
+public:
+    bool Read();
+
+    void Write();
+
+    bool IsEmpty(){ return m_mapKey2Value.empty(); }
+
+private:
+    std::unordered_map<std::string, std::string> m_mapKey2Value;
+    std::string m_strFile;
+};
+
+#endif // CONFIG_H

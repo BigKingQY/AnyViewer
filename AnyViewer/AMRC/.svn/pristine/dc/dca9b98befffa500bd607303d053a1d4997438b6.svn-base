@@ -1,0 +1,27 @@
+/******************************************************************************
+* 
+* SaxListCtrl
+* Version
+* Copyright (C) 2007 Ax3soft Co., Ltd.
+* All Rights Reserved
+* $Header: /cvsdata/vc/Common/GeneralFunctions.h,v 1.17 2014/12/13 01:42:27 administrator Exp $
+* 
+*******************************************************************************
+* 
+* Description:General functions define,Dependent MFC library
+******************************************************************************/
+#pragma once
+#ifndef WIN32
+#include "public.h"
+#endif // !1
+
+
+#include <string>
+#include <vector>
+#include <assert.h>
+#include <regex>
+
+
+
+
+extern unsigned int IPv4_to_i(const std::string& strIpAddress);

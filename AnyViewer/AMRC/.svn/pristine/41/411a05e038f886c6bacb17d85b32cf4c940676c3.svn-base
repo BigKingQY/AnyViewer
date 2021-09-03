@@ -1,0 +1,158 @@
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// @file  
+// 树形数据管理器相关基类定义
+/// 
+///
+/// 
+/// @author 黄丽云
+/// @version 1.0
+/// @date        2019-1-15
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#pragma once
+//#include "public.h"
+#include "JsonSerializer.h"
+#include "MiscellaneousFunctions.h"
+
+
+
+
+class CEntryBase;
+class CTreeManagerBase;
+class CMacroCommand;
+
+typedef CDynamicJsonVector<CEntryBase> ENTRY_ARRAY;
+
+
+
+
+//*******************************************************************
+/// <summary>
+/// 枚举条目上下文
+/// </summary>
+//*******************************************************************
+class CEnumEntryContext
+{
+public:
+	virtual bool OnEntry(CEntryBase* pEntry) = 0;
+};
+
+
+//*******************************************************************
+/// <summary>
+/// 树形数据项基类
+/// </summary>
+//*******************************************************************
+class CEntryBase : public CSerializeEntry
+{
+public:
+	CEntryBase();
+	virtual ~CEntryBase();
+public:
+	CEntryBase(const CEntryBase &refSource);
+	CEntryBase & operator=(const CEntryBase &refSource);
+
+public:
+	virtual std::string GetClassName() { assert(false);  return nullptr; }
+
+public:
+	// 得到子的个数
+	size_t GetChildCount();
+
+	// 得到指定的子对象
+	CEntryBase* GetChild(size_t nIndex);
+
+	// 得到当前记录在父记录中的位置序号
+	int GetIndex() const;
+
+public:
+	// 初始化对象
+	virtual void Init();
+
+	// 清除对象，包括释放所有的子对象
+	virtual void Clear();
+
+	// 复位对象，不释放任何的子对象
+	virtual void Reset();
+
+public:
+	virtual void Serialize(CJSONSerializer& refJsonSerializer) const;
+	virtual void DeSerialize(CJSONSerializer& refJsonSerializer);
+
+public:
+	virtual CEntryBase* CreateEntry(const std::string& strClass, CMacroCommand* pMacroCommand = nullptr);
+
+	// 插入一个新的条目在指定条目的前面
+	virtual bool InsertChild(CEntryBase* pNewEntry, const CEntryBase* pPosEntry,  CMacroCommand* pMacroCommand = nullptr);
+
+	// 移除指定的工程量清单记录,并不释放对象空间
+	virtual bool ReplaceChild(CEntryBase* pEntry1, CEntryBase* pEntry2,  CMacroCommand* pMacroCommand = nullptr);
+
+	// 移除指定的工程量清单记录,并不释放对象空间
+	virtual bool RemoveChild(CEntryBase* pEntryRemoved,  CMacroCommand* pMacroCommand = nullptr);
+	
+	// 删除所有子节点
+	void RemoveAllChild(CMacroCommand* pMacroCommand = nullptr);
+
+	// 根据id得到对应的清单条目记录
+	CEntryBase* LookupChild(const size_t nID) const;
+
+	bool HasChild(const CEntryBase * pEntry, const bool bRecursion) const;
+
+	// 枚举所有记录
+	virtual void Enumerate(CEnumEntryContext& refContext);
+
+	// 查找子记录的位置序号
+	int QueryIndex(const CEntryBase * pEntry) const;
+
+	virtual CEntryBase* Clone();
+
+public: //事件函数组
+
+	// 当记录被增加到工程树后将收到该事件
+	virtual void  OnSinked();
+
+	// 当记录从工程树移除后将收到该事件
+	virtual void  OnUnsinked();
+
+	// 结束加载工程通知
+	virtual void OnCompleteLoading();
+
+private:
+	static size_t s_nNextID;
+
+private:
+	DECLARE_MEMBER_AND_METHOD_V11(size_t, m_nID, ID,0)    ///< ID
+	DECLARE_MEMBER_AND_METHOD_V11(CEntryBase*, m_pParent, Parent,nullptr)    ///< ID
+
+	ENTRY_ARRAY              m_arrChild;
+};
+
+
+//*******************************************************************
+/// <summary>
+/// 树形数据管理器基类
+/// </summary>
+//*******************************************************************
+class CTreeManagerBase: public CEntryBase
+{
+	ENABLE_SERIALIZE(CTreeManagerBase)
+public:
+	CTreeManagerBase();
+	virtual ~CTreeManagerBase();
+
+public:
+	CTreeManagerBase(const CTreeManagerBase &refSource);
+	CTreeManagerBase & operator=(const CTreeManagerBase &refSource);
+
+public:
+
+private:
+
+};
+
+
+inline CEntryBase * CREATE_ENTRY(const std::string& strId)
+{
+	return static_cast<CEntryBase*>(CGlobleSingleton<CFactory<std::string> >::Instance()->CreateObject(strId));
+}

@@ -1,0 +1,11 @@
+#include "ResourceHelper.h"
+#include "SDPSingleton.h"
+#include "Config.h"
+
+
+CSingleton<CConfig>::m_pInstance = nullptr;
+
+bool OpenSource(const std::string& refPath)
+{
+	CSingleton<CConfig>::Instance(refPath);
+}

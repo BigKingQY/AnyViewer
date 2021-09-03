@@ -64,9 +64,15 @@
 		1823C34326E0B0AE00B0FBDD /* MessageBusManager.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1823C33A26E0B0AE00B0FBDD /* MessageBusManager.mm */; };
 		1823C34426E0B0AE00B0FBDD /* LYCodeCvt.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1823C33B26E0B0AE00B0FBDD /* LYCodeCvt.mm */; };
 		1823C34526E0B0AE00B0FBDD /* RCProtocol.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1823C33C26E0B0AE00B0FBDD /* RCProtocol.mm */; };
-		1873992A26DDBB4A00098702 /* AMSocketManager.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1873992926DDBB4A00098702 /* AMSocketManager.mm */; };
+		1823C34B26E0BC1B00B0FBDD /* RCServerProxy.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1823C34A26E0BC1B00B0FBDD /* RCServerProxy.mm */; };
+		1823C35126E0CFB800B0FBDD /* CPrjSettings.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1823C35026E0CFB800B0FBDD /* CPrjSettings.mm */; };
+		1823C35426E0D61000B0FBDD /* CJsonHelper.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1823C35326E0D61000B0FBDD /* CJsonHelper.mm */; };
+		1873CF2326E1B60000598361 /* GlobeFunction.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1873CF2226E1B60000598361 /* GlobeFunction.mm */; };
+		1873CF2626E1C44400598361 /* HttpFileDownloader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1873CF2426E1C44400598361 /* HttpFileDownloader.cpp */; };
+		1873CF2E26E1F48700598361 /* CAIMTime.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1873CF2D26E1F48700598361 /* CAIMTime.mm */; };
+		1873CF4C26E225D900598361 /* NetworkRequest.m in Sources */ = {isa = PBXBuildFile; fileRef = 1873CF4B26E225D900598361 /* NetworkRequest.m */; };
 		1878E13626DF0B0E00E514EA /* EccCode.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1878E13426DF0B0E00E514EA /* EccCode.mm */; };
-		1878E13926DF175A00E514EA /* AMSocketService.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1878E13826DF175A00E514EA /* AMSocketService.mm */; };
+		1878E13926DF175A00E514EA /* CNetTransactionEngine.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1878E13826DF175A00E514EA /* CNetTransactionEngine.mm */; };
 		1878E13D26DF2AF400E514EA /* CDataPacket.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1878E13C26DF2AF400E514EA /* CDataPacket.mm */; };
 		1878E14026DF2B6600E514EA /* PacketBase.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1878E13F26DF2B6600E514EA /* PacketBase.mm */; };
 		1878E14726DF514A00E514EA /* CNetClientImpl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1878E14626DF514A00E514EA /* CNetClientImpl.mm */; };
@@ -111,7 +117,7 @@
 		066A180E26D3A3FA0058085F /* UIViewController+Presentation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "UIViewController+Presentation.m"; sourceTree = "<group>"; };
 		066A181026D3A3FA0058085F /* UIFont+BKAdd.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "UIFont+BKAdd.m"; sourceTree = "<group>"; };
 		066A181126D3A3FA0058085F /* NSObject+BKAdd.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSObject+BKAdd.h"; sourceTree = "<group>"; };
-		066A181226D3A3FA0058085F /* NSString+BKAdd.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSString+BKAdd.m"; sourceTree = "<group>"; };
+		066A181226D3A3FA0058085F /* NSString+BKAdd.m */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; path = "NSString+BKAdd.m"; sourceTree = "<group>"; };
 		066A181326D3A3FA0058085F /* UIScrollView+BKAdd.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "UIScrollView+BKAdd.h"; sourceTree = "<group>"; };
 		066A181426D3A3FA0058085F /* UIView+ViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "UIView+ViewController.h"; sourceTree = "<group>"; };
 		066A181526D3A3FA0058085F /* UIImageView+BKAdd.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "UIImageView+BKAdd.h"; sourceTree = "<group>"; };
@@ -207,7 +213,7 @@
 		1823C32A26E07C8A00B0FBDD /* libboost_exception.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libboost_exception.a; path = "../../../../usr/local/lib/boost-ios/boost/libboost_exception.a"; sourceTree = "<group>"; };
 		1823C33126E0AAE500B0FBDD /* EnumHeader.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = EnumHeader.h; sourceTree = "<group>"; };
 		1823C33226E0AB9100B0FBDD /* StructHeader.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = StructHeader.h; sourceTree = "<group>"; };
-		1823C33326E0AC1900B0FBDD /* FuncHeader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FuncHeader.h; sourceTree = "<group>"; };
+		1823C33326E0AC1900B0FBDD /* FuncHeader.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = FuncHeader.h; sourceTree = "<group>"; };
 		1823C33526E0B0AD00B0FBDD /* RCProtocol.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RCProtocol.h; sourceTree = "<group>"; };
 		1823C33626E0B0AD00B0FBDD /* ConsoleProxy.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = ConsoleProxy.mm; sourceTree = "<group>"; };
 		1823C33726E0B0AD00B0FBDD /* SDPFactory.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SDPFactory.h; sourceTree = "<group>"; };
@@ -221,19 +227,42 @@
 		1823C33F26E0B0AE00B0FBDD /* MessageBusManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MessageBusManager.h; sourceTree = "<group>"; };
 		1823C34026E0B0AE00B0FBDD /* SDPSingleton.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SDPSingleton.h; sourceTree = "<group>"; };
 		1823C34126E0B0AE00B0FBDD /* SDPMessageBus.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SDPMessageBus.h; sourceTree = "<group>"; };
-		1873992826DDBB4A00098702 /* AMSocketManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AMSocketManager.h; sourceTree = "<group>"; };
-		1873992926DDBB4A00098702 /* AMSocketManager.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = AMSocketManager.mm; sourceTree = "<group>"; };
+		1823C34926E0BC1B00B0FBDD /* RCServerProxy.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = RCServerProxy.h; sourceTree = "<group>"; };
+		1823C34A26E0BC1B00B0FBDD /* RCServerProxy.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = RCServerProxy.mm; sourceTree = "<group>"; };
+		1823C34F26E0CFB800B0FBDD /* CPrjSettings.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = CPrjSettings.h; sourceTree = "<group>"; };
+		1823C35026E0CFB800B0FBDD /* CPrjSettings.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = CPrjSettings.mm; path = "../New Group/CPrjSettings.mm"; sourceTree = "<group>"; };
+		1823C35226E0D61000B0FBDD /* CJsonHelper.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = CJsonHelper.h; sourceTree = "<group>"; };
+		1823C35326E0D61000B0FBDD /* CJsonHelper.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = CJsonHelper.mm; sourceTree = "<group>"; };
+		1873CF2126E1B60000598361 /* GlobeFunction.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = GlobeFunction.h; sourceTree = "<group>"; };
+		1873CF2226E1B60000598361 /* GlobeFunction.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = GlobeFunction.mm; sourceTree = "<group>"; };
+		1873CF2426E1C44400598361 /* HttpFileDownloader.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = HttpFileDownloader.cpp; sourceTree = "<group>"; };
+		1873CF2526E1C44400598361 /* HttpFileDownloader.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; path = HttpFileDownloader.h; sourceTree = "<group>"; };
+		1873CF2C26E1F48700598361 /* CAIMTime.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = CAIMTime.h; sourceTree = "<group>"; };
+		1873CF2D26E1F48700598361 /* CAIMTime.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = CAIMTime.mm; sourceTree = "<group>"; };
+		1873CF2F26E2076000598361 /* ZJCurl.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = ZJCurl.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		1873CF3626E219FA00598361 /* libboost_atomic.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libboost_atomic.a; path = "../../../../usr/local/lib/boost-ios/boost/libboost_atomic.a"; sourceTree = "<group>"; };
+		1873CF3726E219FA00598361 /* libboost_date_time.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libboost_date_time.a; path = "../../../../usr/local/lib/boost-ios/boost/libboost_date_time.a"; sourceTree = "<group>"; };
+		1873CF3826E219FA00598361 /* libboost_serialization.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libboost_serialization.a; path = "../../../../usr/local/lib/boost-ios/boost/libboost_serialization.a"; sourceTree = "<group>"; };
+		1873CF3926E219FA00598361 /* libboost_regex.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libboost_regex.a; path = "../../../../usr/local/lib/boost-ios/boost/libboost_regex.a"; sourceTree = "<group>"; };
+		1873CF3A26E219FB00598361 /* libboost_timer.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libboost_timer.a; path = "../../../../usr/local/lib/boost-ios/boost/libboost_timer.a"; sourceTree = "<group>"; };
+		1873CF3B26E219FB00598361 /* libboost_chrono.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libboost_chrono.a; path = "../../../../usr/local/lib/boost-ios/boost/libboost_chrono.a"; sourceTree = "<group>"; };
+		1873CF3C26E219FB00598361 /* libboost_thread.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libboost_thread.a; path = "../../../../usr/local/lib/boost-ios/boost/libboost_thread.a"; sourceTree = "<group>"; };
+		1873CF3D26E219FB00598361 /* libboost_iostreams.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libboost_iostreams.a; path = "../../../../usr/local/lib/boost-ios/boost/libboost_iostreams.a"; sourceTree = "<group>"; };
+		1873CF3E26E219FB00598361 /* libboost_signals.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libboost_signals.a; path = "../../../../usr/local/lib/boost-ios/boost/libboost_signals.a"; sourceTree = "<group>"; };
+		1873CF3F26E219FB00598361 /* libboost_wserialization.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libboost_wserialization.a; path = "../../../../usr/local/lib/boost-ios/boost/libboost_wserialization.a"; sourceTree = "<group>"; };
+		1873CF4A26E225D900598361 /* NetworkRequest.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NetworkRequest.h; sourceTree = "<group>"; };
+		1873CF4B26E225D900598361 /* NetworkRequest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NetworkRequest.m; sourceTree = "<group>"; };
 		1878E13426DF0B0E00E514EA /* EccCode.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = EccCode.mm; sourceTree = "<group>"; };
 		1878E13526DF0B0E00E514EA /* EccCode.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EccCode.h; sourceTree = "<group>"; };
-		1878E13726DF175A00E514EA /* AMSocketService.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AMSocketService.h; sourceTree = "<group>"; };
-		1878E13826DF175A00E514EA /* AMSocketService.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = AMSocketService.mm; sourceTree = "<group>"; };
+		1878E13726DF175A00E514EA /* CNetTransactionEngine.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = CNetTransactionEngine.h; sourceTree = "<group>"; };
+		1878E13826DF175A00E514EA /* CNetTransactionEngine.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = CNetTransactionEngine.mm; sourceTree = "<group>"; };
 		1878E13B26DF2AF400E514EA /* CDataPacket.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CDataPacket.h; sourceTree = "<group>"; };
 		1878E13C26DF2AF400E514EA /* CDataPacket.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = CDataPacket.mm; sourceTree = "<group>"; };
 		1878E13E26DF2B6600E514EA /* PacketBase.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PacketBase.h; sourceTree = "<group>"; };
 		1878E13F26DF2B6600E514EA /* PacketBase.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = PacketBase.mm; sourceTree = "<group>"; };
 		1878E14126DF2BAF00E514EA /* BufferImpl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BufferImpl.h; sourceTree = "<group>"; };
-		1878E14226DF2BED00E514EA /* Typedef.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Typedef.h; sourceTree = "<group>"; };
-		1878E14326DF2CDE00E514EA /* MessageHeadDef.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MessageHeadDef.h; sourceTree = "<group>"; };
+		1878E14226DF2BED00E514EA /* Typedef.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = Typedef.h; sourceTree = "<group>"; };
+		1878E14326DF2CDE00E514EA /* MessageHeadDef.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = MessageHeadDef.h; sourceTree = "<group>"; };
 		1878E14526DF514A00E514EA /* CNetClientImpl.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = CNetClientImpl.h; sourceTree = "<group>"; };
 		1878E14626DF514A00E514EA /* CNetClientImpl.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = CNetClientImpl.mm; sourceTree = "<group>"; };
 		1878E14926DF53FA00E514EA /* CNetIPDataTransfer.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = CNetIPDataTransfer.h; sourceTree = "<group>"; };
@@ -473,6 +502,8 @@
 				066A186E26D4C1190058085F /* MBProgressHUD */,
 				06D2AE9826D60FF10092B089 /* BKFingerWaveView.h */,
 				06D2AE9926D60FF10092B089 /* BKFingerWaveView.m */,
+				1873CF4A26E225D900598361 /* NetworkRequest.h */,
+				1873CF4B26E225D900598361 /* NetworkRequest.m */,
 			);
 			path = Tools;
 			sourceTree = "<group>";
@@ -630,19 +661,42 @@
 			children = (
 				1823C33926E0B0AD00B0FBDD /* ConsoleProxy.h */,
 				1823C33626E0B0AD00B0FBDD /* ConsoleProxy.mm */,
-				1823C33D26E0B0AE00B0FBDD /* JsonSerializer.h */,
 				1823C33826E0B0AD00B0FBDD /* LYCodeCvt.h */,
 				1823C33B26E0B0AE00B0FBDD /* LYCodeCvt.mm */,
 				1823C33F26E0B0AE00B0FBDD /* MessageBusManager.h */,
 				1823C33A26E0B0AE00B0FBDD /* MessageBusManager.mm */,
 				1823C33526E0B0AD00B0FBDD /* RCProtocol.h */,
 				1823C33C26E0B0AE00B0FBDD /* RCProtocol.mm */,
+			);
+			path = ConsoleProxy;
+			sourceTree = "<group>";
+		};
+		1823C34D26E0C18A00B0FBDD /* Headers */ = {
+			isa = PBXGroup;
+			children = (
 				1823C33726E0B0AD00B0FBDD /* SDPFactory.h */,
 				1823C33E26E0B0AE00B0FBDD /* SDPFunctionTraits.h */,
 				1823C34126E0B0AE00B0FBDD /* SDPMessageBus.h */,
 				1823C34026E0B0AE00B0FBDD /* SDPSingleton.h */,
+				1878E14126DF2BAF00E514EA /* BufferImpl.h */,
+				1823C33226E0AB9100B0FBDD /* StructHeader.h */,
+				1878E14226DF2BED00E514EA /* Typedef.h */,
+				1823C33126E0AAE500B0FBDD /* EnumHeader.h */,
+				1823C33326E0AC1900B0FBDD /* FuncHeader.h */,
+				1873CF2126E1B60000598361 /* GlobeFunction.h */,
+				1873CF2226E1B60000598361 /* GlobeFunction.mm */,
+				1878E14326DF2CDE00E514EA /* MessageHeadDef.h */,
 			);
-			path = ConsoleProxy;
+			path = Headers;
+			sourceTree = "<group>";
+		};
+		1823C34E26E0C22700B0FBDD /* RCServerProxy */ = {
+			isa = PBXGroup;
+			children = (
+				1823C34926E0BC1B00B0FBDD /* RCServerProxy.h */,
+				1823C34A26E0BC1B00B0FBDD /* RCServerProxy.mm */,
+			);
+			path = RCServerProxy;
 			sourceTree = "<group>";
 		};
 		18739B8A26DE039300098702 /* AMRC */ = {
@@ -650,6 +704,54 @@
 			children = (
 			);
 			path = AMRC;
+			sourceTree = "<group>";
+		};
+		1873CF2726E1C7DC00598361 /* DataPacket */ = {
+			isa = PBXGroup;
+			children = (
+				1878E13B26DF2AF400E514EA /* CDataPacket.h */,
+				1878E13C26DF2AF400E514EA /* CDataPacket.mm */,
+				1878E13E26DF2B6600E514EA /* PacketBase.h */,
+				1878E13F26DF2B6600E514EA /* PacketBase.mm */,
+			);
+			path = DataPacket;
+			sourceTree = "<group>";
+		};
+		1873CF2826E1C81200598361 /* JsonHandle */ = {
+			isa = PBXGroup;
+			children = (
+				1823C33D26E0B0AE00B0FBDD /* JsonSerializer.h */,
+				1823C35226E0D61000B0FBDD /* CJsonHelper.h */,
+				1823C35326E0D61000B0FBDD /* CJsonHelper.mm */,
+			);
+			path = JsonHandle;
+			sourceTree = "<group>";
+		};
+		1873CF2926E1C85100598361 /* Encode */ = {
+			isa = PBXGroup;
+			children = (
+				1878E13526DF0B0E00E514EA /* EccCode.h */,
+				1878E13426DF0B0E00E514EA /* EccCode.mm */,
+			);
+			path = Encode;
+			sourceTree = "<group>";
+		};
+		1873CF2A26E1C86800598361 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				1823C34F26E0CFB800B0FBDD /* CPrjSettings.h */,
+				1823C35026E0CFB800B0FBDD /* CPrjSettings.mm */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		1873CF2B26E1C8B300598361 /* Request */ = {
+			isa = PBXGroup;
+			children = (
+				1873CF2526E1C44400598361 /* HttpFileDownloader.h */,
+				1873CF2426E1C44400598361 /* HttpFileDownloader.cpp */,
+			);
+			path = Request;
 			sourceTree = "<group>";
 		};
 		1878E14426DF50EC00E514EA /* ServiceImpl */ = {
@@ -673,26 +775,21 @@
 			isa = PBXGroup;
 			children = (
 				18802C8626DCF582002B5742 /* AMSocketHeader.h */,
-				1873992826DDBB4A00098702 /* AMSocketManager.h */,
-				1873992926DDBB4A00098702 /* AMSocketManager.mm */,
-				1878E13726DF175A00E514EA /* AMSocketService.h */,
-				1878E13826DF175A00E514EA /* AMSocketService.mm */,
-				1878E14126DF2BAF00E514EA /* BufferImpl.h */,
-				1878E13B26DF2AF400E514EA /* CDataPacket.h */,
-				1878E13C26DF2AF400E514EA /* CDataPacket.mm */,
-				1878E13526DF0B0E00E514EA /* EccCode.h */,
-				1878E13426DF0B0E00E514EA /* EccCode.mm */,
+				1878E13726DF175A00E514EA /* CNetTransactionEngine.h */,
+				1878E13826DF175A00E514EA /* CNetTransactionEngine.mm */,
+				1873CF2B26E1C8B300598361 /* Request */,
+				1873CF2A26E1C86800598361 /* Settings */,
+				1873CF2926E1C85100598361 /* Encode */,
+				1873CF2826E1C81200598361 /* JsonHandle */,
+				1873CF2726E1C7DC00598361 /* DataPacket */,
+				1823C34E26E0C22700B0FBDD /* RCServerProxy */,
+				1823C33426E0B0AD00B0FBDD /* ConsoleProxy */,
+				1823C34D26E0C18A00B0FBDD /* Headers */,
 				1878E15426DF70F000E514EA /* Log.h */,
 				1878E15526DF84F200E514EA /* Log.mm */,
-				1878E14326DF2CDE00E514EA /* MessageHeadDef.h */,
-				1878E13E26DF2B6600E514EA /* PacketBase.h */,
-				1878E13F26DF2B6600E514EA /* PacketBase.mm */,
-				1823C33426E0B0AD00B0FBDD /* ConsoleProxy */,
+				1873CF2C26E1F48700598361 /* CAIMTime.h */,
+				1873CF2D26E1F48700598361 /* CAIMTime.mm */,
 				1878E14426DF50EC00E514EA /* ServiceImpl */,
-				1878E14226DF2BED00E514EA /* Typedef.h */,
-				1823C33226E0AB9100B0FBDD /* StructHeader.h */,
-				1823C33126E0AAE500B0FBDD /* EnumHeader.h */,
-				1823C33326E0AC1900B0FBDD /* FuncHeader.h */,
 			);
 			path = Socket;
 			sourceTree = "<group>";
@@ -700,6 +797,17 @@
 		5A54F60C1753795720D82170 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				1873CF3626E219FA00598361 /* libboost_atomic.a */,
+				1873CF3B26E219FB00598361 /* libboost_chrono.a */,
+				1873CF3726E219FA00598361 /* libboost_date_time.a */,
+				1873CF3D26E219FB00598361 /* libboost_iostreams.a */,
+				1873CF3926E219FA00598361 /* libboost_regex.a */,
+				1873CF3826E219FA00598361 /* libboost_serialization.a */,
+				1873CF3E26E219FB00598361 /* libboost_signals.a */,
+				1873CF3C26E219FB00598361 /* libboost_thread.a */,
+				1873CF3A26E219FB00598361 /* libboost_timer.a */,
+				1873CF3F26E219FB00598361 /* libboost_wserialization.a */,
+				1873CF2F26E2076000598361 /* ZJCurl.framework */,
 				1823C32A26E07C8A00B0FBDD /* libboost_exception.a */,
 				1823C32826E07C8A00B0FBDD /* libboost_filesystem.a */,
 				1823C32926E07C8A00B0FBDD /* libboost_system.a */,
@@ -855,20 +963,23 @@
 				06D2AEA026D73E0E0092B089 /* AMLoginViewController.m in Sources */,
 				066A184926D3A3FA0058085F /* UIButton+BKAdd.m in Sources */,
 				066A185026D3A3FA0058085F /* BaseTableViewCell.m in Sources */,
+				1873CF2326E1B60000598361 /* GlobeFunction.mm in Sources */,
 				06D2AE8B26D5DEAA0092B089 /* AMSettingListTableViewCell.m in Sources */,
 				066A184F26D3A3FA0058085F /* BaseViewController.m in Sources */,
 				066A188C26D5D8970058085F /* AMDeviceListTableViewCell.m in Sources */,
 				066A184026D3A3FA0058085F /* NSObject+BKAdd.m in Sources */,
 				066A173B26D3A14B0058085F /* AMConnectViewController.m in Sources */,
 				1878E15626DF84F200E514EA /* Log.mm in Sources */,
+				1823C35426E0D61000B0FBDD /* CJsonHelper.mm in Sources */,
 				066A184E26D3A3FA0058085F /* BaseEmptyDelegator.m in Sources */,
+				1823C34B26E0BC1B00B0FBDD /* RCServerProxy.mm in Sources */,
 				066A184426D3A3FA0058085F /* NSDictionary+BKAdd.m in Sources */,
 				066A183D26D3A3FA0058085F /* UIImageView+BKAdd.m in Sources */,
 				1878E14B26DF53FA00E514EA /* CNetIPDataTransfer.mm in Sources */,
 				066A185826D3A3FA0058085F /* BaseNavigationViewController.m in Sources */,
 				066A184326D3A3FA0058085F /* NSUserDefaults+Sz.m in Sources */,
 				066A185626D3A3FA0058085F /* BaseTextField.m in Sources */,
-				1878E13926DF175A00E514EA /* AMSocketService.mm in Sources */,
+				1878E13926DF175A00E514EA /* CNetTransactionEngine.mm in Sources */,
 				1878E13626DF0B0E00E514EA /* EccCode.mm in Sources */,
 				066A185926D3A3FA0058085F /* BaseCollectionViewController.m in Sources */,
 				066A185726D3A3FA0058085F /* BaseLabel.m in Sources */,
@@ -879,6 +990,7 @@
 				066A171626D39FE90058085F /* AppDelegate.m in Sources */,
 				066A183E26D3A3FA0058085F /* UIView+ViewController.m in Sources */,
 				066A184C26D3A3FA0058085F /* BaseTableViewController.m in Sources */,
+				1823C35126E0CFB800B0FBDD /* CPrjSettings.mm in Sources */,
 				1823C34326E0B0AE00B0FBDD /* MessageBusManager.mm in Sources */,
 				1878E14726DF514A00E514EA /* CNetClientImpl.mm in Sources */,
 				066A172726D39FED0058085F /* main.m in Sources */,
@@ -887,7 +999,9 @@
 				066A185426D3A3FA0058085F /* BaseCollectionViewCell.m in Sources */,
 				066A186326D3A98B0058085F /* BKSearchBar.m in Sources */,
 				066A184526D3A3FA0058085F /* UIViewController+Presentation.m in Sources */,
+				1873CF2626E1C44400598361 /* HttpFileDownloader.cpp in Sources */,
 				066A189026D5DB210058085F /* AMDevice.m in Sources */,
+				1873CF4C26E225D900598361 /* NetworkRequest.m in Sources */,
 				066A186226D3A98B0058085F /* BKCellModel.m in Sources */,
 				066A186D26D4BD110058085F /* AMSafeCodeAlertViewController.m in Sources */,
 				066A185226D3A3FA0058085F /* BaseImageView.m in Sources */,
@@ -900,7 +1014,7 @@
 				066A184826D3A3FA0058085F /* BKPresentationController.m in Sources */,
 				066A187526D4C1190058085F /* MBProgressHUD+BKAdd.m in Sources */,
 				066A186826D499E70058085F /* AMRemoteDeviceInputView.m in Sources */,
-				1873992A26DDBB4A00098702 /* AMSocketManager.mm in Sources */,
+				1873CF2E26E1F48700598361 /* CAIMTime.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1113,6 +1227,71 @@
 					"/usr/local/lib/boost-ios",
 					"/usr/local/lib/boost-ios/boost",
 				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+					"-l\"curl\"",
+					"-l\"sqlite3\"",
+					"-l\"z\"",
+					"-framework",
+					"\"AFNetworking\"",
+					"-framework",
+					"\"Accelerate\"",
+					"-framework",
+					"\"AssetsLibrary\"",
+					"-framework",
+					"\"CoreFoundation\"",
+					"-framework",
+					"\"CoreGraphics\"",
+					"-framework",
+					"\"CoreImage\"",
+					"-framework",
+					"\"CoreText\"",
+					"-framework",
+					"\"DZNEmptyDataSet\"",
+					"-framework",
+					"\"Foundation\"",
+					"-framework",
+					"\"GKNavigationBar\"",
+					"-framework",
+					"\"IQKeyboardManager\"",
+					"-framework",
+					"\"ImageIO\"",
+					"-framework",
+					"\"JXCategoryView\"",
+					"-framework",
+					"\"MBProgressHUD\"",
+					"-framework",
+					"\"MJRefresh\"",
+					"-framework",
+					"\"Masonry\"",
+					"-framework",
+					"\"MobileCoreServices\"",
+					"-framework",
+					"\"OpenSSL\"",
+					"-framework",
+					"\"Photos\"",
+					"-framework",
+					"\"QuartzCore\"",
+					"-framework",
+					"\"ReactiveObjC\"",
+					"-framework",
+					"\"SDWebImage\"",
+					"-framework",
+					"\"SystemConfiguration\"",
+					"-framework",
+					"\"TZImagePickerController\"",
+					"-framework",
+					"\"UIKit\"",
+					"-framework",
+					"\"WZLBadge\"",
+					"-framework",
+					"\"YYKit\"",
+					"-framework",
+					"\"ZJCurl\"",
+					"-framework",
+					"\"curly\"",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.aomei.AnyViewer;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -1186,6 +1365,71 @@
 					"$(inherited)",
 					"/usr/local/lib/boost-ios",
 					"/usr/local/lib/boost-ios/boost",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+					"-l\"curl\"",
+					"-l\"sqlite3\"",
+					"-l\"z\"",
+					"-framework",
+					"\"AFNetworking\"",
+					"-framework",
+					"\"Accelerate\"",
+					"-framework",
+					"\"AssetsLibrary\"",
+					"-framework",
+					"\"CoreFoundation\"",
+					"-framework",
+					"\"CoreGraphics\"",
+					"-framework",
+					"\"CoreImage\"",
+					"-framework",
+					"\"CoreText\"",
+					"-framework",
+					"\"DZNEmptyDataSet\"",
+					"-framework",
+					"\"Foundation\"",
+					"-framework",
+					"\"GKNavigationBar\"",
+					"-framework",
+					"\"IQKeyboardManager\"",
+					"-framework",
+					"\"ImageIO\"",
+					"-framework",
+					"\"JXCategoryView\"",
+					"-framework",
+					"\"MBProgressHUD\"",
+					"-framework",
+					"\"MJRefresh\"",
+					"-framework",
+					"\"Masonry\"",
+					"-framework",
+					"\"MobileCoreServices\"",
+					"-framework",
+					"\"OpenSSL\"",
+					"-framework",
+					"\"Photos\"",
+					"-framework",
+					"\"QuartzCore\"",
+					"-framework",
+					"\"ReactiveObjC\"",
+					"-framework",
+					"\"SDWebImage\"",
+					"-framework",
+					"\"SystemConfiguration\"",
+					"-framework",
+					"\"TZImagePickerController\"",
+					"-framework",
+					"\"UIKit\"",
+					"-framework",
+					"\"WZLBadge\"",
+					"-framework",
+					"\"YYKit\"",
+					"-framework",
+					"\"ZJCurl\"",
+					"-framework",
+					"\"curly\"",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.aomei.AnyViewer;
 				PRODUCT_NAME = "$(TARGET_NAME)";

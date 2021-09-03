@@ -1,0 +1,63 @@
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// @file  
+/// 单位转换类定义
+/// 
+///
+/// @author  黄丽云
+/// @version 1.0
+/// @date    2019-7-25
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#pragma once
+#include "TreeManagerBase.h"
+#include <unordered_map>
+
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// 开标记录信息
+/// </summary>
+// --------------------------------------------------------------------------------
+class CUnitConvertEntry : public CSerializeEntry
+{
+public:
+	CUnitConvertEntry(){}
+	ENABLE_SERIALIZE(CUnitConvertEntry)
+
+public:
+	virtual void Serialize(CJSONSerializer& refJsonSerializer) const override;
+	virtual void DeSerialize(CJSONSerializer& refJsonSerializer) override;
+
+private:
+	DECLARE_MEMBER_AND_METHOD(std::wstring, m_strKey, Key);   ///< 单位1
+	DECLARE_MEMBER_AND_METHOD_V11(double, m_nScale, Scale, 1);   ///< 单位比例
+};
+
+using UNIT_CONVERT_ENTRY_ARRAY = CDynamicJsonVector<CUnitConvertEntry>;
+
+class CUnitConvert
+{
+public:
+	CUnitConvert();
+	~CUnitConvert();
+
+public:
+	// 初始化单位费率映射表
+	void Init(const std::wstring& strSettingsFile);
+
+	// 转换单位1到单位2
+	double Convert(const std::wstring& refUnit1, const std::wstring& refUnit2);
+
+private:
+	
+	// 提取并清除单位前面的系数
+	double ExtractClearFactor(std::wstring& refUnit);
+
+	// 预处理单位
+	void PreProcess(std::wstring& refUnit);
+
+private:
+	std::unordered_map<std::wstring, double> m_mapUnitScale;   //单位转换比例
+	std::unordered_map<std::wstring, int> m_mapWhole;          //表示无法分割的物体单位
+};
+

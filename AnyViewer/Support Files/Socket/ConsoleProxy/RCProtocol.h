@@ -5,16 +5,21 @@
 //  Created by Aomei on 2021/9/1.
 //
 
+#ifndef RCProtocol_h
+#define RCProtocol_h
+
 #pragma once
 #pragma warning(disable : 4200)
 #include "MessageHeadDef.h"
+#include "JsonSerializer.h"
+#include "EnumHeader.h"
+
+//#include "ServiceHeader.h"
+
 //#include "TreeManagerBase.h"
 //#include "MiscellaneousFunctions.h"
 #include <memory>
 
-#ifndef WIN32
-#include <mutex>
-#endif
 
 namespace RCP
 {
@@ -521,3 +526,5 @@ namespace RCP
     extern std::string GetStatusCodeDesc(EXCEPTION_STATUS nStatusCode);
     using CRelayTaskSharedArray = CSharedDynamicJsonVector<CNewRelayTaskRequest>;
 }
+
+#endif

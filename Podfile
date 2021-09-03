@@ -19,9 +19,12 @@ target 'AnyViewer' do
   pod 'WZLBadge'
   pod 'GKNavigationBar', '~> 1.4.3'
   
+  #C语言的库
   pod 'rapidjson', '~> 1.1.0'
-  pod 'boost', '~> 1.59.0'
-
+  pod 'OpenSSL-Universal', '~> 1.1.1100'
+  pod 'curly', '~> 0.8.5'
+  pod 'ZJCurl', '~> 1.0.0'
+  
   # Pods for AnyViewer
 
 end

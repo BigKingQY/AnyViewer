@@ -1,0 +1,10 @@
+#pragma once
+#include "CommonHeader.h"
+
+class CClipboardListener
+{
+public:
+  // Interface function
+  virtual void onClipboardUpdate(const CStringStorage *pNewClipboard) = 0;
+};
+

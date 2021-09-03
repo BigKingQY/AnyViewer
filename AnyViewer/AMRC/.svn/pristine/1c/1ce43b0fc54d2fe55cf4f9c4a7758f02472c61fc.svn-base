@@ -1,0 +1,589 @@
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// @file  
+// 树形数据管理器相关基类实现
+/// 
+///
+/// 
+/// @author 黄丽云
+/// @version 1.0
+/// @date        2019-1-15
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#include "stdafx.h"
+#include "TreeManagerBase.h"
+#include "EntryUndoCmd.h"
+
+size_t  CEntryBase::s_nNextID = 0;
+
+/*-------------------------CAREntryUndoCmd-------------------------*/
+
+CEntryBase::CEntryBase()
+	: m_nID(s_nNextID++)
+	, m_pParent(nullptr)
+{
+}
+
+
+CEntryBase::~CEntryBase()
+{
+	Clear();
+}
+
+CEntryBase::CEntryBase(const CEntryBase & refSource)
+	: m_nID(refSource.m_nID)
+{
+	m_arrChild.DestroyAllItems();
+
+	auto itr = refSource.m_arrChild.begin();
+
+	for (; refSource.m_arrChild.end() != itr; itr++)
+	{
+		m_arrChild.push_back((*itr)->Clone());
+	}
+}
+
+CEntryBase & CEntryBase::operator=(const CEntryBase & refSource)
+{
+	if (this == &refSource)
+	{
+		return *this;
+	}
+
+	m_nID = (refSource.m_nID);
+
+	m_arrChild.DestroyAllItems();
+
+	auto itr = refSource.m_arrChild.begin();
+
+	for (; refSource.m_arrChild.end() != itr; itr++)
+	{
+		m_arrChild.push_back((*itr)->Clone());
+	}
+
+	return *this;
+}
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// 得到子的个数
+/// </summary>
+/// <returns></returns>
+/// <created>黄丽云,2019/1/16</created>
+/// <changed>黄丽云,2019/1/16</changed>
+// --------------------------------------------------------------------------------
+size_t CEntryBase::GetChildCount()
+{
+	return m_arrChild.size();
+}
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// 得到指定的子对象
+/// </summary>
+/// <param name="nIndex">索引</param>
+/// <returns>成功返回子节点对象的指针，否则为nullptr</returns>
+/// <created>黄丽云,2019/1/16</created>
+/// <changed>黄丽云,2019/1/16</changed>
+// --------------------------------------------------------------------------------
+CEntryBase * CEntryBase::GetChild(size_t nIndex)
+{
+	CEntryBase * pResult = nullptr;
+
+	if (nIndex < m_arrChild.size())
+	{
+		pResult = m_arrChild[nIndex];
+	}
+
+	return pResult;
+}
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// 得到当前记录在父记录中的位置序号
+/// </summary>
+/// <returns>成功返回索引，否则返回-1</returns>
+/// <created>黄丽云,2019/1/16</created>
+/// <changed>黄丽云,2019/1/16</changed>
+// --------------------------------------------------------------------------------
+int CEntryBase::GetIndex() const
+{
+	int nIndex = -1;
+
+	if (nullptr != GetParent())
+	{
+		nIndex = GetParent()->QueryIndex(this);
+	}	
+
+	return nIndex;
+}
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// 初始化对象
+/// </summary>
+/// <created>黄丽云,2019/1/16</created>
+/// <changed>黄丽云,2019/1/16</changed>
+// --------------------------------------------------------------------------------
+void CEntryBase::Init()
+{
+	auto itr = m_arrChild.begin();
+
+	for (; m_arrChild.end() != itr; itr++)
+	{
+		(*itr)->Init();
+	}
+}
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// 清除对象，包括释放所有的子对象
+/// </summary>
+/// <created>黄丽云,2019/1/16</created>
+/// <changed>黄丽云,2019/1/16</changed>
+// --------------------------------------------------------------------------------
+void CEntryBase::Clear()
+{
+	auto itr = m_arrChild.begin();
+
+	for (; m_arrChild.end() != itr; itr++)
+	{
+		(*itr)->Clear();
+	}
+
+	m_arrChild.DestroyAllItems();
+}
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// 复位对象，不释放任何的子对象
+/// </summary>
+/// <created>黄丽云,2019/1/16</created>
+/// <changed>黄丽云,2019/1/16</changed>
+// --------------------------------------------------------------------------------
+void CEntryBase::Reset()
+{
+	auto itr = m_arrChild.begin();
+
+	for (; m_arrChild.end() != itr; itr++)
+	{
+		(*itr)->Reset();
+	}
+}
+
+
+
+void CEntryBase::Serialize(CJSONSerializer & refJsonSerializer) const
+{
+	CSerializeEntry::Serialize(refJsonSerializer);
+
+	refJsonSerializer.Serialize("ID", m_nID);
+	refJsonSerializer.Serialize("Child", m_arrChild);
+}
+
+void CEntryBase::DeSerialize(CJSONSerializer & refJsonSerializer)
+{
+	CSerializeEntry::DeSerialize(refJsonSerializer);
+
+	refJsonSerializer.DeSerialize("ID", m_nID);
+	refJsonSerializer.DeSerialize("Child", m_arrChild);
+
+	auto itr = m_arrChild.begin();
+
+	for (; m_arrChild.end() != itr; itr++)
+	{
+		(*itr)->SetParent(this);
+	}
+}
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// 创建一个新的子记录
+/// </summary>
+/// <param name="strClass">新建类名称</param>
+/// <param name="pMacroCommand">指向undo宏命令对象指针</param>
+/// <returns>成功返回新建对象的指针，否则为null</returns>
+/// <created>黄丽云,2019/1/16</created>
+/// <changed>黄丽云,2019/1/16</changed>
+// --------------------------------------------------------------------------------
+CEntryBase * CEntryBase::CreateEntry(
+	const std::string & strClass
+	, CMacroCommand* pMacroCommand)
+{
+	CEntryBase * pResult = CREATE_ENTRY(strClass);
+
+	if (nullptr != pResult)
+	{
+		InsertChild(pResult,nullptr, pMacroCommand);
+	}
+
+	return pResult;
+}
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// 插入一个新的条目在指定条目的前面
+/// </summary>
+/// <param name="pNewEntry">指向被插入对象指针</param>
+/// <param name="pPosEntry">指向位置对象指针</param>
+/// <param name="pMacroCommand">指向undo宏命令对象指针</param>
+/// <returns>true:成功,false:失败</returns>
+/// <created>黄丽云,2019/1/15</created>
+/// <changed>黄丽云,2019/1/15</changed>
+// --------------------------------------------------------------------------------
+bool CEntryBase::InsertChild(
+	CEntryBase * pNewEntry
+	, const CEntryBase * pPosEntry
+	, CMacroCommand * pMacroCommand)
+{
+	bool bResult = false;
+
+	assert(nullptr != pNewEntry);
+
+	if (nullptr != pNewEntry)
+	{
+		bResult = m_arrChild.InsertItem(pNewEntry, pPosEntry);
+
+		if (bResult)
+		{
+			pNewEntry->SetParent(this);
+			pNewEntry->OnSinked();
+
+			// 创建undo命令
+			if (nullptr != pMacroCommand)
+			{
+				CAREntryUndoCmd* pNewItemCmd = (CAREntryUndoCmd*)CreateUndoCommand(N2S(CAREntryUndoCmd));
+
+				pNewItemCmd->SetEntryArray(&m_arrChild);
+				pNewItemCmd->SetEntry(pNewEntry);
+				pMacroCommand->AddCommand(pNewItemCmd);
+			}
+		}
+	}
+
+	return bResult;
+}
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// 移除指定的工程量清单记录,并不释放对象空间
+/// </summary>
+/// <param name="pEntry1">被替换对象指针</param>
+/// <param name="pEntry2">替换对象指针</param>
+/// <param name="pMacroCommand">指向undo宏命令对象指针</param>
+/// <returns>true:成功,false:失败</returns>
+/// <created>黄丽云,2019/1/15</created>
+/// <changed>黄丽云,2019/1/15</changed>
+// --------------------------------------------------------------------------------
+bool CEntryBase::ReplaceChild(CEntryBase * pEntry1, CEntryBase * pEntry2, CMacroCommand * pMacroCommand)
+{
+	bool bResult = false;
+
+	assert(nullptr != pEntry1);
+	assert(nullptr != pEntry2);
+
+	if (nullptr != pEntry1 && nullptr != pEntry2)
+	{
+		bResult = m_arrChild.Replace(pEntry1, pEntry2,(nullptr == pMacroCommand));
+
+		if (bResult)
+		{
+			pEntry2->SetParent(this);
+
+			if (nullptr != pMacroCommand)
+			{
+				CReplaceEntryUndoCmd* pReplaceCmd =
+					(CReplaceEntryUndoCmd*)CreateUndoCommand(N2S(CReplaceEntryUndoCmd));
+
+				pReplaceCmd->SetEntryArray(&m_arrChild);
+				pReplaceCmd->SetReplacedEntry(pEntry1);
+				pReplaceCmd->SetNewEntry(pEntry2);
+				pMacroCommand->AddCommand(pReplaceCmd);
+			}
+		}
+	}
+
+	return bResult;
+}
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// 移除指定的工程量清单记录,并不释放对象空间
+/// </summary>
+/// <param name="pEntryRemoved">被删除对象指针</param>
+/// <param name="pMacroCommand">指向undo宏命令对象指针</param>
+/// <returns>true:成功,false:失败</returns>
+/// <created>黄丽云,2019/1/15</created>
+/// <changed>黄丽云,2019/1/15</changed>
+// --------------------------------------------------------------------------------
+bool CEntryBase::RemoveChild(CEntryBase * pEntryRemoved, CMacroCommand * pMacroCommand)
+{
+	bool bResult = false;
+
+	assert(nullptr != pEntryRemoved);
+
+	if (nullptr != pEntryRemoved)
+	{		
+		pEntryRemoved->OnUnsinked();
+
+		if (nullptr != pMacroCommand)
+		{
+			bResult = m_arrChild.RemoveItem(pEntryRemoved);
+
+			if (bResult)
+			{
+				// 创建undo命令
+				CAREntryUndoCmd* pNewItemCmd = (CAREntryUndoCmd*)CreateUndoCommand(N2S(CAREntryUndoCmd));
+
+				pNewItemCmd->SetEntryArray(&m_arrChild);
+				pNewItemCmd->SetEntry(pEntryRemoved);
+				pNewItemCmd->SetAppending(false);
+				pMacroCommand->AddCommand(pNewItemCmd);
+			}
+		}
+		else
+		{
+			bResult = m_arrChild.DestroyItem(pEntryRemoved);
+		}
+	}
+
+	return bResult;
+}
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// 删除所有子节点
+/// </summary>
+/// <param name="pMacroCommand">指向undo宏命令对象指针</param>
+/// <created>黄丽云,2019/1/15</created>
+/// <changed>黄丽云,2019/1/15</changed>
+// --------------------------------------------------------------------------------
+void CEntryBase::RemoveAllChild(CMacroCommand * pMacroCommand)
+{
+	auto itr = m_arrChild.begin();
+
+	for (; m_arrChild.end() != itr; itr++)
+	{
+		(*itr)->OnUnsinked();		
+
+		if (nullptr != pMacroCommand)
+		{
+			// 创建undo命令
+			CAREntryUndoCmd* pNewItemCmd = (CAREntryUndoCmd*)CreateUndoCommand(N2S(CAREntryUndoCmd));
+
+			pNewItemCmd->SetEntryArray(&m_arrChild);
+			pNewItemCmd->SetEntry((*itr));
+			pNewItemCmd->SetAppending(false);
+			pMacroCommand->AddCommand(pNewItemCmd);
+		}
+	}
+
+	m_arrChild.clear();
+}
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// 根据id得到对应的清单条目记录
+/// </summary>
+/// <param name="nID">记录id</param>
+/// <returns>成功返回指向记录的指针，否则null</returns>
+/// <created>黄丽云,2019/1/16</created>
+/// <changed>黄丽云,2019/1/16</changed>
+// --------------------------------------------------------------------------------
+CEntryBase * CEntryBase::LookupChild(const size_t nID) const
+{
+	CEntryBase * pResult = nullptr;
+
+	for (size_t i = 0; i < m_arrChild.size(); i++)
+	{
+		CEntryBase* pBOQEntry = m_arrChild[i];
+
+		if (pBOQEntry->GetID() == nID)
+		{
+			pResult = pBOQEntry;
+			break;
+		}
+
+		pResult = pBOQEntry->LookupChild(nID);
+
+		if (nullptr != pResult)
+		{
+			break;
+		}
+	}
+
+	return pResult;
+}
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// 判断是否存在指定的字节点记录
+/// </summary>
+/// <param name="pEntry">被查找的记录对象指针</param>
+/// <param name="bRecursion">是否递归查找</param>
+/// <returns>true:存在,false:不存在</returns>
+/// <created>黄丽云,2019/1/16</created>
+/// <changed>黄丽云,2019/1/16</changed>
+// --------------------------------------------------------------------------------
+bool CEntryBase::HasChild(const CEntryBase * pEntry, const bool bRecursion) const
+{
+	bool bResult = false;
+
+	assert(nullptr != pEntry);
+
+	if (nullptr != pEntry)
+	{
+		for (size_t i = 0; i < m_arrChild.size(); i++)
+		{
+			const CEntryBase* pCurEntry = m_arrChild[i];
+
+			if (pCurEntry == pEntry)
+			{
+				bResult = true;
+				break;
+			}
+
+			if (bRecursion)
+			{
+				bResult = pCurEntry->HasChild(pEntry, bRecursion);
+
+				if (bResult)
+				{
+					break;
+				}
+			}
+		}
+	}
+
+	return bResult;
+}
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// 枚举所有记录
+/// </summary>
+/// <param name="refContext">枚举上下文对象</param>
+/// <created>黄丽云,2019/1/16</created>
+/// <changed>黄丽云,2019/1/16</changed>
+// --------------------------------------------------------------------------------
+void CEntryBase::Enumerate(CEnumEntryContext & refContext)
+{
+	refContext.OnEntry(this);
+
+	auto itr = m_arrChild.begin();
+
+	for (; m_arrChild.end() != itr; itr++)
+	{
+		if (refContext.OnEntry(*itr))
+		{
+			(*itr)->Enumerate(refContext);
+		}
+	}
+}
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// 查找子记录的位置序号
+/// </summary>
+/// <param name="pEntry">被查询的记录对象指针</param>
+/// <returns>成功返回索引，否则返回-1</returns>
+/// <created>黄丽云,2019/1/16</created>
+/// <changed>黄丽云,2019/1/16</changed>
+// --------------------------------------------------------------------------------
+int CEntryBase::QueryIndex(const CEntryBase * pEntry) const
+{
+	assert(nullptr != pEntry);
+
+	int nPos = -1;
+
+	if (nullptr != pEntry)
+	{
+		nPos = m_arrChild.Find(pEntry);
+	}
+
+	return nPos;
+}
+
+CEntryBase * CEntryBase::Clone()
+{
+	return new CEntryBase(*this);
+}
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// 当前节点被直接或间接增加到树中后将收到该事件
+/// </summary>
+/// <created>黄丽云,2019/1/16</created>
+/// <changed>黄丽云,2019/1/16</changed>
+// --------------------------------------------------------------------------------
+void CEntryBase::OnSinked()
+{
+	auto itr = m_arrChild.begin();
+
+	for (; m_arrChild.end() != itr; itr++)
+	{
+		(*itr)->OnSinked();
+	}
+}
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// 当前节点被直接或间接从树中移除后将收到该事件
+/// </summary>
+/// <created>黄丽云,2019/1/16</created>
+/// <changed>黄丽云,2019/1/16</changed>
+// --------------------------------------------------------------------------------
+void CEntryBase::OnUnsinked()
+{
+	auto itr = m_arrChild.begin();
+
+	for (; m_arrChild.end() != itr; itr++)
+	{
+		(*itr)->OnUnsinked();
+	}
+}
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// 整个节点树被反序列化后将收到该事件
+/// </summary>
+/// <created>黄丽云,2019/1/16</created>
+/// <changed>黄丽云,2019/1/16</changed>
+// --------------------------------------------------------------------------------
+void CEntryBase::OnCompleteLoading()
+{
+	auto itr = m_arrChild.begin();
+
+	for (; m_arrChild.end() != itr; itr++)
+	{
+		(*itr)->OnCompleteLoading();
+	}
+}
+
+
+
+/*-------------------------CTreeManagerBase-------------------------*/
+CTreeManagerBase::CTreeManagerBase()
+{
+}
+
+
+CTreeManagerBase::~CTreeManagerBase()
+{
+}
+
+CTreeManagerBase::CTreeManagerBase(const CTreeManagerBase & refSource)
+	: CEntryBase(refSource)
+{
+}
+
+CTreeManagerBase & CTreeManagerBase::operator=(const CTreeManagerBase & refSource)
+{
+	if (this == &refSource)
+	{
+		return *this;
+	}
+
+	CEntryBase::operator=(refSource);
+
+	return *this;
+}
+

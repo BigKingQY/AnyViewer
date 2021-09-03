@@ -1,0 +1,228 @@
+#pragma once
+#include "Typedef.h"
+#include "PacketBase.h"
+//#include "ObjectPoolImpl.h"
+#include "MessageHeadDef.h"
+#include "TreeManagerBase.h"
+#include <rapidjson/document.h>
+#include <rapidjson/prettywriter.h>
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/filewritestream.h>
+#include <iostream>
+
+#define FLAG_OPERATOR 0X0003
+#define FLAG_VERSION 0X78
+#define MSG_HEAD_FLAG_MAX 3
+
+
+//extern char const CDATAPACKET_ID[];
+
+
+class CDataPacket  : public CNetPacketBase
+{
+public:
+	CDataPacket();
+	CDataPacket(BYTE* pBuffer, int nLen);
+	~CDataPacket();
+	CDataPacket(CDataPacket& rDataPacket);
+	CDataPacket& operator=(CDataPacket& rDataPacket);
+
+	//USE_CLASS_MEMORY_POOL(CDataPacket,128,16);
+
+	using CNetPacketBase::CNetPacketBase;
+
+	enum
+	{
+		PACKET_LEN_MAX = 100 * 1024,  ///< 最大的数据包长度
+	};
+
+public:
+	void SetEnableEncipher(bool bEnableEncipher) {  m_bEnableEncipher = bEnableEncipher; }
+	bool GetEnableEncipher()                           {  return m_bEnableEncipher; }
+
+public: //下面的函数是与CRC32校验相关的
+	unsigned int CalculateCRC32();
+	bool VerifyCRC32();
+
+public:
+	void Encipher(struct aes_ctx& refCAES);
+	bool Decipherer(struct aes_ctx& refCAES);
+
+public:
+	bool IsValid();
+
+public:
+	bool Initial(UINT nID, WORD nType, BYTE nFlags, UINT nDataLen);
+
+	/*--------------------------------------------------------------------------
+	*函数名称：InitialT
+	*描述： 初始化数据包的模板函数（推荐使用该函数）
+	*参数 :  UINT nID->数据包的ID
+	*参数 : WORD nType->数据包的类型
+	*参数 : WORD nFlags->数据包的标志
+	*参数 : UINT nVarPayloadLen->数据包携带的可选数据
+	*返回值: true->成功,false->失败 (主要是分配内存失败)
+	*修改记录: 
+	*---------------------------------------------------------------------------*/
+	template <class T> 
+	bool InitialT(UINT nID, WORD nType, BYTE nFlags, UINT nVarPayloadLen = 0)
+	{
+		bool bResult = m_objDataBuffer.Reallocate(nVarPayloadLen + sizeof(T));
+		if (bResult)
+		{
+			m_objDataBuffer.Empty();
+
+            if (!(nFlags & OT_RESPONSE))
+            {
+                nFlags |= OR_SUCCESS;
+            }
+
+			MESSAGE_HEADER* pMsgHeader = (MESSAGE_HEADER*)m_objDataBuffer.GetBufferHeadPtr();
+
+			pMsgHeader->nMagic        = HTONS((U16)HEADER_MAGIC);
+			pMsgHeader->nID            = HTONL(nID);
+			pMsgHeader->nType        = HTONS(nType);
+			pMsgHeader->nFlags        = (nFlags | BYTE(VERSION_ONE));
+			pMsgHeader->nPayloadLen    = HTONL(MESSAGE_FIXED_PAYLOAD_LEN(T) + nVarPayloadLen); //数据包携带数据长度=数据头长度+固定数据长度+可变数据的长度(可选)
+			pMsgHeader->nPadding = 0;
+			pMsgHeader->nChecksum = 0;			
+
+			m_objDataBuffer.IncreaseDataLen(nVarPayloadLen + sizeof(T));   //该代码不能少
+		}
+
+		return bResult;
+	}
+
+	// --------------------------------------------------------------------------------
+/// <summary>
+/// 初始化数据包的模板函数（推荐使用该函数）
+/// </summary>
+/// <param name="nID">数据包的ID</param>
+/// <param name="nType">数据包的类型</param>
+/// <param name="nFlags">数据包的标志</param>
+/// <param name="pJsonObj">指向一个有序列化json数据的对象，序列化后数据将添加到数据包后面</param>
+/// <returns></returns>
+/// <created>黄丽云,2019/2/27</created>
+/// <changed>黄丽云,2019/2/27</changed>
+    template <class TPacket, class PObject = CSerializeEntry*>
+    bool InitialJsonT(UINT nID, WORD nType, BYTE nFlags, const PObject pJsonObj)
+    {
+        bool bResult = false;
+        rapidjson::StringBuffer objBuffer;
+        rapidjson::Document objJsonDoc(rapidjson::kObjectType);    //生成一个dom元素Document
+        CJSONSerializer objJsonSerializerHelper(objJsonDoc.GetAllocator());
+
+        pJsonObj->Serialize(objJsonSerializerHelper);
+        objJsonDoc.AddMember("data", objJsonSerializerHelper.GetJsonValue(), objJsonDoc.GetAllocator());
+        rapidjson::Writer<rapidjson::StringBuffer> objWriter(objBuffer);
+
+        bResult = objJsonDoc.Accept(objWriter);
+
+
+        assert(bResult);
+        if (bResult)
+        {
+            auto out = objBuffer.GetString();
+            const int nVarPayloadLen = objBuffer.GetLength();
+
+            bResult = InitialT<TPacket>(nID, nType, nFlags, nVarPayloadLen);
+
+            if (bResult)
+            {
+                if (nVarPayloadLen > 0)
+                {
+                    char* pDataptr = (char*)m_objDataBuffer.GetBufferHeadPtr() + sizeof(TPacket);
+
+                    memcpy(pDataptr, out, nVarPayloadLen);
+                }
+            }
+        }
+
+        return bResult;
+    }
+
+	// --------------------------------------------------------------------------------
+/// <summary>
+/// 从数据包的载荷数据中提取json对象
+/// </summary>
+/// <param name="refJsonObj">json对象</param>
+/// <returns></returns>
+/// <created>黄丽云,2019/2/27</created>
+/// <changed>黄丽云,2019/2/27</changed>
+// --------------------------------------------------------------------------------
+	template <class T>
+	bool ExtractJsonObjT(const unsigned int nStartPos,const unsigned int nLen,T& refJsonObj)
+	{
+		bool bResult = false;
+
+		if (nLen > 0)
+		{
+			rapidjson::Document objJsonDoc;
+			objJsonDoc.Parse(
+				(char*)(m_objDataBuffer.GetBufferHeadPtr()) + nStartPos
+				, nLen);
+
+			if (!objJsonDoc.IsNull())
+			{
+				auto itr = objJsonDoc.FindMember("data");
+
+				if (objJsonDoc.MemberEnd() != itr)
+				{
+					CJSONSerializer objJsonSerializerHelper(objJsonDoc.GetAllocator());
+
+					objJsonSerializerHelper.SetJsonValue(const_cast<rapidjson::Value&>(itr->value));
+					refJsonObj.DeSerialize(objJsonSerializerHelper);
+
+					bResult = true;
+				}
+			}
+		}
+
+		return bResult;
+	}
+
+	// --------------------------------------------------------------------------------
+/// <summary>
+/// 从数据包的载荷数据中提取json对象
+/// </summary>
+/// <param name="refJsonObj">json对象</param>
+/// <returns></returns>
+/// <created>黄丽云,2019/2/27</created>
+/// <changed>黄丽云,2019/2/27</changed>
+// --------------------------------------------------------------------------------
+	template <class TPacket,class TObject>
+	bool ExtractJsonObjT(TObject& refJsonObj)
+	{
+		MESSAGE_HEADER* pMsgHeader = (MESSAGE_HEADER*)m_objDataBuffer.GetBufferHeadPtr();
+
+		bool bResult = ExtractJsonObjT<TObject>(sizeof(TPacket)
+			, HTONL(pMsgHeader->nPayloadLen)
+			, refJsonObj);
+
+		return bResult;
+	}
+
+	template <class TPacket>
+	std::string GetPayload()
+	{
+		MESSAGE_HEADER* pMsgHeader = (MESSAGE_HEADER*)m_objDataBuffer.GetBufferHeadPtr();
+		std::string strResult((char*)(m_objDataBuffer.GetBufferHeadPtr()) + sizeof(TPacket)
+			, HTONL(pMsgHeader->nPayloadLen));
+
+		return strResult;
+	}
+
+public:
+
+	NET_EXTRACT_DATA_PACKET_RESULT ExtractData(CDataStreamBuffer& refDataBuffer);   //分析所接收数据
+	int GetPacketLen();// 获取整个报的长度、本机字节序
+	int GetPacketType();// 获取报文类型、本机字节序
+	int GetPacketId();// 获取报文ID、本机字节序
+	int GetPacketFlag();// 获取报文操作类型和结果、本机字节序
+	int GetPacketVer();                     //  获取报文版本、本机字节序
+	BYTE* GetBuffer();
+	BYTE* GetBufferHeadPtr() { return m_objDataBuffer.GetBufferHeadPtr(); }
+private:
+	bool                           m_bEnableEncipher;			//是否需要加密
+};
+

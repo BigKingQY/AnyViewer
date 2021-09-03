@@ -1,0 +1,180 @@
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// @file  
+/// @brief 事务管理器类实现
+/// 
+///
+/// @author 黄丽云
+/// @version 1.0
+/// @date    2019-3-22
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#include "stdafx.h"
+#include "TransactionManager.h"
+#include "TransactionAbstract.h"
+//#include "Application.h"
+#include <SDPFactory.h>
+
+
+CTransManager::CTransManager()
+{
+    
+}
+
+
+CTransManager::~CTransManager()
+{
+}
+
+size_t CTransManager::GetCount()
+{
+	std::lock_guard<std::recursive_mutex> objLock(m_objRcMutex);
+
+	return m_mapTransaction.size();
+}
+// ********************************************************************************
+/// <summary>
+/// 
+/// </summary>
+/// <param name="strClassName">类名</param>
+/// <returns></returns>
+/// <created>Leiyz,2019/3/27</created>
+/// <changed>Leiyz,2019/3/27</changed>
+// ********************************************************************************
+CTransAbstractPtr CTransManager::CreateItem(
+	const std::string& strClassName
+	, const U64 nID)
+{
+	CTransAbstractPtr pResult(CreateObject<CTransAbstract>(strClassName));
+   std::lock_guard<std::recursive_mutex> objLock(m_objRcMutex);
+
+    if (nullptr != pResult)
+    {
+		if (nID > 0)
+		{
+			pResult->SetID(nID);
+		}
+
+        //auto it = m_mapTransaction.find(pResult->GetID());
+        m_mapTransaction[pResult->GetID()] = pResult;
+    }
+
+    return pResult;
+}
+
+// ********************************************************************************
+/// <summary>
+/// 查询事务
+/// </summary>
+/// <param name="nId"></param>
+/// <returns></returns>
+/// <created>Leiyz,2019/3/14</created>
+/// <changed>Leiyz,2019/3/14</changed>
+// ********************************************************************************
+CTransAbstractPtr CTransManager::Lookup(U64 nId)
+{
+	CTransAbstractPtr pResult = nullptr;
+   std::lock_guard<std::recursive_mutex> objLock(m_objRcMutex);
+    auto it = m_mapTransaction.find(nId);
+
+    if (m_mapTransaction.end() != it)
+    {
+        pResult = it->second;
+    }
+
+    return pResult;
+}
+
+// ********************************************************************************
+/// <summary>
+/// 增加一个事务
+/// </summary>
+/// <param name="pTransaction"></param>
+/// <returns></returns>
+/// <created>Leiyz,2019/3/14</created>
+/// <changed>Leiyz,2019/3/14</changed>
+// ********************************************************************************
+bool CTransManager::Append(CTransAbstractPtr pTransaction)
+{
+    assert(nullptr != pTransaction);
+    bool bResult = false;
+
+    if (nullptr != pTransaction)
+    {
+       std::lock_guard<std::recursive_mutex> objLock(m_objRcMutex);
+
+        if (m_mapTransaction.end() == m_mapTransaction.find(pTransaction->GetID()))
+        {
+            m_mapTransaction[pTransaction->GetID()] = pTransaction;
+            bResult = true;
+        }
+    }
+
+    return bResult;
+}
+
+
+
+// ********************************************************************************
+/// <summary>
+/// 移除一个事务
+/// </summary>
+/// <param name="nId"></param>
+/// <created>Leiyz,2019/3/14</created>
+/// <changed>Leiyz,2019/3/14</changed>
+// ********************************************************************************
+void CTransManager::Remove(U64 nId)
+{
+   std::lock_guard<std::recursive_mutex> objLock(m_objRcMutex);
+    auto it = m_mapTransaction.find(nId);
+
+    if (it != m_mapTransaction.end())
+    {
+        m_mapTransaction.erase(it);
+    }
+}
+
+// ********************************************************************************
+/// <summary>
+/// 清除事务
+/// </summary>
+/// <created>Leiyz,2019/5/31</created>
+/// <changed>Leiyz,2019/5/31</changed>
+// ********************************************************************************
+void CTransManager::Clear()
+{
+   std::lock_guard<std::recursive_mutex> objLock(m_objRcMutex);
+    m_mapTransaction.clear();
+}
+
+//--------------------------------------------------------------------------------
+/// <summary>
+/// 枚举管理中的所有事务，如果回掉函数返回false将删除当前节点
+/// </summary>
+/// <param name="fnCallBack">指向回掉函数对象</param>
+/// <created>Andy,2019/9/5</created>
+/// <changed>Andy,2019/9/5</changed>
+//--------------------------------------------------------------------------------
+void CTransManager::Enumerate(std::function<bool(CTransAbstractPtr)> fnCallBack)
+{
+	std::lock_guard<std::recursive_mutex> objLock(m_objRcMutex);
+	auto itr = m_mapTransaction.begin();
+
+	for (; m_mapTransaction.end() != itr;)
+	{
+		if (nullptr != (*itr).second)
+		{
+			if (fnCallBack((*itr).second))
+			{
+				itr++;
+			}
+			else
+			{
+				itr = m_mapTransaction.erase(itr); 
+			}
+		}
+		/*else
+		{
+			LOG_DEBUG("Invalid Trans id:%d", (*itr).first);
+		}*/
+	}
+}

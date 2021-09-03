@@ -5,15 +5,14 @@
 //  Created by Aomei on 2021/9/1.
 //
 
-#import "Timer.h"
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <chrono>
-#include <ctime>
-#include <assert.h>
-#include <algorithm>
+#include "Timer.h"
+//#include <stdio.h>
+//#include <stdlib.h>
+//#include <errno.h>
+//#include <chrono>
+//#include <ctime>
+//#include <assert.h>
+//#include <algorithm>
 
 using namespace std::chrono;
 
@@ -234,7 +233,7 @@ bool CTimerManager::LookupTimer(CTimerPtr pTimer)
         if (objCurTimer.GetTimer() == pTimer)
         {
             nResult = true;
-            LOG_INFO("Exit timer!");
+//            LOG_INFO("Exit timer!");
             break;
         }
     }

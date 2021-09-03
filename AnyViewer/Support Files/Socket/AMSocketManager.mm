@@ -96,27 +96,27 @@ static AMSocketManager *_manager = nil;
 //    char                        m_szPrivateKey[ECC_KEY_LEN];
 //
 //    std::string strKey = ("FDEAB7BEB6119B28AF2C8069690DFD9E31826941CE38AB49");
-////    ATLASSERT(strKey.size() == ECC_KEY_LEN * 2);
+////    assert(strKey.size() == ECC_KEY_LEN * 2);
 //    ConvertHexTextToBin(strKey, m_szPublicKeyX, ECC_KEY_LEN);
 //
 //    strKey = ("310B70A07716300EFC2D6761B3975E2AEC4E4C6097A7D12C");
-////    ATLASSERT(strKey.size() == ECC_KEY_LEN * 2);
+////    assert(strKey.size() == ECC_KEY_LEN * 2);
 //    ConvertHexTextToBin(strKey, m_szPublicKeyY, ECC_KEY_LEN);
 //
 //    strKey = ("8E0A669C5A185F21119BC3D5CFEB11A293EAB39325AC9D48");
-////    ATLASSERT(strKey.size() == ECC_KEY_LEN * 2);
+////    assert(strKey.size() == ECC_KEY_LEN * 2);
 //    ConvertHexTextToBin(strKey, m_szLittleKey, ECC_KEY_LEN);
 //
 //    strKey = ("EBDCA421B0A437B7A059D3EFC94B353B771F84DC09B6FFD6");
-////    ATLASSERT(strKey.size() == ECC_KEY_LEN * 2);
+////    assert(strKey.size() == ECC_KEY_LEN * 2);
 //    ConvertHexTextToBin(strKey, m_szRKeyX, ECC_KEY_LEN);
 //
 //    strKey = ("A2564A78C9C6E3CF7983FDF89F0F66BC9927B2CAC98973E4");
-////    ATLASSERT(strKey.size() == ECC_KEY_LEN * 2);
+////    assert(strKey.size() == ECC_KEY_LEN * 2);
 //    ConvertHexTextToBin(strKey, m_szRKeyY, ECC_KEY_LEN);
 //
 //    strKey = ("D77A7BEAE1724E0CBAB6B3412A3A4DCFC9C3BC256EF88920");
-////    ATLASSERT(strKey.size() == ECC_KEY_LEN * 2);
+////    assert(strKey.size() == ECC_KEY_LEN * 2);
 //    ConvertHexTextToBin(strKey, m_szPrivateKey, ECC_KEY_LEN);
 //
 //#ifdef _DEBUG
@@ -186,8 +186,7 @@ static AMSocketManager *_manager = nil;
     NSLog(@"-- %s --", __func__);
     
     
-    EccEncrypt ecc = EccEncrypt();
-    ecc
+
     
     
     
@@ -281,7 +280,7 @@ static AMSocketManager *_manager = nil;
 
 //void CRCSvrProxy::OnAESEncipherKey(CDataPacket* pDataPacket)
 //{
-//    ATLASSERT(nullptr != pDataPacket);
+//    assert(nullptr != pDataPacket);
 //    if (nullptr != pDataPacket)
 //    {
 //        RCP::AES_ENCIPHER_KEY_REQUEST* pRequest = (RCP::AES_ENCIPHER_KEY_REQUEST*)pDataPacket->GetHeaderPtr();
@@ -303,27 +302,27 @@ static AMSocketManager *_manager = nil;
 //void CRCSvrProxy::InitECCKey()
 //{
 //    std::string strKey = ("FDEAB7BEB6119B28AF2C8069690DFD9E31826941CE38AB49");
-//    ATLASSERT(strKey.size() == ECC_KEY_LEN * 2);
+//    assert(strKey.size() == ECC_KEY_LEN * 2);
 //    ConvertHexTextToBin(strKey, m_szPublicKeyX, ECC_KEY_LEN);
 //
 //    strKey = ("310B70A07716300EFC2D6761B3975E2AEC4E4C6097A7D12C");
-//    ATLASSERT(strKey.size() == ECC_KEY_LEN * 2);
+//    assert(strKey.size() == ECC_KEY_LEN * 2);
 //    ConvertHexTextToBin(strKey, m_szPublicKeyY, ECC_KEY_LEN);
 //
 //    strKey = ("8E0A669C5A185F21119BC3D5CFEB11A293EAB39325AC9D48");
-//    ATLASSERT(strKey.size() == ECC_KEY_LEN * 2);
+//    assert(strKey.size() == ECC_KEY_LEN * 2);
 //    ConvertHexTextToBin(strKey, m_szLittleKey, ECC_KEY_LEN);
 //
 //    strKey = ("EBDCA421B0A437B7A059D3EFC94B353B771F84DC09B6FFD6");
-//    ATLASSERT(strKey.size() == ECC_KEY_LEN * 2);
+//    assert(strKey.size() == ECC_KEY_LEN * 2);
 //    ConvertHexTextToBin(strKey, m_szRKeyX, ECC_KEY_LEN);
 //
 //    strKey = ("A2564A78C9C6E3CF7983FDF89F0F66BC9927B2CAC98973E4");
-//    ATLASSERT(strKey.size() == ECC_KEY_LEN * 2);
+//    assert(strKey.size() == ECC_KEY_LEN * 2);
 //    ConvertHexTextToBin(strKey, m_szRKeyY, ECC_KEY_LEN);
 //
 //    strKey = ("D77A7BEAE1724E0CBAB6B3412A3A4DCFC9C3BC256EF88920");
-//    ATLASSERT(strKey.size() == ECC_KEY_LEN * 2);
+//    assert(strKey.size() == ECC_KEY_LEN * 2);
 //    ConvertHexTextToBin(strKey, m_szPrivateKey, ECC_KEY_LEN);
 //
 //#ifdef _DEBUG

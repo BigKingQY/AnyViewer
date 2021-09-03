@@ -1,0 +1,310 @@
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// @file  KCPUDPDataTransfer.cpp
+/// @brief 可靠的UDP传输器实现
+/// 
+///
+/// @author 黄丽云
+/// @version 1.0
+///    -v$VerNO$    $YEAR$ / $MONTH_02$ / $DAY_02$ $HOUR_02$ : $MINUTE$    黄历云    $VerNoBrief$
+/// @date        2016-9-1
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#include "stdafx.h"
+#include "KCPUDPDataTransfer.h"
+
+CKCPUDPDataTransfer::CKCPUDPDataTransfer(const bool  bServer)
+	: m_bServer(bServer)
+	, m_objKCPIntputBuffer(2048)    ///< 该尺寸已经足够，一般不会超过1514
+	, m_objKCPOutBuffer(500*1024)
+{
+}
+
+CKCPUDPDataTransfer::~CKCPUDPDataTransfer()
+{
+	Close();
+
+	if (INVALID_SOCKET != m_pSocket)
+	{
+		closesocket(m_pSocket);
+		m_pSocket = INVALID_SOCKET;
+	}
+
+	WSACleanup();
+}
+
+// ********************************************************************************
+/// <summary>
+/// 
+/// </summary>
+/// <param name="nPort"></param>
+/// <returns></returns>
+/// <created>Andy,2021/1/18</created>
+/// <changed>Andy,2021/1/18</changed>
+// ********************************************************************************
+bool CKCPUDPDataTransfer::Init(const USHORT nPort)
+{
+	assert(m_bServer);
+	bool bResult = InitSocket();	
+
+	if (bResult)
+	{	
+		m_pSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+
+		if (INVALID_SOCKET != m_pSocket)
+		{
+			SOCKADDR_IN    objServiceSocketAddr;
+
+			memset((void *)&objServiceSocketAddr, 0, sizeof(SOCKADDR_IN));
+			objServiceSocketAddr.sin_family = AF_INET;
+			objServiceSocketAddr.sin_addr.S_un.S_addr = htonl(INADDR_ANY);
+			objServiceSocketAddr.sin_port = HTONS(nPort);
+
+			bResult = (0 == ::bind(m_pSocket, (const struct sockaddr FAR*)&objServiceSocketAddr, sizeof(SOCKADDR_IN)));
+
+			if (bResult)
+			{
+				bResult = KCPInit(0);
+			}
+		}
+		else
+		{
+			bResult = false;
+#ifdef _DEBUG
+			ATLTRACE(_T("Fail to create socket (Error: %d)\r\n"), WSAGetLastError());
+#endif
+		}
+	}
+
+	//std::thread objRecevingThread(std::bind([this]() { KCPRecevingThread(); }));
+
+	//m_objRecevingThread = std::move(objRecevingThread);
+
+	return bResult;
+
+}
+
+// ********************************************************************************
+/// <summary>
+/// 
+/// </summary>
+/// <param name="nIP"></param>
+/// <param name="nPort"></param>
+/// <returns></returns>
+/// <created>Andy,2021/1/18</created>
+/// <changed>Andy,2021/1/18</changed>
+// ********************************************************************************
+bool CKCPUDPDataTransfer::Init(const UINT nIP, const USHORT nPort)
+{
+	assert(!m_bServer);
+	bool bResult = InitSocket();
+
+	if (bResult)
+	{
+		InitDstAddr(nIP, nPort);
+		m_pSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);	
+
+		if (INVALID_SOCKET != m_pSocket)
+		{
+			bResult = KCPInit(0);
+
+			if (bResult)
+			{
+				//std::thread objRecevingThread(std::bind([this]() { KCPRecevingThread(); }));
+
+				//m_objRecevingThread = std::move(objRecevingThread);
+			}
+		}
+		else
+		{
+			bResult = true;
+		}
+	}
+
+	return bResult;
+}
+
+// ********************************************************************************
+/// <summary>
+/// 
+/// </summary>
+/// <param name="pBuffer"></param>
+/// <param name="nLen"></param>
+/// <returns></returns>
+/// <created>Andy,2021/1/18</created>
+/// <changed>Andy,2021/1/18</changed>
+// ********************************************************************************
+int CKCPUDPDataTransfer::Send(const BYTE * pBuffer, int nLen)
+{
+	return CNetUDPDataTransfer::Send((BYTE*)pBuffer, nLen);
+}
+
+int CKCPUDPDataTransfer::Recv(BYTE * pBuffer, int nLen)
+{
+	if (INVALID_SOCKET == m_pSocket)
+	{
+		return -2;
+	}
+
+	timeval tv;
+
+	tv.tv_sec = 0;
+	tv.tv_usec = 0;
+
+	int nBytesReceived = -1;
+	bool bResult = CNetUDPDataTransfer::QuerySocketStatus(tv, true, &nBytesReceived);
+
+	if (bResult)
+	{
+		if (nBytesReceived > 0)
+		{
+			SOCKADDR_IN  objFrom;
+			int nFromLen = sizeof(objFrom);
+
+			nBytesReceived = recvfrom(m_pSocket, (char*)pBuffer, nLen, 0, (sockaddr*)&objFrom, &nFromLen);
+
+			if (SOCKET_ERROR == nBytesReceived)
+			{
+				const UINT LAST_ERROR = WSAGetLastError();
+#ifdef _DEBUG
+				CString strIP;
+				strIP.Format(_T("%u.%u.%u.%u"), ((BYTE*)&m_nDstIP)[0]
+					, ((BYTE*)&m_nDstIP)[1]
+					, ((BYTE*)&m_nDstIP)[2]
+					, ((BYTE*)&m_nDstIP)[3]);
+
+				ATLTRACE(_T("Fail to recv data (IP = %s,error = %d)\r\n"), static_cast<LPCTSTR>(strIP), LAST_ERROR);
+#endif
+				if (LAST_ERROR == 10052                  // Network dropped connection on reset. 
+					|| LAST_ERROR == 10053              // Software caused connection abort. 
+					|| LAST_ERROR == 10054              // Connection reset by peer.  
+					|| LAST_ERROR == 10057              // Socket is not connected.  
+					|| LAST_ERROR == 10064              // Host is down. 
+					)
+				{
+					nBytesReceived = -2;
+				}
+				else
+				{
+					nBytesReceived = -1;
+				}
+			}
+			else if (0 == nBytesReceived)
+			{
+				nBytesReceived = -2;
+			}
+			else if (GetServer())
+			{
+				// 如果是服务端需要设置目标端的ip地址和端口
+				InitDstAddr(NTOHL(objFrom.sin_addr.S_un.S_addr), NTOHS(objFrom.sin_port));
+			}
+		}
+	}
+	else
+	{
+		nBytesReceived = -1;
+	}
+
+	return nBytesReceived;
+}
+
+void CKCPUDPDataTransfer::Close()
+{
+	m_bStopReceving = true;
+	//m_objRecevingThread.join();
+}
+
+int CKCPUDPDataTransfer::KCPOutput(const char * pBuffer, const int nLen)
+{
+	return CNetUDPDataTransfer::Send((BYTE*)pBuffer, nLen);
+}
+
+size_t CKCPUDPDataTransfer::read(void * buffer, size_t len)
+{
+	int nBytesReaded = 0;
+
+	nBytesReaded = Recv((unsigned char *)m_objKCPOutBuffer.GetBufferFreeHeadPtr(), m_objKCPOutBuffer.GetFreeSize());
+
+	if (nBytesReaded > 0)
+	{
+		m_objKCPOutBuffer.IncreaseDataLen(nBytesReaded);
+	}
+
+	nBytesReaded = m_objKCPOutBuffer.Read((unsigned char *)buffer, len);
+
+	if (nBytesReaded <= 0)
+	{	
+		m_objInputingEvent.WaitForEvent(100);
+		nBytesReaded = 0;
+	}
+	else
+	{
+		m_objKCPOutBuffer.MoveDataForward();
+	}
+
+	return nBytesReaded;
+}
+
+size_t CKCPUDPDataTransfer::available()
+{
+	assert(false);
+	return 0;
+}
+
+int CKCPUDPDataTransfer::write(const void * buffer, const size_t len)
+{
+	if (!GetEstablished())
+	{
+		return -1;
+	}
+
+	size_t nTotalBytesSents = 0;
+
+	while (nTotalBytesSents < len)
+	{
+		const int nBytesSents = CNetUDPDataTransfer::Send(&((const unsigned char*)buffer)[nTotalBytesSents], min(len,1000));
+
+		if (nBytesSents > 0)
+		{
+			nTotalBytesSents += nBytesSents;
+		}
+	}
+
+	return nTotalBytesSents;
+}
+
+void CKCPUDPDataTransfer::close()
+{
+	Close();
+}
+
+bool CKCPUDPDataTransfer::InitSocket()
+{
+	WSADATA        objWSAData;
+	const int nResult = WSAStartup(0x0202, &objWSAData);
+
+	return (0 == nResult);
+}
+
+void CKCPUDPDataTransfer::KCPRecevingThread()
+{
+	while (!m_bStopReceving)
+	{
+		KCPUpdate((U32)(CAIMTime::GetCurMilliseconds() & 0xfffffffful));
+
+		const int nBytesReceived = Recv(m_objKCPIntputBuffer.GetBufferFreeHeadPtr(), m_objKCPIntputBuffer.GetSize());
+
+		if (nBytesReceived > 0)
+		{
+			KCPInput((const char *)m_objKCPIntputBuffer.GetBufferFreeHeadPtr(), nBytesReceived);
+			m_objKCPIntputBuffer.Empty();
+			m_objInputingEvent.Notify();
+		}
+
+		// 如果接收缓冲区和发送缓冲中都有数据，那不用等待
+		if (GetRecevingQueueSize() == 0 && GetSendingQueueSize() == 0)
+		{
+			std::chrono::milliseconds objSleepDyratuib(10);
+
+			std::this_thread::sleep_for(objSleepDyratuib);
+		}
+	}
+}

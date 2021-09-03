@@ -1,0 +1,61 @@
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// @file  
+/// @brief 事务管理器类定义
+/// 
+///
+/// @author 黄丽云
+/// @version 1.0
+/// @date    2019-3-22
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#pragma once
+
+#include <TypeDefine.h>
+#include <JsonSerializer.h>
+//#include <boost/thread.hpp>
+#include <memory>
+#include <unordered_map>
+#include <functional>
+
+class CTransAbstract;
+
+typedef std::shared_ptr<CTransAbstract> CTransAbstractPtr;
+typedef std::unordered_map<U64, CTransAbstractPtr> MAP_TRANSACTION;
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// <summary>
+/// 事务管理器
+/// </summary>
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+class CTransManager 
+{
+public:
+    CTransManager();
+    ~CTransManager();
+
+public:
+	size_t GetCount();
+
+	//MAP_TRANSACTION& GetTransaction() { return m_mapTransaction; }
+
+public:
+	CTransAbstractPtr CreateItem(const std::string& strClassName,const U64 nID);
+
+    // 查询事务
+	CTransAbstractPtr Lookup(U64 nId);
+    
+    // 增加一个事务	
+    bool Append(CTransAbstractPtr pTransaction);
+
+    // 移除一个事务
+    void Remove(U64 nId);
+
+    void Clear();
+
+	void Enumerate(std::function<bool(CTransAbstractPtr)> fnCallBack);
+private:
+    MAP_TRANSACTION         m_mapTransaction;
+   std::recursive_mutex  m_objRcMutex;
+};
+

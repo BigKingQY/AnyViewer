@@ -1,0 +1,10 @@
+#pragma once
+
+
+class CApplicationCrashEvents
+{
+public:
+  virtual void onCrash(const TCHAR *dumpPath) = 0;
+};
+
+

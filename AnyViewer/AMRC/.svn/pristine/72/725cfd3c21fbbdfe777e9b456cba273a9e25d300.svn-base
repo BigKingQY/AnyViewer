@@ -1,0 +1,126 @@
+#pragma once
+
+
+#include <mutex>
+
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// Contains options of connection configuration.
+/// All methods of class are thead-safe.
+/// </summary>
+// --------------------------------------------------------------------------------
+class CConnectionConfig
+{
+
+public:
+	CConnectionConfig();
+	~CConnectionConfig();
+	CConnectionConfig(const CConnectionConfig &refSrc);
+	CConnectionConfig& operator=(const CConnectionConfig& refSrc);
+
+	/// <summary>光标类型枚举</summary>
+	enum CURSOR_TYPE
+	{
+		NO_CURSOR = 0,
+		DOT_CURSOR = 1,
+		NORMAL_CURSOR = 2,
+		SMALL_CURSOR = 3,
+	};
+
+public:
+	// Sets custom compression nLevel.
+	// Remark: if nLevel is equals to -1 than custom compression
+	// will be disabled.
+	void SetCustomCompressionLevel(int nLevel);
+
+	// Sets jpeg compression nLevel.
+	// Remark: if nLevel is equals to -1 than custom compression
+	// will be disabled.
+	void SetJpegCompressionLevel(int nLevel);
+
+	bool isCustomCompressionEnabled();
+	bool isJpegCompressionEnabled();
+
+	// Sets custom compression nLevel to -1
+	void disableCustomCompression();
+	// Sets jpeg compression nLevel to -1
+	void disableJpegCompression();
+
+	// Sets scale in percent relative to original
+	void SetScale(int n, int d);
+
+	void setLocalCursorShape(int nCursorShape);
+
+private:
+	// FIXME: Move this method away from here.
+	int gcd(const int a, const int b) const;
+
+protected:
+
+	//
+	// "Format and encoding" group members
+	//
+
+	// Allowed "copy rect" encoding
+	DECLARE_MEMBER_AND_METHOD_V11(bool,m_bAllowedCopyRect, AllowedCopyRect,true);
+
+
+	// Use 8bit color (for low-speed connections)
+	DECLARE_MEMBER_AND_METHOD_V11(bool,m_bUse8BitColor, Use8BitColor,false);
+
+	// Custom compression nLevel
+	DECLARE_MEMBER_AND_GET_METHOD_V11(int,m_nCustomCompressionLevel, CustomCompressionLevel,-1);
+
+	// Jpeg compression nLevel
+	DECLARE_MEMBER_AND_GET_METHOD_V11(int,m_nJpegCompressionLevel, JpegCompressionLevel,6);
+
+	//
+	// "Restrictions" group members
+	//
+
+	// View only mode (all client input are ignored)
+	DECLARE_MEMBER_AND_METHOD_V11(bool,m_bViewOnly, ViewOnly,false);
+
+	// Enable clipboard transfers flag
+	DECLARE_MEMBER_AND_METHOD_V11(bool,m_bClipboardEnabled,ClipboardEnabled,true);
+
+	//
+	// "Display" group members
+	//
+
+	// If set then use fullscreen are to display remote display by default
+	DECLARE_MEMBER_AND_METHOD_V11(bool,m_bUseFullscreen, UseFullscreen,false);
+
+	// If set then deiconify window and play sound
+	DECLARE_MEMBER_AND_METHOD_V11(bool,m_nDeiconifyOnRemoteBell, DeiconifyOnRemoteBell,false);
+
+	// If set then use autoscale to scale remote display image
+	DECLARE_MEMBER_AND_METHOD_V11(bool,m_bUseAutoScale, UseAutoScale,false);
+
+	// Scale numerator
+	DECLARE_MEMBER_AND_METHOD_V11(int,m_nScaleNumerator, ScaleNumerator,1);
+
+	// Scale denominator
+	DECLARE_MEMBER_AND_METHOD_V11(int,m_nScaleDenominator, ScaleDenominator,1);
+
+	//
+	// "Mouse" members group
+	//
+
+	// Swap mouse buttons 2 and 3
+	DECLARE_MEMBER_AND_METHOD_V11(bool,m_bSwapMouse, SwapMouse,false);
+
+	//
+	// Non-grouped config option members
+	//
+
+	// If set than client will request shared session
+	DECLARE_MEMBER_AND_METHOD_V11(bool,m_bRequestSharedSession, RequestSharedSession,true);
+
+	DECLARE_MEMBER_AND_METHOD_V11(bool,m_bFitWindow, FitWindow,false);
+	DECLARE_MEMBER_AND_METHOD_V11(bool,m_bRequestShapeUpdates, RequestShapeUpdates,true);
+	DECLARE_MEMBER_AND_METHOD_V11(bool,m_bIgnoreShapeUpdates, IgnoreShapeUpdates,false);
+
+	DECLARE_MEMBER_AND_GET_METHOD_V11(int,m_nLocalCursor, LocalCursor, NO_CURSOR);
+};

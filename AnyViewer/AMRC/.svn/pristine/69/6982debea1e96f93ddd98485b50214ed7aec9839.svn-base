@@ -1,0 +1,66 @@
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// @file  
+/// @brief 数据库连接池定义
+/// 
+///
+/// @author 黄丽云
+/// @version 1.0
+/// @date        2020-3-29
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#pragma once
+#include <list>  
+#include <mysql/jdbc.h>
+#include <mutex>
+
+
+class CDBConnPool
+{
+public:
+	// Singleton get the single object
+	static CDBConnPool* GetInstance();
+
+	// Destroy the connection pool Instance
+	static void DestorInstance();
+
+public:
+	//init pool
+	bool InitPool(const std::string& strURL, const std::string& strUser, const std::string& strPwd, const int nMaxSize);
+
+	//get a conn from pool
+	sql::Connection* GetConnection();
+
+	//put the conn back to pool
+	void ReleaseConnection(sql::Connection *pConn);
+
+private:
+	CDBConnPool() {}
+	~CDBConnPool();
+
+	//init DB pool
+	int InitConnection(const unsigned int initSize);
+
+	// create a connection
+	sql::Connection* CreateConnection();
+
+	// destory a connection
+	void DestoryConnection(sql::Connection *pConn);
+
+	// destory db pool
+	void DestoryConnPool();
+
+private:
+	std::string              m_strUser;
+	std::string              m_strPassword;
+	std::string              m_strURL;
+	int                      m_nMaxSize;
+	int                      m_nCurSize;
+
+	sql::Driver*             m_nDriver;     //sql m_nDriver (the sql will free it)
+	std::list<sql::Connection*>   m_lstConnctions;   //create conn list
+
+	//thread lock mutex
+	std::recursive_mutex     m_objlock;
+
+	static CDBConnPool*      s_pInstance;
+};

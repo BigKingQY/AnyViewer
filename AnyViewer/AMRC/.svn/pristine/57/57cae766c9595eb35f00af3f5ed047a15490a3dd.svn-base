@@ -1,0 +1,252 @@
+/////////////////////////////////////////////////////////////////////
+/// @file ESClient.cpp
+/// @brief Elasticsearch客户端实现，主要是操作服务器Elasticsearch
+/// 
+/// @author andy
+/// @version 1.0
+/// @date 2020.4.1
+/////////////////////////////////////////////////////////////////////
+
+#include "stdafx.h"
+#include "ESClient.h"
+#include "JsonHelper.h"
+
+
+REGISTER_CLASS(CIndexSettings)
+REGISTER_CLASS(CStatNode)
+REGISTER_CLASS(CStatNodeList)
+REGISTER_CLASS(CGroupNode)
+
+void CIndexSettings::Serialize(CJSONSerializer & refJsonSerializer) const
+{
+	CSerializeEntry::Serialize(refJsonSerializer);
+
+	refJsonSerializer.Serialize("number_of_shards", m_nShards);
+	refJsonSerializer.Serialize("number_of_replicas", m_nReplicas);
+}
+
+void CIndexSettings::DeSerialize(CJSONSerializer & refJsonSerializer)
+{
+	CSerializeEntry::DeSerialize(refJsonSerializer);
+
+	refJsonSerializer.DeSerialize("number_of_shards", m_nShards);
+	refJsonSerializer.DeSerialize("number_of_replicas", m_nReplicas);
+}
+
+
+
+/*---------------------------CStatNode-------------------*/
+void CStatNode::Serialize(CJSONSerializer & refJsonSerializer) const
+{
+	CSerializeEntry::Serialize(refJsonSerializer);
+
+	refJsonSerializer.Serialize("key", m_nKey);
+	refJsonSerializer.Serialize("doc_count", m_nCount);
+}
+
+
+void CStatNode::DeSerialize(CJSONSerializer & refJsonSerializer)
+{
+	CSerializeEntry::DeSerialize(refJsonSerializer);
+
+	refJsonSerializer.DeSerialize("key", m_nKey);
+	refJsonSerializer.DeSerialize("doc_count", m_nCount);
+}
+
+
+
+
+/*---------------------------CStatNodeList-------------------*/
+
+void CStatNodeList::Serialize(CJSONSerializer & refJsonSerializer) const
+{
+	CSerializeEntry::Serialize(refJsonSerializer);
+
+	refJsonSerializer.Serialize("buckets", m_arrStatNodes);
+
+}
+
+
+void CStatNodeList::DeSerialize(CJSONSerializer & refJsonSerializer)
+{
+	CSerializeEntry::DeSerialize(refJsonSerializer);
+
+	refJsonSerializer.DeSerialize("buckets", m_arrStatNodes);
+}
+
+/*---------------------------CGroupNode-------------------*/
+void CGroupNode::Serialize(CJSONSerializer & refJsonSerializer) const
+{
+	CSerializeEntry::Serialize(refJsonSerializer);
+
+	refJsonSerializer.Serialize("key_as_string", m_strKey);
+	refJsonSerializer.Serialize("key", m_nKey);
+	refJsonSerializer.Serialize("doc_count", m_nDocCount);
+	refJsonSerializer.Serialize(m_strStatNodeListName.c_str(), m_objStatNodeList);
+}
+
+
+void CGroupNode::DeSerialize(CJSONSerializer & refJsonSerializer)
+{
+	CSerializeEntry::DeSerialize(refJsonSerializer);
+
+	refJsonSerializer.DeSerialize("key_as_string", m_strKey);
+	refJsonSerializer.DeSerialize("key", m_nKey);
+	refJsonSerializer.DeSerialize("doc_count", m_nDocCount);
+	refJsonSerializer.DeSerialize(m_strStatNodeListName.c_str(), m_objStatNodeList);
+}
+
+/*---------------------------CESClient-------------------*/
+
+
+CESClient::CESClient(UINT nIP , UINT nPort )
+	: CNetClientImpl(nIP, nPort)
+{
+}
+
+CESClient::~CESClient()
+{
+}
+
+bool CESClient::OnReceivedPacketEventHandle(
+	PTR_NET_ENDPOINT_INTERFACE pEndpoint
+	, CNetPacket * pPacket)
+{
+	CHTTPPacket* pHTTPPacket = static_cast<CHTTPPacket*>(pPacket);
+
+	if (nullptr != pHTTPPacket)
+	{
+		pHTTPPacket->AnalyzeReponse();
+		SetStatusCode(pHTTPPacket->GetStatusCode());
+		SetBody(pHTTPPacket->GetBody());
+	}
+
+	{
+		std::unique_lock <std::mutex> objLock(m_objMutext);
+		m_objReponse.notify_all(); // 唤醒所有线程.
+	}
+
+	return true;
+}
+
+bool CESClient::Initial()
+{
+	return CNetClientImpl::Initial();
+}
+
+bool CESClient::Send(CNetPacket * pPacket)
+{
+	CHECK_POINTER_EX(pPacket,false);
+
+	static_cast<CHTTPPacket*>(pPacket)->AppendOption("Content-Type","application/json");
+	static_cast<CHTTPPacket*>(pPacket)->Assemble();
+
+	bool bResult = CNetClientImpl::Send(pPacket);
+
+	if (bResult)
+	{
+		std::unique_lock <std::mutex> objLock(m_objMutext);
+
+		if (m_objReponse.wait_for(objLock, std::chrono::seconds(30)) != std::cv_status::timeout)
+		{
+			bResult = (GetStatusCode() < 300);
+		}
+		else
+		{
+			LOG_ERROR("Fail to receive ES response!");
+		}
+	}
+	else
+	{
+		LOG_ERROR("Fail to send ES request!");
+	}
+
+#ifdef  DEBUG
+	if (!bResult)
+	{
+		std::cout << m_strBody << std::endl;
+	}
+#endif //  DEBUG	
+
+	return bResult;
+}
+
+char const SETTINGS_TAG[] = "settings";
+//--------------------------------------------------------------------------------
+/// <summary>
+/// 创建一个索引
+/// </summary>
+/// <param name="strName">索引名称</param>
+/// <param name="nShards"></param>
+/// <param name="nReplicas"></param>
+/// <returns>true:成功,false:失败</returns>
+/// <created>Andy,2020/4/1</created>
+/// <changed>Andy,2020/4/4</changed>
+//--------------------------------------------------------------------------------
+bool CESClient::CreateIndexs(std::string strName,const int nShards, const int nReplicas)
+{	
+	std::transform(strName.begin(), strName.end(), strName.begin(), ::tolower);
+	CHTTPPacket objPacket("PUT", strName.c_str(), "HTTP/1.1","");
+	CJsonWrap<SETTINGS_TAG,CIndexSettings>  objSettings;
+
+	objSettings.GetMemberObj().SetShards(nShards);
+	objSettings.GetMemberObj().SetReplicas(nReplicas);
+	objPacket.InitialBodyT<CJsonWrap<SETTINGS_TAG,CIndexSettings>*>(&objSettings);
+
+	const bool bResult = Send(&objPacket);
+
+	return bResult;
+}
+
+//--------------------------------------------------------------------------------
+/// <summary>
+/// 删除一个索引
+/// </summary>
+/// <param name="strName">索引名称</param>
+/// <returns>true:成功,false:失败</returns>
+/// <created>Andy,2020/4/1</created>
+/// <changed>Andy,2020/4/1</changed>
+//--------------------------------------------------------------------------------
+bool CESClient::DeleteIndexs(std::string strName)
+{
+	std::transform(strName.begin(), strName.end(), strName.begin(), ::tolower);
+	CHTTPPacket objPacket("DELETE", strName.c_str(), "HTTP/1.1", "");
+
+	const bool bResult = Send(&objPacket);
+
+	return bResult;
+}
+
+//--------------------------------------------------------------------------------
+/// <summary>
+/// 
+/// </summary>
+/// <param name="lpMothed"></param>
+/// <param name="lpURL"></param>
+/// <param name="refBody"></param>
+/// <returns></returns>
+/// <created>Andy,2020/4/7</created>
+/// <changed>Andy,2020/4/7</changed>
+//--------------------------------------------------------------------------------
+bool CESClient::Execute(
+	const char * lpMothed
+	, const char * lpURL
+	, const std::string & refBody)
+{
+	CHECK_POINTER_EX(lpMothed, false);
+	CHECK_POINTER_EX(lpMothed, false);
+
+#ifdef DEBUG
+	std::cout << refBody << std::endl;
+#endif
+
+	CHTTPPacket objPacket(lpMothed, lpURL, "HTTP/1.1", "");
+
+	objPacket.SetBody(refBody);
+
+	const bool bResult = Send(&objPacket);
+
+	return bResult;
+}
+
+

@@ -1,0 +1,1181 @@
+/******************************************************************************
+* 
+* ControlCenter
+* Version
+* Copyright (C) 2007-2008 ControlCenter Software Co., Ltd.
+* All Rights Reserved
+* $Header: /cvsdata/vc/ControlCenter/Policies.cpp,v 1.18 2015/08/17 01:08:00 administrator Exp $
+* 
+*******************************************************************************
+* 
+* Description:
+******************************************************************************/
+#include "stdafx.h"
+// $Nokeywords: $
+#include "Policies.h"
+#include "JsonHelper.h"
+#include <algorithm>
+#include <functional>
+#include <sstream>
+#include "boost/format.hpp"
+
+#ifdef _DEBUG
+#undef THIS_FILE
+static char THIS_FILE[]=__FILE__;
+#define new DEBUG_NEW
+#endif
+
+
+const char  ENCRYPT_POLICIES_KEY[]      = "xD5Sm8jy";             //加密策略文件密锁
+
+const char* POLICY_DATA_UUID = "D07E82D5-23F6-409A-B012-6A2CA47FEF3D";  //剪贴板数据唯一标识
+const UINT POLICY_DATA_VERSION = 1;  //剪贴板数据格式版本
+const char* POLICY_DATA_DESC = "Policy";  //清单列表
+
+
+
+REGISTER_CLASS(CPolicyOption)
+REGISTER_CLASS(CPolicyItem)
+REGISTER_CLASS(CGeneralGroup)
+REGISTER_CLASS(CSpecialGroup)
+REGISTER_CLASS(CPoliciesSet)
+
+
+//-----------------------------CPolicyOption implementation----------
+CPolicyOption::CPolicyOption(CPoliciesSet* pPoliciesSet)
+: m_nType(0)
+, m_nOperator(0)
+, m_nMacroVariable(0)
+, m_pPoliciesSet(pPoliciesSet)
+#ifdef ENABLE_FULL_EDIT_POLICY
+, m_bReplicate(false)
+#endif
+{
+}
+
+CPolicyOption::~CPolicyOption(void)
+{
+}
+
+void CPolicyOption::SetPolicySetModificatory(bool bModificatory)
+{ 
+	m_pPoliciesSet->SetModificatory(bModificatory); 
+}
+
+
+
+CPolicyOption& CPolicyOption::operator=(CPolicyOption& objPolicyOption)
+{
+	m_nType       = objPolicyOption.m_nType;
+	m_nOperator   = objPolicyOption.m_nOperator;
+	m_strValue    = objPolicyOption.m_strValue;
+	m_nMacroVariable  = objPolicyOption.m_nMacroVariable;
+
+	return *this;
+}
+bool CPolicyOption::operator==(CPolicyOption& objPolicyOption)
+{
+	return (m_nType == objPolicyOption.m_nType
+	&& m_nOperator == objPolicyOption.m_nOperator
+	&& m_strValue  == objPolicyOption.m_strValue
+	&& m_nMacroVariable  == objPolicyOption.m_nMacroVariable);	
+}
+
+void CPolicyOption::Serialize(CJSONSerializer& refJsonSerializer) const
+{
+	CSerializeEntry::Serialize(refJsonSerializer);
+
+	refJsonSerializer.Serialize("m10", m_strValue);
+	refJsonSerializer.Serialize("m11", m_nType);
+	refJsonSerializer.Serialize("m12", m_nOperator);
+	refJsonSerializer.Serialize("m13", m_nMacroVariable);
+}
+
+void CPolicyOption::DeSerialize(CJSONSerializer& refJsonSerializer)
+{
+	CSerializeEntry::DeSerialize(refJsonSerializer);
+
+	refJsonSerializer.DeSerialize("m10", m_strValue);
+	refJsonSerializer.DeSerialize("m11", m_nType);
+	refJsonSerializer.DeSerialize("m12", m_nOperator);
+	refJsonSerializer.DeSerialize("m13", m_nMacroVariable);
+}
+
+//-----------------------------CPolicyItem implementation----------
+
+CPolicyItem::CPolicyItem(CGeneralGroup* pGeneralGroup,CPoliciesSet* pPoliciesSet)
+: m_nID(0)
+, m_nProtocol(0)
+, m_nSampleID(1)
+, m_nSeverity(0)
+, m_nResponseSchemeID(1)
+, m_bCaseSensitivity(true)
+, m_nEndpoint(0)
+, m_bEnable(true)
+, m_pGeneralGroup(pGeneralGroup)
+, m_nOptionRelation(0)
+, m_nPatternFormat(0)
+, m_nPatternRelation(0)
+, m_bRemoving(false)
+, m_pPoliciesSet(pPoliciesSet)
+{
+}
+
+CPolicyItem::~CPolicyItem(void)
+{
+	ClearAllOptions();
+}
+
+void CPolicyItem::ClearAllOptions()
+{
+	m_arrPolicyOptions.clear();
+}
+
+void CPolicyItem::SetPoliciesSet(CPoliciesSet* pPoliciesSet)
+{
+	assert(pPoliciesSet);
+
+	m_pPoliciesSet = pPoliciesSet;
+
+	for (auto pOption : m_arrPolicyOptions)
+	{
+		pOption->SetPoliciesSet(m_pPoliciesSet);
+	}	
+}
+
+
+void CPolicyItem::SetPolicySetModificatory(bool bModificatory)
+{ 
+	m_pPoliciesSet->SetModificatory(bModificatory); 
+}
+
+void CPolicyItem::Serialize(CJSONSerializer& refJsonSerializer) const
+{
+	CSerializeEntry::Serialize(refJsonSerializer);
+
+	refJsonSerializer.Serialize("m10", m_nID);
+	refJsonSerializer.Serialize("m11", m_strCode);
+	refJsonSerializer.Serialize("m12", m_strName);
+	refJsonSerializer.Serialize("m13", m_strDescription);
+	refJsonSerializer.Serialize("m14", m_strAffected);
+	refJsonSerializer.Serialize("m15", m_strAdvice);
+	refJsonSerializer.Serialize("m16", m_nProtocol);
+	refJsonSerializer.Serialize("m17", m_nSampleID);
+	refJsonSerializer.Serialize("m18", m_nSeverity);
+	refJsonSerializer.Serialize("m19", m_nResponseSchemeID);
+	refJsonSerializer.Serialize("m20", m_strPattern);
+	refJsonSerializer.Serialize("m21", m_nPatternFormat);
+	refJsonSerializer.Serialize("m22", m_bCaseSensitivity);
+	refJsonSerializer.Serialize("m23", m_nEndpoint);
+	refJsonSerializer.Serialize("m24", m_bEnable);
+	refJsonSerializer.Serialize("m25", m_nOptionRelation);
+	refJsonSerializer.Serialize("m26", m_nPatternRelation);
+	refJsonSerializer.Serialize("m27", m_strScript);
+	refJsonSerializer.Serialize("m28", m_arrPolicyOptions);
+	
+}
+
+void CPolicyItem::DeSerialize(CJSONSerializer& refJsonSerializer)
+{
+	CSerializeEntry::DeSerialize(refJsonSerializer);
+
+	refJsonSerializer.DeSerialize("m10", m_nID);
+	refJsonSerializer.DeSerialize("m11", m_strCode);
+	refJsonSerializer.DeSerialize("m12", m_strName);
+	refJsonSerializer.DeSerialize("m13", m_strDescription);
+	refJsonSerializer.DeSerialize("m14", m_strAffected);
+	refJsonSerializer.DeSerialize("m15", m_strAdvice);
+	refJsonSerializer.DeSerialize("m16", m_nProtocol);
+	refJsonSerializer.DeSerialize("m17", m_nSampleID);
+	refJsonSerializer.DeSerialize("m18", m_nSeverity);
+	refJsonSerializer.DeSerialize("m19", m_nResponseSchemeID);
+	refJsonSerializer.DeSerialize("m20", m_strPattern);
+	refJsonSerializer.DeSerialize("m21", m_nPatternFormat);
+	refJsonSerializer.DeSerialize("m22", m_bCaseSensitivity);
+	refJsonSerializer.DeSerialize("m23", m_nEndpoint);
+	refJsonSerializer.DeSerialize("m24", m_bEnable);
+	refJsonSerializer.DeSerialize("m25", m_nOptionRelation);
+	refJsonSerializer.DeSerialize("m26", m_nPatternRelation);
+	refJsonSerializer.DeSerialize("m27", m_strScript);
+	refJsonSerializer.DeSerialize("m28", m_arrPolicyOptions);
+}
+
+
+CPolicyItem& CPolicyItem::operator=(CPolicyItem& objPolicyItem)
+{
+	m_nID               = objPolicyItem.m_nID;
+	m_strCode           = objPolicyItem.m_strCode;
+	m_strName           = objPolicyItem.m_strName;
+	m_strDescription    = objPolicyItem.m_strDescription;
+	m_strAffected       = objPolicyItem.m_strAffected;
+	m_strAdvice         = objPolicyItem.m_strAdvice;
+	m_nProtocol         = objPolicyItem.m_nProtocol;
+	m_nSampleID         = objPolicyItem.m_nSampleID;
+	m_nSeverity         = objPolicyItem.m_nSeverity;
+	m_nResponseSchemeID = objPolicyItem.m_nResponseSchemeID;
+	m_strPattern        = objPolicyItem.m_strPattern;
+	m_nPatternFormat    = objPolicyItem.m_nPatternFormat;
+	m_bCaseSensitivity  = objPolicyItem.m_bCaseSensitivity;
+	m_nEndpoint         = objPolicyItem.m_nEndpoint;
+	m_bEnable           = objPolicyItem.m_bEnable;
+	m_nOptionRelation   = objPolicyItem.m_nOptionRelation;
+	m_nPatternRelation  = objPolicyItem.m_nPatternRelation;
+	m_strScript = objPolicyItem.m_strScript;
+
+	ClearAllOptions();
+
+	for (auto pOption : objPolicyItem.m_arrPolicyOptions)
+	{
+		CPolicyOptionPtr pNewOption = std::make_shared<CPolicyOption>(m_pPoliciesSet);
+
+		*pNewOption = *pOption;
+		m_arrPolicyOptions.push_back(pNewOption);
+	}
+
+	return *this;
+}
+
+//--------------------------------------------------------------------------------
+/// <summary>
+/// 增加一个选项
+/// </summary>
+/// <returns>成功返回指向选项对象的指针,否则nullptr</returns>
+/// <created>Andy,2020/8/26</created>
+/// <changed>Andy,2020/8/26</changed>
+//--------------------------------------------------------------------------------
+CPolicyOptionPtr CPolicyItem::CreateOption()
+{
+	CPolicyOptionPtr pResult = std::make_shared<CPolicyOption>(m_pPoliciesSet);
+
+	if(pResult)
+	{
+		m_arrPolicyOptions.push_back(pResult);
+		SetPolicySetModificatory(true);
+	}
+
+	return pResult;
+}
+
+
+//--------------------------------------------------------------------------------
+/// <summary>
+/// 删除制定的选项
+/// </summary>
+/// <param name="pPolicyOption">指向选项对象的指针</param>
+/// <created>Andy,2020/8/26</created>
+/// <changed>Andy,2020/8/26</changed>
+//--------------------------------------------------------------------------------
+void CPolicyItem::RemoveOption(CPolicyOptionPtr pPolicyOption)
+{
+	auto itr = std::find(m_arrPolicyOptions.begin(), m_arrPolicyOptions.end(), pPolicyOption);
+
+	if (m_arrPolicyOptions.end() != itr)
+	{
+		m_arrPolicyOptions.erase(itr);
+		SetPolicySetModificatory(true);
+	}	
+}
+
+
+
+//-----------------------------CGeneralGroup implementation----------
+CGeneralGroup::CGeneralGroup(CPoliciesSet* pPoliciesSet)
+: m_nID(0)
+, m_pPoliciesSet(pPoliciesSet)
+, m_nMaxItemID(0)
+{
+}
+
+CGeneralGroup::~CGeneralGroup(void)
+{
+	m_arrPolicyItems.clear();	
+}
+
+void CGeneralGroup::SetPolicySetModificatory(bool bModificatory)
+{ 
+	m_pPoliciesSet->SetModificatory(bModificatory); 
+}
+
+void CGeneralGroup::SetPoliciesSet(CPoliciesSet* pPoliciesSet)
+{
+	m_pPoliciesSet = pPoliciesSet;
+
+	for (auto pPolicy : m_arrPolicyItems)
+	{
+		pPolicy->SetGeneralGroup(this);
+		pPolicy->SetPoliciesSet(m_pPoliciesSet);
+	}	
+}
+
+
+
+void CGeneralGroup::Serialize(CJSONSerializer& refJsonSerializer) const
+{
+	CSerializeEntry::Serialize(refJsonSerializer);
+
+	refJsonSerializer.Serialize("m10", m_nID);
+	refJsonSerializer.Serialize("m11", m_arrPolicyItems);
+}
+
+void CGeneralGroup::DeSerialize(CJSONSerializer& refJsonSerializer)
+{
+	CSerializeEntry::DeSerialize(refJsonSerializer);
+
+	refJsonSerializer.DeSerialize("m10", m_nID);
+	refJsonSerializer.DeSerialize("m11", m_arrPolicyItems);
+
+	for (auto pPolicy : m_arrPolicyItems)
+	{
+		if (pPolicy->GetID() > m_nMaxItemID)
+		{
+			m_nMaxItemID = pPolicy->GetID();
+		}
+	}
+}
+
+CGeneralGroup& CGeneralGroup::operator=(CGeneralGroup& objGeneralGroup)
+{
+	m_nID = objGeneralGroup.m_nID;
+
+	for (auto pPolicy : objGeneralGroup.m_arrPolicyItems)
+	{
+		CPolicyItemPtr pNewPolicyItem = std::make_shared<CPolicyItem>(this, m_pPoliciesSet);
+
+		if (pNewPolicyItem)
+		{
+			*pNewPolicyItem = *(pPolicy);
+			m_arrPolicyItems.push_back(pNewPolicyItem);
+		}
+	}
+
+    return *this;
+}
+
+CPolicyItemPtr CGeneralGroup::LookupPolicyItem(const std::string strName)
+{
+	CPolicyItemPtr pResult = nullptr;
+
+	for (auto pPolicy : m_arrPolicyItems)
+	{
+		if (pPolicy->GetName() == strName)
+		{
+			pResult = pPolicy;
+			break;
+		}
+	}
+
+	return pResult;
+}
+//-----------------------------------------------------------------
+// CGeneralGroup::EnableDiagnosis
+/// \brief Look up a policy by code and return a pointer to the prolicy object
+///
+/// \param _in strCode - policy code
+/// \return  a pointer to the prolicy object
+/// \author andy 
+//-----------------------------------------------------------------
+CPolicyItemPtr CGeneralGroup::LookupPolicyItembyCode(const std::string strCode)
+{
+	CPolicyItemPtr pResult = nullptr;
+
+	for (auto pPolicy : m_arrPolicyItems)
+	{
+		if (pPolicy->GetCode() == strCode)
+		{
+			pResult = pPolicy;
+			break;
+		}
+	}
+
+	return pResult;
+}
+
+CPolicyItemPtr CGeneralGroup::LookupPolicyItem(const UINT nID)
+{
+	CPolicyItemPtr pResult = nullptr;
+
+	for (auto pPolicy : m_arrPolicyItems)
+	{
+		if (pPolicy->GetID() == nID)
+		{
+			pResult = pPolicy;
+			break;
+		}
+	}	
+
+    return pResult;
+}
+
+void CGeneralGroup::RemovePolicyItem(const UINT nID)
+{
+	auto itr = m_arrPolicyItems.begin();
+
+	for (; m_arrPolicyItems.end() != itr; itr++)
+	{
+		if ((*itr)->GetID() == nID)
+		{			
+			m_arrPolicyItems.erase(itr);
+			m_pPoliciesSet->ChangePoliciesCount(-1);
+			SetPolicySetModificatory(true);
+			break;
+		}
+	}	
+}
+
+
+void CGeneralGroup::RemoveAllPolicyTtems()
+{
+	m_pPoliciesSet->ChangePoliciesCount(-(m_arrPolicyItems.size()));
+	m_arrPolicyItems.clear();
+	SetPolicySetModificatory(true);
+}
+
+/*-----------------------------------------------------------------
+|  函数名称  : CGeneralGroup::CreatePolicyItem
+|  描    述  : Create a policy item and return a pointer to the policy item
+|  参    数  : UINT nID——
+|              std::string strName——
+|  返 回 值  : 
+|  注    释  : 
+|  修改记录  : 2008-4-9 19:23:09   -huangdy-   创建
+-----------------------------------------------------------------*/
+CPolicyItemPtr CGeneralGroup::CreatePolicyItem(const UINT nID,const std::string strName)
+{
+	CPolicyItemPtr pResult = std::make_shared<CPolicyItem>(this,m_pPoliciesSet);
+
+	if(pResult)
+	{
+		pResult->SetID(nID);
+		pResult->SetName(strName);
+		
+		boost::format fmtCode("p%d");
+
+		fmtCode% nID;
+		pResult->SetCode(fmtCode.str());
+		m_arrPolicyItems.push_back(pResult);
+
+		m_pPoliciesSet->ChangePoliciesCount(1);
+		SetPolicySetModificatory(true);
+	}
+
+	return pResult;
+}
+
+//--------------------------------------------------------------------------------
+/// <summary>
+/// 
+/// </summary>
+/// <param name="bEnable"></param>
+/// <created>Andy,2020/8/26</created>
+/// <changed>Andy,2020/8/26</changed>
+//--------------------------------------------------------------------------------
+void CGeneralGroup::EnableAllPolicyItems(const bool bEnable)
+{
+	for (auto pPolicy : m_arrPolicyItems)
+	{
+		pPolicy->SetEnable(bEnable);
+	}	
+}
+
+void CGeneralGroup::EnablePolicyItem(const std::string strCode,const bool bEnable)
+{
+	CPolicyItemPtr pPolicyItem = LookupPolicyItembyCode(strCode);
+
+	if(pPolicyItem)
+	{
+		pPolicyItem->SetEnable(bEnable);
+	}	
+}
+
+bool UDgreater(CPolicyItemPtr pItem1, CPolicyItemPtr pItem2 )
+{
+	if(nullptr != pItem1 && nullptr != pItem2)
+	{
+		return (pItem1->GetName() < pItem2->GetName());
+	}
+
+	return false;
+}
+
+
+void CGeneralGroup::SortPolicyItems()
+{
+	//sort(m_arrPolicyItems.begin(),m_arrPolicyItems.end(),UDgreater);
+}
+
+
+//-----------------------------CSpecialGroup implementation----------
+CSpecialGroup::CSpecialGroup(bool bSytem,CPoliciesSet* pPoliciesSet)
+: m_pSytem(bSytem)
+, m_pPoliciesSet(pPoliciesSet)
+{
+}
+
+CSpecialGroup::~CSpecialGroup(void)
+{
+	Clear();
+}
+
+void CSpecialGroup::SetPolicySetModificatory(bool bModificatory)
+{ 
+	m_pPoliciesSet->SetModificatory(bModificatory); 
+}
+
+
+void CSpecialGroup::Serialize(CJSONSerializer& refJsonSerializer) const
+{
+	CSerializeEntry::Serialize(refJsonSerializer);
+
+	refJsonSerializer.Serialize("m10", m_arrGeneralPolicies);
+}
+
+
+
+//--------------------------------------------------------------------------------
+/// <summary>
+/// 
+/// </summary>
+/// <created>Andy,2020/8/26</created>
+/// <changed>Andy,2020/8/26</changed>
+//--------------------------------------------------------------------------------
+void CSpecialGroup::DeSerializeEnd()
+{
+	CHECK_POINTER(m_pPoliciesSet);
+
+	for (auto pGeneralGroup : m_arrGeneralPolicies)
+	{
+		pGeneralGroup->SetPoliciesSet(m_pPoliciesSet);
+
+		m_pPoliciesSet->ChangePoliciesCount((int)pGeneralGroup->GetPolicyItemCount());
+
+		if (m_pPoliciesSet->GetMaxItemID() < pGeneralGroup->GetMaxItemID())
+		{
+			m_pPoliciesSet->SetMaxItemID(pGeneralGroup->GetMaxItemID());
+		}
+	}
+}
+
+
+void CSpecialGroup::DeSerialize(CJSONSerializer& refJsonSerializer)
+{
+	CSerializeEntry::DeSerialize(refJsonSerializer);
+
+	refJsonSerializer.DeSerialize("m10", m_arrGeneralPolicies);	
+}
+
+CSpecialGroup& CSpecialGroup::operator=(CSpecialGroup& objSpecialGroup)
+{
+	for (auto pGeneralGroup : objSpecialGroup.m_arrGeneralPolicies)
+	{
+		CGeneralGroupPtr pNewGeneralGroup = std::make_shared<CGeneralGroup>(m_pPoliciesSet);
+
+		if (nullptr != pNewGeneralGroup)
+		{
+			*pNewGeneralGroup = *(pGeneralGroup);
+			m_arrGeneralPolicies.push_back(pNewGeneralGroup);
+		}
+	}
+
+    return *this;
+}
+
+
+//--------------------------------------------------------------------------------
+/// <summary>
+/// 
+/// </summary>
+/// <param name="nID"></param>
+/// <returns></returns>
+/// <created>Andy,2020/8/26</created>
+/// <changed>Andy,2020/8/26</changed>
+//--------------------------------------------------------------------------------
+CGeneralGroupPtr CSpecialGroup::LookupGeneralGroupByID(const UINT nID)
+{
+	CGeneralGroupPtr pResult = nullptr;
+
+	for (auto pGeneralGroup : m_arrGeneralPolicies)
+	{
+		if (pGeneralGroup->GetID() == nID)
+		{
+			pResult = pGeneralGroup;
+			break;
+		}
+	}	
+	
+	return pResult;
+}
+
+void CSpecialGroup::EnablePolicyItem(std::string strCode,bool bEnable)
+{
+	for (auto pGeneralGroup : m_arrGeneralPolicies)
+	{
+		pGeneralGroup->EnablePolicyItem(strCode, bEnable);
+	}
+}
+
+void CSpecialGroup::Clear()
+{
+	m_arrGeneralPolicies.clear();
+}
+/*-----------------------------------------------------------------
+|  函数名称  : CSpecialGroup::CreateGeneralGroup
+|  描    述  : 
+|  参    数  : UINT nID——
+|  返 回 值  : 
+|  注    释  : 
+|  修改记录  : 2008-4-9 20:08:45   -huangdy-   创建
+-----------------------------------------------------------------*/
+CGeneralGroupPtr CSpecialGroup::CreateGeneralGroup(const UINT nID)
+{
+	CGeneralGroupPtr pResult = std::make_shared<CGeneralGroup>(m_pPoliciesSet);
+
+	if(pResult)
+	{
+		pResult->SetID(nID);
+		m_arrGeneralPolicies.push_back(pResult);
+	}
+
+	return pResult;
+}
+
+
+//-----------------------------CPoliciesSet implementation----------
+CPoliciesSet::CPoliciesSet(const bool bSystem/* = true*/)
+						   : m_bSystem(bSystem)
+						   , m_bActivity(false)
+						   , m_nVersion(1)
+						   , m_nPoliciesCount(0)
+						   , m_bExported(false)
+						   , m_objSystemPolicies(true)
+						   , m_objCustomPolicies(false)
+						   , m_bModificatory(false)
+						   , m_nMaxItemID(0)
+{
+}
+
+CPoliciesSet::~CPoliciesSet(void)
+{
+}
+
+
+void CPoliciesSet::Serialize(CJSONSerializer& refJsonSerializer) const
+{
+	CSerializeEntry::Serialize(refJsonSerializer);
+
+	if (m_bModificatory)
+	{
+		char szBuffer[64] = { 0 };
+		time_t nNow;
+
+		time(&nNow);
+		strftime(szBuffer, sizeof(szBuffer), "%m/%d/%Y %H:%M", localtime(&nNow));
+
+		const_cast<CPoliciesSet*>(this)->m_strLastModifiedTime = szBuffer;
+		const_cast<CPoliciesSet*>(this)->InreaseVersion();
+	}
+
+	refJsonSerializer.Serialize("m10", m_strSourceCode);
+	refJsonSerializer.Serialize("m11", m_strLastModifiedTime);
+	refJsonSerializer.Serialize("m12", m_strName);
+	refJsonSerializer.Serialize("m13", m_strCode);
+	refJsonSerializer.Serialize("m14", m_bSystem);
+	refJsonSerializer.Serialize("m15", m_bActivity);
+	refJsonSerializer.Serialize("m16", m_nVersion);
+	refJsonSerializer.Serialize("m17", m_objSystemPolicies);
+
+	if (!m_bSystem)
+	{
+		refJsonSerializer.Serialize("m18", m_objCustomPolicies);
+	}
+}
+
+void CPoliciesSet::DeSerialize(CJSONSerializer& refJsonSerializer)
+{
+	CSerializeEntry::DeSerialize(refJsonSerializer);
+
+	refJsonSerializer.DeSerialize("m10", m_strSourceCode);
+	refJsonSerializer.DeSerialize("m11", m_strLastModifiedTime);
+	refJsonSerializer.DeSerialize("m12", m_strName);
+	refJsonSerializer.DeSerialize("m13", m_strCode);
+	refJsonSerializer.DeSerialize("m14", m_bSystem);
+	refJsonSerializer.DeSerialize("m15", m_bActivity);
+	refJsonSerializer.DeSerialize("m16", m_nVersion);
+
+	refJsonSerializer.DeSerialize("m17", m_objSystemPolicies);
+	m_objSystemPolicies.SetPoliciesSet(this);
+	m_objSystemPolicies.DeSerializeEnd();
+
+	if (!m_bSystem)
+	{
+		refJsonSerializer.DeSerialize("m18", m_objCustomPolicies);
+		m_objCustomPolicies.SetPoliciesSet(this);
+		m_objCustomPolicies.DeSerializeEnd();
+	}
+}
+
+CPoliciesSet& CPoliciesSet::operator=(CPoliciesSet& objCPoliciesSet)
+{
+	m_strName        = objCPoliciesSet.m_strName;
+	m_strCode        = objCPoliciesSet.m_strCode;
+	m_bSystem        = objCPoliciesSet.m_bSystem;
+	m_nVersion       = objCPoliciesSet.m_nVersion;
+	m_nPoliciesCount = objCPoliciesSet.m_nPoliciesCount;
+
+	m_objSystemPolicies = objCPoliciesSet.m_objSystemPolicies;
+	m_objCustomPolicies = objCPoliciesSet.m_objCustomPolicies;
+
+	m_bModificatory = true;
+
+	return *this;
+}
+
+void CPoliciesSet::UpdateFrom(CPoliciesSetPtr pPoliciesSet)
+{
+	//if(m_nVersion < pPoliciesSet->m_nVersion)
+	{
+		m_nVersion       = pPoliciesSet->m_nVersion - 1;   //因为保存的时候要增加版本号
+		m_nPoliciesCount = pPoliciesSet->m_nPoliciesCount;
+
+		m_objSystemPolicies.Clear();
+		m_objSystemPolicies = pPoliciesSet->m_objSystemPolicies;
+
+		m_bModificatory = true;
+	}
+}
+
+void CPoliciesSet::Init()
+{
+	m_objSystemPolicies.SetPoliciesSet(this);
+	m_objCustomPolicies.SetPoliciesSet(this);
+}
+
+
+//-----------------------------CPolicies----------
+CPolicies::CPolicies()
+: m_bModificatory(false)
+{
+}
+
+CPolicies::~CPolicies(void)
+{
+	m_arrPoliciesSet.clear();
+}
+
+
+bool CPolicies::Save(const char* lpFilePath)
+{
+	CJsonHelper objJsonHelper;
+	const bool bResult = objJsonHelper.Save<CPoliciesSetArray>(
+		m_arrPoliciesSet
+		, lpFilePath
+		, POLICY_DATA_UUID
+		, POLICY_DATA_VERSION
+		, POLICY_DATA_DESC);
+
+
+	return bResult;
+}
+
+
+bool CPolicies::Load(const char* lpFilePath/* = nullptr*/)
+{
+	CJsonHelper objJsonHelper;
+	const bool bResult = objJsonHelper.Load<CPoliciesSetArray>(
+		lpFilePath
+		, POLICY_DATA_UUID
+		, m_arrPoliciesSet);
+
+	return bResult;
+}
+
+
+/*-----------------------------------------------------------------
+|  函数名称  : CPolicies::Import
+|  描    述  : 从指定的文件中导入指定的策略集
+|  参    数  : const char* lpFilePath——
+|              string_list& arrPoliciesSetList——
+|  返 回 值  : true----
+|              false---
+|  注    释  : 
+|  修改记录  : 2008-4-18 16:39:01   -huangdy-   创建
+-----------------------------------------------------------------*/
+bool CPolicies::Import(const char* lpFilePath,string_list& arrPoliciesSetList)
+{
+	if(arrPoliciesSetList.size() == 0)  //说明不需要导入
+	{
+		return false;
+	}
+	
+	CPolicies objPolicies;
+	const bool bResult = objPolicies.Load(lpFilePath);
+
+	if (bResult)
+	{
+		for (auto pPoliciesSet : objPolicies.m_arrPoliciesSet)
+		{
+			for (size_t i = 0; i < arrPoliciesSetList.size(); i++)
+			{
+				if (pPoliciesSet->GetName() == arrPoliciesSetList[i])
+				{
+					CPoliciesSetPtr pResult = std::make_shared<CPoliciesSet>();
+
+					if (pResult)
+					{
+						pResult->Init();
+						*pResult = *pPoliciesSet;
+
+						std::stringstream  strNewName(pResult->GetName());
+						int nIndex = 1;
+
+						strNewName << pResult->GetName();
+
+						while (LookupPolicybyName(strNewName.str()))  //避免重复的文件名称
+						{
+							strNewName << pPoliciesSet->GetName() << "(" << nIndex++ << ")";
+						}
+
+						std::string strCode;
+						GetNewPolicyCode(strCode);
+
+						pResult->SetCode(strCode);
+						pResult->SetName(strNewName.str());
+						pResult->SetSystem(true);
+						pResult->SetActivity(false);
+
+						arrPoliciesSetList[i] = strNewName.str();
+						m_arrPoliciesSet.push_back(pResult);
+
+						m_bModificatory = true;
+					}
+
+					break;
+				}
+			}
+		}
+	}
+
+	
+	return bResult;
+}
+
+/*-----------------------------------------------------------------
+|  函数名称  : CPolicies::ExtractPoliciesSetList
+|  描    述  : 从指定的文件中提取策略集列表
+|  参    数  : const char* lpFilePath——
+|              string_list& arrPoliciesSetList——
+|  返 回 值  : true----success
+|              false---fail
+|  注    释  : 
+|  修改记录  : 2008-4-18 16:10:21   -huangdy-   创建
+-----------------------------------------------------------------*/
+bool CPolicies::ExtractPoliciesSetList(
+	const char* lpFilePath
+	, string_list& arrPoliciesSetList)
+{
+	bool bResult = false;
+	CPolicies objPolicies;
+
+	arrPoliciesSetList.clear();
+
+	if (objPolicies.Load(lpFilePath))
+	{
+		for (auto pPoliciesSet : objPolicies.m_arrPoliciesSet)
+		{
+			arrPoliciesSetList.push_back(pPoliciesSet->GetName());
+		}
+
+		bResult = true;
+	}
+
+	return bResult;
+}
+
+/*---------------------------------------------------------------------------------
+| Name      : CPolicies::GetNewPolicyCode
+| Desc      : 得到新的策略类编码
+| Parameter : std::string& strCode——>
+| Return    : void 
+| Author    : Andy.h
+| Date      : 星期三, 十一月 18 2009
+---------------------------------------------------------------------------------*/
+void CPolicies::GetNewPolicyCode(std::string& strCode,bool bIsSystem)
+{
+	int nIndex = 1;
+	CPoliciesSetPtr pPoliciesSet = nullptr;
+
+	for (auto pPoliciesSet : m_arrPoliciesSet)
+	{
+		if (pPoliciesSet->GetSystem() == bIsSystem)
+		{
+			std::string strTmp = pPoliciesSet->GetCode();
+
+			strTmp.erase(strTmp.begin());   //删除编号前面的P字母
+			
+			if (nIndex < std::atoi(strTmp.c_str()))
+			{
+				nIndex = std::atoi(strTmp.c_str());
+			}
+		}
+
+		nIndex++;
+	}
+
+
+	if(bIsSystem)
+	{
+		boost::format ssCodeFmt("P%03d");
+
+		ssCodeFmt% nIndex;	
+		strCode = ssCodeFmt.str();
+	}
+	else
+	{
+		boost::format ssCodeFmt("C%03d");
+
+		ssCodeFmt% nIndex;
+		strCode = ssCodeFmt.str();
+	}
+}
+/*-----------------------------------------------------------------
+|  函数名称  : CPolicies::CreatePolicy
+|  描    述  : Create a policies set
+|  参    数  : std::string& strName——name of policies set
+|  参    数  : std::string& strCode——name of policies set
+|  参    数  : bool bSystem——是否是系统策略集标记
+|  返 回 值  : true----success
+|              false---fail
+|  注    释  : 
+|  修改记录  : 2008-4-6 13:53:54   -huangdy-   创建
+-----------------------------------------------------------------*/
+CPoliciesSetPtr CPolicies::CreatePolicy(
+	const std::string& strName
+	, bool bSystem)
+{
+	std::string strCode;
+
+	GetNewPolicyCode(strCode);
+
+	CPoliciesSetPtr pResult = std::make_shared<CPoliciesSet>(bSystem);
+	
+	if(pResult)
+	{
+		pResult->Init();
+		pResult->SetCode(strCode);
+		pResult->SetName(strName);
+
+		m_arrPoliciesSet.push_back(pResult);
+		m_bModificatory = true;
+	}
+
+	return pResult;
+}
+
+/*-----------------------------------------------------------------
+|  函数名称  : CPolicies::LookupPoliciesSet
+|  描    述  : 查找指定的策略集是否存在
+|  参    数  : std::string& strCode——
+|  返 回 值  : true----
+|              false---
+|  注    释  : 
+|  修改记录  : 2008-4-6 19:24:39   -huangdy-   创建
+-----------------------------------------------------------------*/
+CPoliciesSetPtr  CPolicies::LookupPolicybyCode(std::string strCode)
+{
+	CPoliciesSetPtr pResult = nullptr;
+
+	for (auto pPoliciesSet : m_arrPoliciesSet)
+	{
+		if (pPoliciesSet->GetCode() == strCode)
+		{
+			pResult = pPoliciesSet;
+			break;
+		}
+	}
+
+	return  pResult;
+}
+/*-----------------------------------------------------------------
+|  函数名称  : CPolicies::LookupPoliciesSet
+|  描    述  : 查找指定的策略集是否存在
+|  参    数  : std::string& strName——
+|  返 回 值  : true----
+|              false---
+|  注    释  : 
+|  修改记录  : 2008-4-6 19:24:39   -huangdy-   创建
+-----------------------------------------------------------------*/
+CPoliciesSetPtr  CPolicies::LookupPolicybyName(std::string strName)
+{
+	CPoliciesSetPtr pResult = nullptr;
+
+	for (auto pPoliciesSet : m_arrPoliciesSet)
+	{
+		if (pPoliciesSet->GetName() == strName)
+		{
+			pResult = pPoliciesSet;
+			break;
+		}
+	}
+
+	return  pResult;
+}
+
+
+/*-----------------------------------------------------------------
+|  函数名称  : CPolicies::RemovePolicy
+|  描    述  : 删除指定的策略集
+|  参    数  : std::string& strName——策略集名称
+|  返 回 值  : true----
+|              false---
+|  注    释  : 
+|  修改记录  : 2008-4-6 19:50:56   -huangdy-   创建
+-----------------------------------------------------------------*/
+bool CPolicies::RemovePolicy(std::string strName)
+{
+	m_arrPoliciesSet.erase(
+		std::remove_if(
+			m_arrPoliciesSet.begin()
+			, m_arrPoliciesSet.end()
+			, [strName](CPoliciesSetPtr pPoliciesSet) { return strName == pPoliciesSet->GetName(); })
+		, m_arrPoliciesSet.end());
+	SetModificatory(true);
+
+	return true;
+}
+
+/*-----------------------------------------------------------------
+|  函数名称  : CPolicies::DerivePolicy
+|  描    述  : 
+|  参    数  : std::string strName——
+|  返 回 值  : true----
+|              false---
+|  注    释  : 
+|  修改记录  : 2008-4-7 9:50:21   -huangdy-   创建
+-----------------------------------------------------------------*/
+CPoliciesSetPtr CPolicies::DerivePolicy(std::string strSrcName,std::string strDstName)
+{
+	CPoliciesSetPtr pResult = nullptr;
+
+	for(auto pPoliciesSet : m_arrPoliciesSet)
+	{
+		if(pPoliciesSet->GetName() == strSrcName)
+		{
+			pResult = std::make_shared<CPoliciesSet>();
+
+			if(pResult)
+			{
+				pResult->Init();
+				*pResult = *(pPoliciesSet);
+
+				std::string strCode;
+
+#ifdef ENABLE_FULL_EDIT_POLICY
+				GetNewPolicyCode(strCode);
+				pResult->SetCode(strCode);
+#else
+				GetNewPolicyCode(strCode,false);
+				pResult->SetCode(strCode);
+				pResult->SetSourceCode(pPoliciesSet->GetCode());
+				pResult->SetSystem(false);
+#endif
+				pResult->SetName(strDstName);
+
+				m_arrPoliciesSet.push_back(pResult);
+				m_bModificatory = true;
+				break;
+			}
+		}
+	}
+
+	return pResult;
+}
+
+
+/*-----------------------------------------------------------------
+|  函数名称  : CPolicies::GetActivityPolicy
+|  描    述  : 得到激活(当前使用)的策略集
+|  返 回 值  : A pointer to the policies set object
+|  注    释  : 
+|  修改记录  : 2008-4-14 20:29:17   -huangdy-   创建
+-----------------------------------------------------------------*/
+CPoliciesSetPtr CPolicies::GetActivityPolicy()
+{
+	CPoliciesSetPtr pResult = nullptr;
+
+	if (m_arrPoliciesSet.size() > 0)
+	{
+		for (auto pPoliciesSet : m_arrPoliciesSet)
+		{
+			if (pPoliciesSet->GetActivity())
+			{
+				pResult = pPoliciesSet;
+				break;
+			}
+		}
+
+		if (nullptr == pResult)
+		{
+			pResult = *(m_arrPoliciesSet.begin());
+		}
+	}
+
+	return pResult;
+}
+
+
+
+
+
+/*-----------------------------------------------------------------
+|  函数名称  : CPolicies::UpdateFrom
+|  描    述  : 用指定的策略信息来更新当前的策略信息
+|  参    数  : CPolicies& objPolicies——
+|  返 回 值  : 
+|  注    释  : 
+|  修改记录  : 2008-4-20 14:26:29   -huangdy-   创建
+-----------------------------------------------------------------*/
+void CPolicies::UpdateFrom(CPolicies& objPolicies)
+{
+	CPoliciesSetPtr pPoliciesSet1 = nullptr,*pPoliciesSet2 = nullptr;
+	
+	for(auto pPoliciesSet1 : objPolicies.m_arrPoliciesSet)
+	{	
+		bool bNewPoliciesSet = true;
+
+		if(pPoliciesSet1->GetSystem())
+		{
+
+			for (auto pPoliciesSet2 : m_arrPoliciesSet)
+			{
+				if (pPoliciesSet2->GetSystem()
+					&& (pPoliciesSet1->GetCode() == pPoliciesSet2->GetCode())
+					|| !pPoliciesSet2->GetSystem()
+					&& (pPoliciesSet1->GetCode() == pPoliciesSet2->GetSourceCode()))
+				{
+					pPoliciesSet2->UpdateFrom(pPoliciesSet1);
+					bNewPoliciesSet = false;
+				}
+			}		
+
+			if(bNewPoliciesSet) //说明是新增加的策略
+			{
+				CPoliciesSetPtr pResult = std::make_shared<CPoliciesSet>();
+				
+				if(pResult)
+				{
+					pResult->Init();
+					*pResult = *(pPoliciesSet1);
+					m_arrPoliciesSet.push_back(pResult);
+					m_bModificatory = true;
+				}
+			}
+		}
+	}
+}
+
+
+
+
+
+
+
+

@@ -1,0 +1,860 @@
+/////////////////////////////////////////////////////////////////////
+/// @file PrjSettings.h
+/// @brief 工程设置类实现
+/// 
+/// @author andy
+/// @version 1.0
+/// @date 2020.10.15
+/////////////////////////////////////////////////////////////////////
+#include "stdafx.h"
+#include "PrjSettings.h"
+#include "PacketBase.h"
+
+
+const unsigned int PWD_TOO_SHORT_THRD = 5;       ///< 密码太短的阈值
+const UCHAR ECC_KEY[] = "8E0BA18EDBE946ED";      ///< 用于加密的key
+
+const char* PRJSETTINGS_DATA_UUID = "438E1E29-8253-463E-9359-227F13BEB098";  //剪贴板数据唯一标识
+const unsigned int PRJSETTINGS_DATA_VERSION = 103;  //剪贴板数据格式版本
+const char* PRJSETTINGS_DATA_DESC = "RCClient Project Settings";  //工程设置
+
+const unsigned int LETTER_KIND_THRD = 6;       ///< 安全密码需要的最少字符种类数阈值
+const unsigned int LETTER_COUNT_THRD = 10;     ///< 非常安全密码需要的最少字符数阈值
+const unsigned int SIMPLE_PWD_LETTER_KIND_THRD = 3;     ///< 简单密码字符种类阈值
+
+REGISTER_CLASS(CHistoryPartner)
+
+void CHistoryPartner::Serialize(CJSONSerializer& refJsonSerializer) const
+{
+	CSerializeEntry::Serialize(refJsonSerializer);
+
+	CPrjSettings* pPrjSettings = GetPrjSettings();
+	std::string&& refPwdEncrypted = pPrjSettings->EncryptPwd(m_strPwd);
+	
+
+	refJsonSerializer.Serialize("m1", m_strDeviceID);
+	refJsonSerializer.Serialize("m2", refPwdEncrypted);
+}
+
+CHistoryPartner& CHistoryPartner::operator=(const CHistoryPartner& refSrc)
+{
+	if (this == &refSrc)
+	{
+		return *this;
+	}
+
+	m_strDeviceID = refSrc.m_strDeviceID;
+
+	return *this;
+}
+
+void CHistoryPartner::DeSerialize(CJSONSerializer& refJsonSerializer)
+{
+	CSerializeEntry::DeSerialize(refJsonSerializer);
+
+	CPrjSettings* pPrjSettings = GetPrjSettings();
+	std::string strPwd;
+
+	refJsonSerializer.DeSerialize("m1", m_strDeviceID);
+	refJsonSerializer.DeSerialize("m2", strPwd);
+
+	m_strPwd = pPrjSettings->DecryptPwd(strPwd);
+}
+
+/*-----------------------------------CPrjSettings--------------------------------------------------*/
+CPrjSettings::CPrjSettings()
+{
+	SetAESEncipherKey(ECC_KEY);
+}
+
+CPrjSettings::~CPrjSettings()
+{
+}
+
+CPrjSettings::CPrjSettings(const CPrjSettings & refSrc)
+: m_bEnableCtrl(refSrc.m_bEnableCtrl)
+, m_bEnableTmpPwd(refSrc.m_bEnableTmpPwd)
+, m_strTmpPwd(refSrc.m_strTmpPwd)
+, m_bEnableFixPwd(refSrc.m_bEnableFixPwd)
+, m_strPwd(refSrc.m_strPwd)
+, m_strNickName(refSrc.m_strNickName)
+, m_nImageQuality(refSrc.m_nImageQuality)
+, m_bAutoStart(refSrc.m_bAutoStart)
+, m_nLanguage(refSrc.m_nLanguage)
+, m_nTheme(refSrc.m_nTheme)
+, m_strServerIP(refSrc.m_strServerIP)
+, m_nPort(refSrc.m_nPort)
+, m_bSaveSecCode(refSrc.m_bSaveSecCode)
+{
+}
+
+CPrjSettings & CPrjSettings::operator=(const CPrjSettings & refSrc)
+{
+	if (this == &refSrc)
+	{
+		return *this;
+	}
+
+	m_bEnableCtrl = refSrc.m_bEnableCtrl;
+	m_bEnableTmpPwd = refSrc.m_bEnableTmpPwd;
+	m_strTmpPwd = refSrc.m_strTmpPwd;
+	m_bEnableFixPwd = refSrc.m_bEnableFixPwd;
+	m_strPwd = refSrc.m_strPwd;
+	m_strNickName = refSrc.m_strNickName;
+	m_nImageQuality = refSrc.m_nImageQuality;
+	m_bHideWallPage = refSrc.m_bHideWallPage;
+	m_bAutoStart = refSrc.m_bAutoStart;
+	m_nLanguage = refSrc.m_nLanguage;
+	m_nTheme = refSrc.m_nTheme;
+	m_strServerIP = refSrc.m_strServerIP;
+	m_nPort = refSrc.m_nPort;
+	m_bSaveSecCode = refSrc.m_bSaveSecCode;
+
+	return *this;
+}
+
+
+// ********************************************************************************
+/// <summary>
+/// 得到密码
+/// </summary>
+/// <param name="refPwd">被解密的密码</param>
+/// <returns>解密后的密码</returns>
+/// <created>Andy,2020/10/19</created>
+/// <changed>Andy,2020/10/19</changed>
+// ********************************************************************************
+std::string CPrjSettings::DecryptPwd(const std::string& refPwd) const
+{
+	std::string strResult;
+
+	if (refPwd.size() > 0)
+	{
+		CDataStreamBuffer objDataBuffer1(refPwd.size());
+		CDataStreamBuffer objDataBuffer2(refPwd.size());
+
+		ConvertHexTextToBin(refPwd, (char *)objDataBuffer1.GetBufferHeadPtr(), refPwd.size());
+		aes_aes(&m_objAESEncipherKey, objDataBuffer1.GetBufferHeadPtr(), refPwd.size(), objDataBuffer2.GetBufferHeadPtr(), AES_DECRYPT);
+
+		strResult = std::string((char *)objDataBuffer2.GetBufferHeadPtr());
+	}
+
+	return strResult;
+}
+
+// ********************************************************************************
+/// <summary>
+/// 加密口令
+/// </summary>
+/// <param name="refPwd">被加密的口令</param>
+/// <returns>解密后额口令</returns>
+/// <created>Andy,2020/10/19</created>
+/// <changed>Andy,2020/10/19</changed>
+// ********************************************************************************
+std::string CPrjSettings::EncryptPwd(const std::string & refPwd) const 
+{
+	std::string strResult;
+
+	if (refPwd.size() > 0)
+	{
+		const unsigned int CIPHERTEXT_LEND = CalcAlign(refPwd.size(), 16);
+		CDataStreamBuffer objDataBuffer(CIPHERTEXT_LEND + 4);
+
+		aes_aes(&m_objAESEncipherKey, (unsigned char *)refPwd.c_str(), refPwd.size(), objDataBuffer.GetBufferHeadPtr(), AES_ENCRYPT);
+		ConvertBinToHexText((unsigned char *)objDataBuffer.GetBufferHeadPtr(), CIPHERTEXT_LEND, strResult);
+	}
+
+	return strResult;
+}
+
+// ********************************************************************************
+/// <summary>
+/// 判断当前的密码是否是比较简单
+/// </summary>
+/// <param name="refPwd">被检测的口令</param>
+/// <returns>true:是,false:否</returns>
+/// <created>Andy,2020/10/19</created>
+/// <changed>Andy,2020/10/19</changed>
+// ********************************************************************************
+bool CPrjSettings::IsSimplePwd(const std::string& refPwd) const
+{
+	std::map<int, int> mapLetterStat;              ///< 字符统计
+
+	for (size_t i = 0; i < refPwd.size(); i++)
+	{
+		const char chCur = refPwd[i];
+		mapLetterStat[chCur] += 1;
+	}
+
+	if (mapLetterStat.size() <= SIMPLE_PWD_LETTER_KIND_THRD)
+	{
+		return true;
+	}
+
+
+	const static TCHAR* SIIMPLE_PWD[] =
+	{
+		_T("password")
+		,_T("Password")
+		,_T("PassWord")
+		,_T("PASSWORD")
+		,_T("securitycode")
+		,_T("security code")
+		,_T("Securitycode")
+		,_T("Security code")
+		,_T("SecurityCode")
+		,_T("Security Code")
+		,_T("SECURITYCODE")
+		,_T("SECURITY CODE")
+		,_T("123456")
+		,_T("1234567")
+		,_T("12345678")
+		,_T("123456789")
+		,_T("1234567890")
+		,_T("qwerty")
+		,_T("qwertyu")
+		,_T("qwertyuio")
+		,_T("qwertyuiop")
+		,_T("QWERTY")
+		,_T("QWERTYU")
+		,_T("QWERTYUI")
+		,_T("QWERTYUIO")
+		,_T("QWERTYUIOP")
+		,_T("qwertyui")
+	};
+
+	bool bResult = false;
+	const CString strPwd(refPwd.c_str());
+
+	for (int i = 0; i < sizeof(SIIMPLE_PWD) / sizeof(TCHAR*); i++)
+	{
+		if (strPwd == SIIMPLE_PWD[i])
+		{
+			bResult = true;
+			break;
+		}
+	}
+
+	return bResult;
+}
+
+// ********************************************************************************
+/// <summary>
+/// 设置指定跳数的路由IP
+/// 
+/// 第一跳的序号是0
+/// </summary>
+/// <param name="nTTL">跳数</param>
+/// <param name="nIP">路由器IP</param>
+/// <created>Andy,2020/11/25</created>
+/// <changed>Andy,2020/11/25</changed>
+// ********************************************************************************
+void CPrjSettings::SetRouteIP(const unsigned int nTTL, const unsigned int nIP)
+{
+	std::lock_guard<std::recursive_mutex> objLocker(m_objMutex);
+
+	if (nTTL < m_arrRouteIPs.size())
+	{
+		m_arrRouteIPs[nTTL] = nIP;
+	}
+	else
+	{
+		m_arrRouteIPs.push_back(nIP);
+	}
+}
+
+// ********************************************************************************
+/// <summary>
+/// 得到指定跳数的路由IP
+/// </summary>
+/// <param name="nTTL">跳数</param>
+/// <returns>路由器IP</returns>
+/// <created>Andy,2020/11/25</created>
+/// <changed>Andy,2020/11/25</changed>
+// ********************************************************************************
+unsigned int CPrjSettings::GetRouteIP(const unsigned int nTTL)
+{
+	std::lock_guard<std::recursive_mutex> objLocker(m_objMutex);
+	unsigned int nResult = 0;
+
+	if (nTTL < m_arrRouteIPs.size())
+	{
+		nResult = m_arrRouteIPs[nTTL];
+	}
+
+	return nResult;
+}
+
+// ********************************************************************************
+/// <summary>
+/// 得到所有路由IP，多个ip地址用分号分割
+/// </summary>
+/// <returns></returns>
+/// <created>Andy,2020/11/25</created>
+/// <changed>Andy,2020/11/25</changed>
+// ********************************************************************************
+std::string CPrjSettings::GetRouteIPsAsString() const
+{
+	std::lock_guard<std::recursive_mutex> objLocker(m_objMutex);
+	std::string strResult;
+	char szBuffer[20] = { 0 };	
+
+	for (auto nIP: m_arrRouteIPs)
+	{
+		if (strResult.size() == 0)
+		{
+			strResult = FormatHostIPAddressAnsi(nIP, szBuffer);
+		}
+		else
+		{
+			strResult += ";";
+			strResult += FormatHostIPAddressAnsi(nIP, szBuffer);
+		}
+	}	
+
+	return strResult;
+}
+
+// ********************************************************************************
+/// <summary>
+///  清除无效的路由IP(主要是把列表末尾为0的清除)
+/// </summary>
+/// <created>Andy,2021/2/25</created>
+/// <changed>Andy,2021/2/25</changed>
+// ********************************************************************************
+void CPrjSettings::ClearInvalidRouteIP()
+{
+	std::lock_guard<std::recursive_mutex> objLocker(m_objMutex);
+
+	while (m_arrRouteIPs.size() > 0)
+	{
+		if (*(m_arrRouteIPs.rbegin()) == 0)
+		{
+			m_arrRouteIPs.pop_back();
+		}
+		else
+		{
+			break;
+		}
+	}
+}
+
+// ********************************************************************************
+/// <summary>
+/// 得到当前语言的tag
+/// </summary>
+/// <returns>语言的字符串标识</returns>
+/// <created>Andy,2021/5/25</created>
+/// <changed>Andy,2021/5/25</changed>
+// ********************************************************************************
+std::string CPrjSettings::GetLanguageTag()
+{
+	std::string strResult("en");
+
+	switch (GetLanguage())
+	{
+	case CPrjSettings::LT_CHINEASE:   ///< 枚举常量,中文
+		strResult = ("cn");
+		break;
+
+	case CPrjSettings::LT_GERMAN:   ///< 枚举常量,德文
+		strResult = ("de");
+		break;
+
+	case CPrjSettings::LT_FRENCH:   ///< 枚举常量,中文
+		strResult = ("fr");
+		break;
+
+	case CPrjSettings::LT_ITALIAN:   ///< 枚举常量,中文
+		strResult = ("it");
+		break;
+
+	case CPrjSettings::LT_SPANISH:   ///< 枚举常量,中文
+		strResult = ("es");
+		break;
+
+	case CPrjSettings::LT_JAPANESE:   ///< 枚举常量,中文
+		strResult = ("jp");
+		break;
+
+	case CPrjSettings::LT_CHINESETW:   ///< 枚举常量,中文
+		strResult = ("tw");
+		break;
+
+	default:
+		strResult = ("en");
+	}
+
+	return strResult;
+}
+
+// ********************************************************************************
+/// <summary>
+/// 增加历史伙伴记录
+/// </summary>
+/// <param name="pHistoryPartner"></param>
+/// <created>Andy,2021/2/3</created>
+/// <changed>Andy,2021/2/3</changed>
+// ********************************************************************************
+void CPrjSettings::AppendHistoryPartner(CHistoryPartnerPtr pHistoryPartner)
+{
+	CHECK_POINTER(pHistoryPartner);
+
+	{
+		std::lock_guard<std::recursive_mutex> objLocker(m_objMutex);
+
+		m_arrHistoryPartners.push_back(pHistoryPartner);
+	}
+}
+
+// ********************************************************************************
+/// <summary>
+/// 查找历史伙伴
+/// </summary>
+/// <param name="refDeviceID"></param>
+/// <returns></returns>
+/// <created>Andy,2021/2/3</created>
+/// <changed>Andy,2021/2/3</changed>
+// ********************************************************************************
+CHistoryPartnerPtr CPrjSettings::LookupHistoryPartner(const std::string& refDeviceID) const
+{
+	std::lock_guard<std::recursive_mutex> objLocker(m_objMutex);
+	CHistoryPartnerPtr pResult = nullptr;
+
+	for (auto pPartner : m_arrHistoryPartners)
+	{
+		if (pPartner->GetDeviceID() == refDeviceID)
+		{
+			pResult = pPartner;
+			break;
+		}
+	}
+
+	return pResult;
+}
+
+// ********************************************************************************
+/// <summary>
+/// 得到历史伙伴列表
+/// </summary>
+/// <returns></returns>
+/// <created>Andy,2021/2/3</created>
+/// <changed>Andy,2021/2/3</changed>
+// ********************************************************************************
+const CHistoryPartnerArray& CPrjSettings::GetHistoryPartner() const
+{
+	std::lock_guard<std::recursive_mutex> objLocker(m_objMutex);
+
+	return m_arrHistoryPartners;
+}
+
+// ********************************************************************************
+/// <summary>
+/// 清除所有的历史会话记录
+/// </summary>
+/// <created>Andy,2021/2/3</created>
+/// <changed>Andy,2021/2/3</changed>
+// ********************************************************************************
+void CPrjSettings::ClearAllHistoryPartner()
+{
+	std::lock_guard<std::recursive_mutex> objLocker(m_objMutex);
+
+	m_arrHistoryPartners.clear();
+}
+
+// ********************************************************************************
+/// <summary>
+/// 清除所有的历史会话记录的安全码
+/// </summary>
+/// <created>Andy,2021/7/21</created>
+/// <changed>Andy,2021/7/21</changed>
+// ********************************************************************************
+void CPrjSettings::ClearAllHistoryPartnerSecCode()
+{
+	std::lock_guard<std::recursive_mutex> objLocker(m_objMutex);
+
+	for (auto pPartner : m_arrHistoryPartners)
+	{
+		pPartner->SetPwd("");
+	}
+}
+
+// ********************************************************************************
+/// <summary>
+/// 校验密码是否合法
+/// </summary>
+/// <param name="refPwd">被校验的密码</param>
+/// <returns>返回VALID_PWD_RET类的校验结果</returns>
+/// <created>Andy,2020/10/16</created>
+/// <changed>Andy,2020/10/19</changed>
+// ********************************************************************************
+CPrjSettings::VALID_PWD_RET CPrjSettings::VerifyPwd(const std::string& refPwd) const
+{
+	VALID_PWD_RET nResult = VPR_VALID;
+
+	if (refPwd.size() > 0)
+	{
+		if (GetNickName() == refPwd)
+		{
+			nResult = VPR_TOO_SIMPLE;
+		}
+		else
+		{
+			if (refPwd.size() > PWD_TOO_SHORT_THRD)
+			{
+				if (IsSimplePwd(refPwd))
+				{
+					nResult = VPR_TOO_SIMPLE;
+				}
+			}
+			else
+			{
+				nResult = VPR_TOO_SHORT;
+			}
+		}
+	}
+	else	
+	{
+		nResult = VPR_EMPTY;
+	}
+
+	return nResult;
+}
+
+// ********************************************************************************
+/// <summary>
+/// 分析密码的安全性
+/// </summary>
+/// <param name="refPwd">被分析的密码</param>
+/// <returns>@see PASSWORD_SECURITY_STRENGTH</returns>
+/// <created>Andy,2020/10/19</created>
+/// <changed>Andy,2020/10/19</changed>
+// ********************************************************************************
+CPrjSettings::PASSWORD_SECURITY_STRENGTH CPrjSettings::AnalyzePwdSecurity(const std::string& refPwd) const
+{	
+	if (refPwd.size() == 0)
+	{
+		// 空密码
+		return PSS_INVALID;
+	}
+
+	const VALID_PWD_RET nValidRet = VerifyPwd(refPwd);
+
+	if (VPR_TOO_SHORT == nValidRet || VPR_TOO_SIMPLE == nValidRet)
+	{
+		return PSS_DANGER;
+	}
+
+	/// <summary>字母种类枚举类型</summary>
+	enum LETTER_KIND
+	{
+		LK_UPPERCASE = 1,      ///< 枚举常量，大写
+		LK_LOWERCASECASE = 2,  ///< 枚举常量，小写
+		LK_NUMERAL = 4,        ///< 枚举常量，数字
+		LK_SPECIAL = 8,        ///< 枚举常量，特殊
+	};
+
+	PASSWORD_SECURITY_STRENGTH nResult = PSS_INVALID;
+	unsigned int nLetterKindFlag = 0;
+	std::map<int, int> mapLetterStat;              ///< 字符统计
+
+	for (size_t i = 0; i < refPwd.size(); i++)
+	{
+		const char chCur = refPwd[i];
+
+		mapLetterStat[chCur] += 1;
+
+		if (48 <= chCur && chCur <= 57)           
+		{
+			// 数字字符
+
+			nLetterKindFlag |= LK_NUMERAL;
+		}
+		else if (65 <= chCur && chCur <= 90)
+		{
+			// 大写字符
+
+			nLetterKindFlag |= LK_UPPERCASE;
+		}
+		else if (97 <= chCur && chCur <= 122)
+		{
+			// 小写字符
+
+			nLetterKindFlag |= LK_LOWERCASECASE;
+		}
+		else
+		{
+			// 特殊字符
+
+			nLetterKindFlag |= LK_SPECIAL;
+		}
+	}
+
+	if (mapLetterStat.size() >= LETTER_KIND_THRD /*大于6种字符*/
+		&& nLetterKindFlag& LK_NUMERAL /*存在数字*/
+		&& nLetterKindFlag& (LK_UPPERCASE | LK_LOWERCASECASE) /*存在字符*/)
+	{
+		if (nLetterKindFlag& LK_SPECIAL
+			&& nLetterKindFlag& LK_UPPERCASE
+			&& nLetterKindFlag& LK_LOWERCASECASE
+			&& refPwd.size() > LETTER_COUNT_THRD)
+		{
+			// 避免了判断为“危险”的条件，包含了大写字母+小写字母+数字+特殊符号，组成密码的字符总共大于等于6种，密码总长度超过10位。
+			nResult = PSS_HIGH_SECURE;
+		}
+		else
+		{
+			// 避免了判断为“危险”的条件，包含了字母（不分大小写）+数字，组成密码的字符总共大于等于6种，但没有满足达到“非常安全”的条件。
+			nResult = PSS_SECURE;
+		}
+	}
+	else
+	{
+		nResult = PSS_LOW_DANGER;
+	}
+
+	return nResult;
+}
+
+
+void CPrjSettings::Serialize(CJSONSerializer& refJsonSerializer) const
+{
+	CSerializeEntry::Serialize(refJsonSerializer);
+
+	std::string&& refPwdEncrypted =  EncryptPwd(m_strPwd);
+
+	refJsonSerializer.Serialize("m1", m_bEnableCtrl);
+	refJsonSerializer.Serialize("m2", m_bEnableTmpPwd);
+	refJsonSerializer.Serialize("m3", m_strTmpPwd);
+	refJsonSerializer.Serialize("m4", m_bEnableFixPwd);
+	refJsonSerializer.Serialize("m5", refPwdEncrypted);
+	refJsonSerializer.Serialize("m6", m_strNickName);
+	refJsonSerializer.Serialize("m7", m_nImageQuality);
+	refJsonSerializer.Serialize("m9", m_bAutoStart);
+	refJsonSerializer.Serialize("m10", m_nLanguage);
+	refJsonSerializer.Serialize("m11", m_nTheme);
+	refJsonSerializer.Serialize("m12", m_strServerIP);	
+	refJsonSerializer.Serialize("m13", m_nPort);
+	refJsonSerializer.Serialize("m14", m_bAnalyzedNetEnv);
+	refJsonSerializer.Serialize("m15", m_arrRouteIPs);
+	refJsonSerializer.Serialize("m16", m_nConsolePort);
+	refJsonSerializer.Serialize("m17", m_nScreenCapPort);	
+	refJsonSerializer.Serialize("m18", m_arrHistoryPartners);
+
+
+	refJsonSerializer.Serialize("m23", m_nPollingInterval);	
+	refJsonSerializer.Serialize("m24", m_strUpdateFileUrl);
+	refJsonSerializer.Serialize("m25", m_nFirstTimeUse);
+	refJsonSerializer.Serialize("m26", m_nLastTimeUse);	
+	refJsonSerializer.Serialize("m27", m_nIgnoretheversion);	
+	refJsonSerializer.Serialize("m28", m_strTechnicalSupportURL);
+	refJsonSerializer.Serialize("m29", m_bHideWallPage);
+	refJsonSerializer.Serialize("m30", m_strRegion);
+	refJsonSerializer.Serialize("m31", m_bInitSettingsReaded);
+	
+	refJsonSerializer.Serialize("m32", m_strHepeCenterURL);
+	refJsonSerializer.Serialize("m33", m_strInviteFriendsURL);
+	refJsonSerializer.Serialize("m34", m_bUserExperience);	
+	refJsonSerializer.Serialize("m35", m_nLogLevel);
+	refJsonSerializer.Serialize("m36", m_bD3DAllowed);	
+	refJsonSerializer.Serialize("m37", m_bSaveSecCode);	
+	refJsonSerializer.Serialize("m38", m_nVersion);	
+}
+
+void CPrjSettings::DeSerialize(CJSONSerializer & refJsonSerializer)
+{
+	CSerializeEntry::DeSerialize(refJsonSerializer);
+
+	std::string strPwd;
+
+	refJsonSerializer.DeSerialize("m1", m_bEnableCtrl);
+	refJsonSerializer.DeSerialize("m2", m_bEnableTmpPwd);
+	refJsonSerializer.DeSerialize("m3", m_strTmpPwd);
+	refJsonSerializer.DeSerialize("m4", m_bEnableFixPwd);
+	refJsonSerializer.DeSerialize("m5", strPwd);
+	refJsonSerializer.DeSerialize("m6", m_strNickName);
+	refJsonSerializer.DeSerialize("m7", m_nImageQuality);
+	refJsonSerializer.DeSerialize("m9", m_bAutoStart);
+	refJsonSerializer.DeSerialize("m10", m_nLanguage);
+	refJsonSerializer.DeSerialize("m11", m_nTheme);
+
+
+	refJsonSerializer.DeSerialize("m12", m_strServerIP);
+	refJsonSerializer.DeSerialize("m13", m_nPort);	
+	refJsonSerializer.DeSerialize("m16", m_nConsolePort);
+	refJsonSerializer.DeSerialize("m17", m_nScreenCapPort);
+
+	//refJsonSerializer.DeSerialize("m14", m_bAnalyzedNetEnv);
+	refJsonSerializer.DeSerialize("m15", m_arrRouteIPs);
+	refJsonSerializer.DeSerialize("m18", m_arrHistoryPartners);
+
+	refJsonSerializer.DeSerialize("m23", m_nPollingInterval);
+	refJsonSerializer.DeSerialize("m24", m_strUpdateFileUrl);
+	refJsonSerializer.DeSerialize("m25", m_nFirstTimeUse);
+	refJsonSerializer.DeSerialize("m26", m_nLastTimeUse);
+	refJsonSerializer.DeSerialize("m27", m_nIgnoretheversion);
+	refJsonSerializer.DeSerialize("m28", m_strTechnicalSupportURL);
+	refJsonSerializer.DeSerialize("m29", m_bHideWallPage);
+	refJsonSerializer.DeSerialize("m30", m_strRegion);
+	refJsonSerializer.DeSerialize("m31", m_bInitSettingsReaded);
+
+	refJsonSerializer.DeSerialize("m32", m_strHepeCenterURL);
+	refJsonSerializer.DeSerialize("m33", m_strInviteFriendsURL);
+	refJsonSerializer.DeSerialize("m34", m_bUserExperience);
+	refJsonSerializer.DeSerialize("m35", m_nLogLevel);
+	refJsonSerializer.DeSerialize("m36", m_bD3DAllowed);
+	refJsonSerializer.DeSerialize("m37", m_bSaveSecCode);
+	refJsonSerializer.DeSerialize("m38", m_nVersion);
+
+	m_nOldLanguage = m_nLanguage;
+	m_strPwd = DecryptPwd(strPwd);
+	
+
+//#ifdef _DEBUG
+//	m_strServerIP = "192.168.3.74";
+//#endif
+}
+
+//--------------------------------------------------------------------------------
+/// <summary>
+/// 保存工程设置到磁盘文件
+/// </summary>
+/// <param name="refPath">文件路径</param>
+/// <created>Andy,2020/7/2</created>
+/// <changed>Andy,2020/7/2</changed>
+//--------------------------------------------------------------------------------
+bool CPrjSettings::Save(const std::string & refPath) const
+{
+	std::lock_guard<std::recursive_mutex> objLocker(m_objMutex);
+	CJsonHelper objJsonHelper;
+	const bool bResult = objJsonHelper.Save<CPrjSettings>(
+		*this
+		, refPath
+		, PRJSETTINGS_DATA_UUID
+		, PRJSETTINGS_DATA_VERSION
+		, PRJSETTINGS_DATA_DESC);
+
+	return bResult;
+
+
+}
+
+//--------------------------------------------------------------------------------
+/// <summary>
+/// 从磁盘文件加载工程设置
+/// </summary>
+/// <param name="refPath">文件路径</param>
+/// <created>Andy,2020/7/2</created>
+/// <changed>Andy,2020/7/2</changed>
+//--------------------------------------------------------------------------------
+bool CPrjSettings::Load(const std::string & refPath)
+{
+	std::lock_guard<std::recursive_mutex> objLocker(m_objMutex);
+	CJsonHelper objJsonHelper;
+	const bool bResult = objJsonHelper.Load<CPrjSettings>(
+		refPath
+		, PRJSETTINGS_DATA_UUID
+		, *this);
+
+	return bResult;
+}
+
+// ********************************************************************************
+/// <summary>
+/// 启用默认设置
+/// </summary>
+/// <created>Andy,2020/10/15</created>
+/// <changed>Andy,2020/10/15</changed>
+// ********************************************************************************
+void CPrjSettings::DefaultSettings()
+{
+	m_bEnableCtrl = true;
+	m_bEnableTmpPwd = true;
+	m_strTmpPwd.clear();
+	//m_bEnableFixPwd = false;
+	//m_strPwd.clear();
+	//m_strNickName = "";
+	m_nImageQuality = IQT_IMAGE_QUALITY_PRIORITY;
+	m_bAutoStart = true;
+	//m_nLanguage = LT_ENGLISH;    ///< 
+	//m_nTheme = TT_FOLLOW_SYSTEM;
+
+#ifdef _DEBUG
+	m_strServerIP = "controlserver.anyviewer.com";
+#endif
+	m_nPort = 30192;
+	m_nPollingInterval = 50;
+	m_bHideWallPage = false;
+	m_bSaveSecCode = true;
+}
+
+// ********************************************************************************
+/// <summary>
+/// 回复设置
+/// </summary>
+/// <param name="refSrc">源</param>
+/// <created>Andy,2021/4/21</created>
+/// <changed>Andy,2021/4/21</changed>
+// ********************************************************************************
+void CPrjSettings::Reconver(CPrjSettings& refSrc)
+{
+	m_bEnableCtrl = refSrc.m_bEnableCtrl;
+	m_bEnableTmpPwd = refSrc.m_bEnableTmpPwd;
+	m_strTmpPwd = refSrc.m_strTmpPwd;
+	m_bEnableFixPwd = refSrc.m_bEnableFixPwd;
+	m_strPwd = refSrc.m_strPwd;
+	m_strNickName = refSrc.m_strNickName;
+	m_nImageQuality = refSrc.m_nImageQuality;
+	m_bHideWallPage = refSrc.m_bHideWallPage;
+	m_bAutoStart = refSrc.m_bAutoStart; //下一个版本需要恢复
+	m_nLanguage = refSrc.m_nLanguage;
+	m_nTheme = refSrc.m_nTheme;
+	m_bLockLocalInput = refSrc.m_bLockLocalInput;
+	m_bLocalInputPriority = refSrc.m_bLocalInputPriority;
+	m_nLocalInputPriorityTimeout = refSrc.m_nLocalInputPriorityTimeout;
+	//m_nLogLevel = refSrc.m_nLogLevel; 下一个版本需要恢复
+	m_nPollingInterval = refSrc.m_nPollingInterval;
+	m_bGrabTransparentWindowsFlag = refSrc.m_bGrabTransparentWindowsFlag;
+	m_bMirrorDriverAllowed = refSrc.m_bMirrorDriverAllowed;
+	//m_bD3DAllowed = refSrc.m_bD3DAllowed;
+	m_bBlockRemoteInput = refSrc.m_bBlockRemoteInput;
+	m_nDisconnectAction = refSrc.m_nDisconnectAction;
+	m_bAlwaysShared = refSrc.m_bAlwaysShared;
+	m_bNeverShared = refSrc.m_bNeverShared;
+	m_bDisconnectClients = refSrc.m_bDisconnectClients;
+	m_bCtrlAltDelEnabled = refSrc.m_bCtrlAltDelEnabled;
+
+	refSrc.m_arrHistoryPartners.MoveTo(m_arrHistoryPartners);
+
+	m_bShared = refSrc.m_bShared;
+	m_nFirstTimeUse = refSrc.m_nFirstTimeUse;
+	m_nLastTimeUse = refSrc.m_nLastTimeUse;
+	m_bSaveSecCode = refSrc.m_bSaveSecCode;
+
+	if (IQT_AUTOMATIC == m_nImageQuality)
+	{
+		// 下面的代码是为了兼容老版本
+		m_nImageQuality = IQT_IMAGE_QUALITY_PRIORITY;
+	}
+
+}
+
+// ********************************************************************************
+/// <summary>
+/// 设置加密key
+/// </summary>
+/// <param name="pKey"></param>
+/// <created>Andy,2020/10/19</created>
+/// <changed>Andy,2020/10/19</changed>
+// ********************************************************************************
+void CPrjSettings::SetAESEncipherKey(const UCHAR * pKey)
+{
+	memset(&m_objAESEncipherKey, 0, sizeof(m_objAESEncipherKey));
+	aes_set_key(&m_objAESEncipherKey, pKey, AES_KEY_LEN);
+}
+
+CPrjSettings* GetPrjSettings()
+{
+	return CGlobleSingleton<CPrjSettings>::Instance();
+}
+
+

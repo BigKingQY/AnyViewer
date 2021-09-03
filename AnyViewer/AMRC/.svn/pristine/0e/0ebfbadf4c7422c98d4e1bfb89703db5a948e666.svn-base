@@ -1,0 +1,84 @@
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// @file  SLCTLogParser.h
+/// @brief SLCT算法类定义
+/// 
+/// SLCT用于提取日志记录中的模式，并发现未知的模式(可能是异常)
+///
+/// @author 黄丽云
+/// @version 1.0
+/// @date        2020-6-9
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#pragma once
+#include "Ax3LogProtocol.h"
+#include <map>
+#include <vector>
+
+#define SEPARATOR_SIZE_MAX 255 ///< 分割符号数组最大值
+
+
+
+
+class CWordsStat
+{
+public:
+	CWordsStat() {}
+	CWordsStat(std::string& strWord)
+		: m_strWord(strWord)
+	{}
+	~CWordsStat() {}
+
+public:
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strWord, Word)                 ///< 单词
+	DECLARE_MEMBER_AND_METHOD_V11(int, m_nFrequent, Frequent,0)             ///< 基数
+	DECLARE_MEMBER_AND_METHOD_V11(bool, m_bExclude, Exclude,false)    ///< 排除
+};
+
+using CWordsStatPtr = std::shared_ptr<CWordsStat>;
+using CWordsList = std::vector<CWordsStatPtr>;
+
+using CWordsListPtr = std::shared_ptr<CWordsList>;
+using MODE_TO_WORDS = std::map<std::string, CWordsListPtr>;
+using STRING_TO_VALUE = std::map<std::string, int>;
+
+class CSLCTLogParser
+{
+public:
+	CSLCTLogParser();
+	virtual ~CSLCTLogParser();
+
+
+public:
+	// 初始化
+	bool Init();
+
+	//添加单词信息
+	void AppendWordsFreq(const std::string& refWord,const int nFreq);
+
+	// 分析日志
+	bool Parser(const std::string& refLogLine, std::string& refModel);
+
+private:
+
+	// 分割单词
+	void SplitWord(const std::string& refLogLine, CWordsListPtr pWordsList) const;
+
+	// 查找单词对应的统计信息
+	CWordsStatPtr LookupWordStat(const std::string& refWord, const CWordsListPtr pWordsList) const;
+
+	// 创建模式
+	void CreateMode(const std::string& refLogLine, const CWordsListPtr pWordsList, std::string& refModel) const;
+
+	// 判断第一个模式是否包含第二个模式
+	bool CheckContainModel(CWordsListPtr pWordsList1, CWordsListPtr pWordsList2);
+
+	// 添加新的模式
+	bool AppendModel(const std::string& refModel, CWordsListPtr pWordsList);
+private:
+	std::recursive_mutex     m_objMutex;
+	STRING_TO_VALUE          m_mapWordsFreq;   ///< 单词频率
+	bool                     m_arrSeparator[SEPARATOR_SIZE_MAX];
+	DECLARE_MEMBER_AND_METHOD_V11(int, m_nSampleThreshold, SampleThreshold, 10)    ///< 开始挖掘分析的阀值
+	MODE_TO_WORDS            m_mapModelList;
+};
+

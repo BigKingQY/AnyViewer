@@ -1,0 +1,92 @@
+/******************************************************************************
+* 
+* CSPAE
+* Version
+* Copyright (C) 2002, 2003 Colasoft Co., Ltd.
+* All Rights Reserved
+* $Header: /cvsdata/vc/SaxIDE/Common/IDEStringFilter.h,v 1.3 2014/10/31 03:21:17 administrator Exp $
+* 
+*******************************************************************************
+* 
+* Description:字符串过滤类定义
+******************************************************************************/
+
+#pragma once
+#include "MiscellaneousFunctions.h"
+#include "vector"
+
+class CStringFilter
+{
+public:
+	CStringFilter(){}
+	~CStringFilter(){}
+
+public:
+	void ParseFilter(std::string strFilter);
+	
+	bool MatchFilter(std::string strText);
+
+private:
+	std::vector<std::string> m_arrFilters;
+};
+
+
+/*********************************************************************
+*  函数名称  : CStringFilter::ParseFilter
+*  描    述  : 分解条件字符串
+*  参    数  : CString strFilter——字符串
+*  修改记录  : 2005-06-23 13:42:19   -huangdy-   创建
+*********************************************************************/
+inline void CStringFilter::ParseFilter(std::string strFilter)
+{
+	m_arrFilters.clear();
+
+	if(strFilter.size() > 0)
+	{
+		size_t nPrePos = 0;
+		size_t nCurPos = 0;
+
+		std::transform(strFilter.begin(), strFilter.end(), strFilter.begin(), ::toupper); //将小写的都转换成大写
+		strFilter += (";");		
+
+		while((nCurPos = strFilter.find((";"),nPrePos)) != std::string::npos)
+		{
+			m_arrFilters.push_back(strFilter.substr(nPrePos,nCurPos - nPrePos));
+
+			nPrePos = (nCurPos + 1);
+		}
+	}
+}
+
+/*********************************************************************
+*  函数名称  : CStringFilter::MatchFilter
+*  描    述  : 检查指定的字符串是否符合条件
+*  参    数  : CString strText——被检查的条件
+*  返 回 值  : TRUE：符合，false：不符合
+*  修改记录  : 2005-06-23 13:43:42   -huangdy-   创建
+*********************************************************************/
+inline bool CStringFilter::MatchFilter(std::string strText)
+{
+	if (m_arrFilters.size() == 0)
+	{
+		return true;
+	}
+	
+	bool bResult = false;
+
+	if(strText.size() > 0)
+	{
+		std::transform(strText.begin(), strText.end(), strText.begin(), ::toupper); //将小写的都转换成大写
+
+		for(size_t i = 0;i < m_arrFilters.size();i++)
+		{
+			if(strText.find(m_arrFilters[i]) != strText.npos)
+			{
+				bResult = true;
+				break;
+			}
+		}
+	}
+
+	return bResult;
+}

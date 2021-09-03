@@ -1,0 +1,44 @@
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// @file  
+/// @brief 标准设计模式辅助方法或类
+/// 
+///
+/// @author 黄丽云
+/// @version 1.0
+/// @date        2018-10-19
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#pragma once
+#include "public.h"
+
+template <typename T>
+void ClearContainer(T& refContainer)
+{
+	auto itr = refContainer.begin();
+
+	for (; itr != refContainer.end(); itr++)
+	{
+		delete (*itr);
+	}
+
+	refContainer.clear();
+}
+
+template <typename T1, typename T2>
+void DeleteItem(T1& refContainer, T2* pEntryDeleted)
+{
+	auto itr = refContainer.begin();
+
+	for (;itr != refContainer.end(); )
+	{
+		if ((*itr) == pEntryDeleted)
+		{
+			delete (*itr);
+			itr = refContainer.erase(itr);
+		}
+        else
+        {
+            itr++;
+        }
+	}
+}

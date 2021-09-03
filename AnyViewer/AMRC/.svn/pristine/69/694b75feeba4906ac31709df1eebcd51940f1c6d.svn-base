@@ -1,0 +1,10 @@
+#pragma once
+
+
+class CUpdateHandlerServerListener
+{
+public:
+	// Interface function
+	virtual void OnUpdateFrameBuffer(const CFrameBuffer *pFrameBuffer) = 0;
+};
+

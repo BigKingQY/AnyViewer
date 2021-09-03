@@ -1,0 +1,22 @@
+#include "stdafx.h"
+#include "NamingDefs.h"
+
+const TCHAR NamingDefs::MIRROR_DRIVER_MESSAGE_WINDOW_CLASS_NAME[] =
+  _T("MIRROR_DRIVER_MESSAGE_WINDOW_CLASS_NAME");
+
+const TCHAR WindowNames::WINDOW_CLASS_NAME[] =
+  _T("TvnWindowsApplicationClass");
+
+const TCHAR ClipboardNames::CLIPBOARD_WIN_CLASS_NAME[] = 
+  _T("Tvnserver.Clipboard.CMessageWindow");
+
+
+const TCHAR HookDefinitions::HOOK_LOADER_WINDOW_CLASS[] =
+  _T("AvnHookLoaderWindowClass");
+const TCHAR HookDefinitions::HOOK_TARGET_WIN_CLASS_NAME[] =
+  _T("HookTargetWinClassName");
+const TCHAR HookDefinitions::HOOK_LOADER_NAME[] = _T("hookldr.exe");
+const UINT HookDefinitions::LOADER_CLOSE_CODE =
+  RegisterWindowMessage(_T("AVN.HOOK.LOADER.CLOSE.CODE"));
+const UINT HookDefinitions::SPEC_IPC_CODE =
+  RegisterWindowMessage(_T("AVN.HOOK.MESSAGE.CODE"));

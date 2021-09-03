@@ -1,0 +1,97 @@
+#include "stdafx.h"
+
+#include "PortMapping.h"
+#include "StringParser.h"
+
+#include <tchar.h>
+#include <stdio.h>
+
+CPortMapping::CPortMapping()
+: m_port(0)
+{
+}
+
+CPortMapping::CPortMapping(int nport, CPortMappingRect nrect)
+: m_port(nport), m_objRect(nrect)
+{
+}
+
+CPortMapping::CPortMapping(const CPortMapping &refSrc)
+: m_port(refSrc.m_port), m_objRect(refSrc.m_objRect)
+{
+}
+
+CPortMapping::~CPortMapping()
+{
+}
+
+CPortMapping &CPortMapping::operator=(const CPortMapping &refSrc)
+{
+  m_port = refSrc.m_port;
+  m_objRect = refSrc.m_objRect;
+  return *this;
+}
+
+bool CPortMapping::IsEqualTo(const CPortMapping *other) const
+{
+  return other->m_port == m_port && other->m_objRect.IsEqualTo(&m_objRect);
+}
+
+void CPortMapping::setPort(int nport)
+{
+  m_port = nport;
+}
+
+void CPortMapping::setRect(CPortMappingRect nrect)
+{
+  m_objRect = nrect;
+}
+
+int CPortMapping::getPort() const
+{
+  return m_port;
+}
+
+CPortMappingRect CPortMapping::GetRect() const
+{
+  return m_objRect;
+}
+
+void CPortMapping::toString(CStringStorage *string) const
+{
+  //
+  // Format:   [port]:[rect.toString()]
+  // It means: [port]:[width]x[height]+[x]+[y]
+  // without square brackets.
+  //
+
+  CStringStorage rectString;
+  m_objRect.toString(&rectString);
+
+  string->format(_T("%d:%s"), m_port, rectString.getString());
+}
+
+bool CPortMapping::parse(const TCHAR *str, CPortMapping *mapping)
+{
+  int port;
+  TCHAR c;
+  CPortMappingRect rect;
+  const TCHAR *rectString = _tcschr(str, _T(':')) + 1;
+  if (rectString == NULL) {
+    return false;
+  }
+  if ((_stscanf(str, _T("%d%c"), &port, &c) != 2) || (c != _T(':'))) {
+    return false;
+  }
+  if (port < 0) {
+    return false;
+  }
+  if (!CPortMappingRect::parse(rectString, &rect)) {
+    return false;
+  }
+  if (mapping != NULL) {
+    mapping->setPort(port);
+    mapping->setRect(rect);
+  }
+  return true;
+}

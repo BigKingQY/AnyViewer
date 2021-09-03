@@ -1,0 +1,57 @@
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// @file  SyslogPacket.h
+/// @brief Syslog日志数据包类定义
+/// 
+///
+/// @author 黄丽云
+/// @version 1.0
+/// @date        2016-9-1
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#pragma once
+#ifdef WIN32
+#include "NetServiceImpl.h"
+#else
+#include "ServiceImpl.h"
+#endif
+
+
+class CSyslogPacket  : public CNetPacket
+{
+public:
+	CSyslogPacket() {}
+	CSyslogPacket(int nSize);
+	~CSyslogPacket();
+
+public:
+	/// @brief 从数据流中提取数据包
+	///
+	/// @param CDataStreamBuffer 存放数据包的缓冲区对象
+	/// @return  返回提取数据包后的结果,参考类型NET_EXTRACT_DATA_PACKET_RESULT
+	virtual NET_EXTRACT_DATA_PACKET_RESULT ExtractData(CDataStreamBuffer&) { return NEDPR_INVALID; }
+
+	/// @brief 清空数据包
+	virtual void ResetContent();
+
+	/// @brief 得到数据头指针
+	///
+	/// @return  返回一个指向数据包头的指针
+	virtual BYTE* GetHeaderPtr();
+
+	/// @brief 得到整个数据包的长度
+	///
+	/// @return  返回数据包有效长度
+	virtual int GetTotalLength();
+
+	/// @brief 关联当前的数据包到指定的数据
+	void Attach(BYTE* pData, int nLen);
+
+	/// @brief 取消关联
+	void Dettach();
+
+	virtual int GetPacketId(void) override;
+protected:
+	CDataStreamBuffer        m_objDataBuffer;                  ///< 存放数据的缓冲区对象
+
+};
+

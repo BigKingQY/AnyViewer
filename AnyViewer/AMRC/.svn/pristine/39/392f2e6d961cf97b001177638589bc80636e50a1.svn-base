@@ -1,0 +1,86 @@
+/******************************************************************************
+*
+* SSIDE
+* Version
+* Copyright (C) 2002, 2003 Ax3soft Co., Ltd.
+* All Rights Reserved
+* $Header: /cvsdata/vc/Common/CacheFile.h,v 1.4 2015/09/17 07:53:59 administrator Exp $
+*
+*******************************************************************************
+*
+* Description:缓存文件类定义
+******************************************************************************/
+#pragma once
+#include <assert.h>
+#include <limits.h>
+
+
+
+//#define _WRITE_LOG
+class CCacheFile
+{
+public:  // Constructors
+	enum BufferCommand { bufferRead, bufferWrite, bufferCommit, bufferCheck };
+	enum SeekPosition { begin = 0x0, current = 0x1, end = 0x2 };
+	enum BufferFlags
+	{
+		bufferDirect = 0x01,
+		bufferBlocking = 0x02
+	};
+
+	CCacheFile(int nGrowBytes = 1024);   /* explicit */
+	CCacheFile(char* lpBuffer, int nBufferSize, int nGrowBytes = 0);
+	~CCacheFile();
+
+public:
+	int GetLength() const { return m_nFileSize; }
+	int GetPosition() const { return m_nPosition; }
+	char* GetBufferPtr() { return m_lpBuffer; }
+
+public:    // Operations
+	void Attach(char* lpBuffer, int nBufferSize, int nGrowBytes = 0);
+
+	const char* Detach();
+
+	void SetGrowBytes(int nGrowBytes) { assert((unsigned int)nGrowBytes <= UINT_MAX); m_nGrowBytes = nGrowBytes; }
+
+	int Seek(int lOff, int nFrom);
+
+	void SetLength(int dwNewLen);
+
+	int Read(void* lpBuf, int nCount);
+
+	bool Write(const void* lpBuf, int nCount);
+
+	void Abort();
+
+	void Close();
+
+	unsigned int GetBufferPtrEx(
+		unsigned int nCommand
+		, unsigned int nCount
+		, void** ppBufStart
+		, void**ppBufMax);
+
+protected:
+	char* Alloc(int nBytes);
+	char* Realloc(char* lpMem, int nBytes);
+	char* Memcpy(char* lpMemTarget, const char* lpMemSource, int nBytes);
+	void Free(char* lpMem);
+	void GrowFile(int dwNewLen);
+
+protected:
+	int                      m_nGrowBytes;
+	int                      m_nPosition;
+	int                      m_nBufferSize;
+	int                      m_nFileSize;
+	char*                    m_lpBuffer;
+	bool                     m_bAutoDelete;
+
+#ifdef _WRITE_LOG
+	static int64_t      s_nMemoSizeAllocated;
+#endif
+};
+
+
+extern bool  WriteString(CCacheFile& file, const char* string);

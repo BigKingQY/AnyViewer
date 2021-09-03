@@ -1,0 +1,344 @@
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// @file  
+/// @brief 数据流事务抽象类、内存数据流事务和文件数据流事务定义
+/// 
+///
+/// @author 黄丽云
+/// @version 1.0
+/// @date    2019-3-22
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+#pragma once
+
+#include <TypeDefine.h>
+#include <MiscellaneousFunctions.h>
+#include "TransactionAbstract.h"
+#include "JsonSerializer.h"
+#include <BufferImpl.h>
+#include <boost/utility.hpp>
+#include <fstream>
+#include <boost/filesystem.hpp>
+#include <boost/filesystem/fstream.hpp>
+#include <rapidjson/document.h>
+#include <rapidjson/prettywriter.h>
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/filewritestream.h>
+#include <LYCodeCvt.h>
+
+//#include <rapidjson/filereadstream.h>
+
+namespace newfs = boost::filesystem;
+
+#define RETRANSFER_NUMBER_MAX 3   ///< 重传最大次数
+
+/// <summary>流事务类型</summary>
+enum STREAM_TRANSACTION_TYPE
+{
+    TST_UNKNOWN = 0,
+    TST_MEMORY = 1,   ///<内存流事务
+    TST_FILE = 2,     ///<文件流事务
+};
+
+/// <summary>流事务状态</summary>
+enum STREAM_TRANS_STATUS
+{
+    STS_INIT,
+    STS_TRANS, ///<传输
+    STS_FALED, ///<失败
+    STS_CANCEL, ///<取消
+    STS_SUCCESS, ///<成功
+};
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// <summary>
+/// 流事务类型
+/// </summary>
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+class CStreamTransAbstract  : public CTransAbstract	
+{
+public:
+    CStreamTransAbstract(const U32 nType);
+    virtual ~CStreamTransAbstract();
+
+	typedef char Ch; //!< Character type (byte).
+
+public:
+	void IncTryNum() { m_nTryNum++; }
+public:
+	//  从流中读取数据
+    virtual int Read(BYTE* pBuffer, U32 nLength,bool bMoveCursor) = 0;
+
+	// 写数据到流中
+    virtual bool Write(const BYTE* pBuffer, U32 nLength) = 0;
+
+	// 移动读指针
+    virtual bool MoveReadingOffset(U64 nOffset) = 0;
+
+	// 移动写指针
+	virtual bool MoveWritingOffset(U64 nOffset) = 0;
+
+	// 计算六md5值
+    virtual std::string CalcMd5() { return ""; }
+
+	//设置流数据的长度
+	virtual void SetLength(U64 /*nLength*/) {}
+
+	// 得到当前可传输流数据的长度
+	virtual U64 GetLength() { return 0; }
+
+    //获取流指针
+    virtual const BYTE* GetBuffer() { return nullptr; }
+
+	// 得到当前的读偏移
+	virtual U64 GetReadingOffset() { return 0; }
+
+	// 判断当前的数据是否传输结束
+	virtual bool TransferOver() { return false; }
+
+	// 判断当前的数据是否合法有效
+	virtual bool IsValid()
+	{ 
+		if (m_strOrgMd5.empty())
+		{
+			/// 如果没有设置MD5,说明不需要校验
+			return true;
+		}
+
+		return (CalcMd5() == GetOrgMd5());
+	}
+
+	// 设置原始尺寸
+	virtual void SetOrgLength(U64 nOrgLength) {	m_nOrgLength = nOrgLength;}
+
+    virtual U32 GetTransferPercent() { return 0; }
+
+public:
+	//! Read the current character from stream without moving the read cursor.
+	Ch Peek();
+
+	//! Read the current character from stream and moving the read cursor to next character.
+	Ch Take();
+
+	//! Get the current read cursor.
+	//! \return Number of characters read from Start.
+	size_t Tell() { return size_t(GetReadingOffset()); }
+
+	// Not implemented
+	void Put(Ch) { RAPIDJSON_ASSERT(false); }
+	void Flush() { RAPIDJSON_ASSERT(false); }
+	Ch* PutBegin() { RAPIDJSON_ASSERT(false); return 0; }
+	size_t PutEnd(Ch*) { RAPIDJSON_ASSERT(false); return 0; }
+
+public:
+    std::string GetStatusDesc();
+
+public:
+	// --------------------------------------------------------------------------------
+/// <summary>
+/// 注入jons数据到流中
+/// </summary>
+/// <param name="pJsonObj">指向一个有序列化json数据的对象，序列化后数据将添加到数据包后面</param>
+/// <returns></returns>
+/// <created>黄丽云,2019/2/27</created>
+/// <changed>黄丽云,2019/2/27</changed>
+// --------------------------------------------------------------------------------
+	template <class T>
+	bool InjectJsonObjT(const T& refData)
+	{
+		rapidjson::StringBuffer objBuffer;
+		rapidjson::Document objJsonDoc(rapidjson::kObjectType);    //生成一个dom元素Document
+		CJSONSerializer objJsonSerializerHelper(objJsonDoc.GetAllocator());
+
+		refData.Serialize(objJsonSerializerHelper);
+		objJsonDoc.AddMember("data", objJsonSerializerHelper.GetJsonValue(), objJsonDoc.GetAllocator());
+        rapidjson::Writer<rapidjson::StringBuffer> objWriter(objBuffer);
+
+        bool bResult = objJsonDoc.Accept(objWriter);
+
+		if (bResult)
+		{
+            MoveWritingOffset(0);
+
+            auto out = objBuffer.GetString();
+            const int nVarPayloadLen = objBuffer.GetLength();
+
+            Write((const BYTE*)out, nVarPayloadLen);
+		}
+
+		return bResult;
+	}
+
+
+	// --------------------------------------------------------------------------------
+/// <summary>
+/// 从数据包的载荷数据中提取json对象
+/// </summary>
+/// <param name="refJsonObj">json对象</param>
+/// <returns></returns>
+/// <created>黄丽云,2019/2/27</created>
+/// <changed>黄丽云,2019/2/27</changed>
+// --------------------------------------------------------------------------------
+	template <class T>
+	bool ExtractJsonObjT(T& refJsonObj)
+	{
+		bool bResult = false;
+		rapidjson::Document objJsonDoc;
+
+		objJsonDoc.ParseStream<0>(*this);
+
+		if (!objJsonDoc.IsNull())
+		{
+			auto itr = objJsonDoc.FindMember("data");
+
+			if (objJsonDoc.MemberEnd() != itr)
+			{
+				CJSONSerializer objJsonSerializerHelper(objJsonDoc.GetAllocator());
+
+				objJsonSerializerHelper.SetJsonValue(const_cast<rapidjson::Value&>(itr->value));
+				refJsonObj.DeSerialize(objJsonSerializerHelper);
+
+				bResult = true;
+			}
+		}
+
+		return bResult;
+	}
+
+	template <class T>
+	bool ExtractESJsonObjT(T& refJsonObj)
+	{
+		bool bResult = false;
+		rapidjson::Document objJsonDoc;
+
+		objJsonDoc.ParseStream<0>(*this);
+
+		if (!objJsonDoc.IsNull())
+		{
+			CJSONSerializer objJsonSerializerHelper(objJsonDoc.GetAllocator());
+
+			objJsonSerializerHelper.SetJsonValue(*((rapidjson::Value*)&objJsonDoc));
+			refJsonObj.DeSerialize(objJsonSerializerHelper);
+
+			bResult = true;
+		}
+
+		return bResult;
+	}
+private:
+    DECLARE_MEMBER_AND_METHOD(std::string, m_strOrgMd5, OrgMd5)  ///< 被传输数据原始CMD5值
+	DECLARE_MEMBER_AND_GET_METHOD(U64, m_nOrgLength, OrgLength)      ///< 被传输数据原始长度
+	DECLARE_MEMBER_AND_METHOD(U32, m_nTryNum, TryNum)            ///< 重传数据流计数
+    DECLARE_MEMBER_AND_METHOD(U32, m_nSrcAccount, SrcAccount)    ///< 源账号id
+	DECLARE_MEMBER_AND_METHOD(U32, m_nDstAccount, DstAccount)    ///< 远程账号id
+    DECLARE_MEMBER_AND_METHOD(STREAM_TRANS_STATUS, m_nStatus, Status) ///<流传输状态
+	DECLARE_MEMBER_AND_METHOD(bool, m_bQuickMode, QuickMode)     ///< 快速模式，不需要应答
+};
+
+
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// 内存流事务
+/// </summary>
+// --------------------------------------------------------------------------------
+class CMemoryStreamTrans : public CStreamTransAbstract
+{
+public:
+    CMemoryStreamTrans();
+
+	virtual ~CMemoryStreamTrans();
+public:
+    //  
+	virtual int Read(BYTE* pBuffer, U32 nLength, bool bMoveCursor = true) override;
+
+    virtual bool Write(const BYTE*, U32 nLength) override;
+    
+	virtual bool MoveReadingOffset(U64 nOffset) override;
+	
+	virtual bool MoveWritingOffset(U64 nOffset) override;
+    
+	virtual std::string CalcMd5() override;
+	
+    virtual const BYTE* GetBuffer() override { return m_objData.GetDataHeadPtr(); }
+
+	virtual void SetLength(U64 nLength) override;
+
+	virtual U64 GetLength() override { return m_objData.GetDataLen(); }
+	
+	virtual U64 GetReadingOffset() override { return m_objData.GetCurReadingPos(); }
+	
+	// 判断当前的数据是否传输结束
+	virtual bool TransferOver() override;
+	
+	virtual void SetOrgLength(U64 nOrgLength) override;
+
+public:
+    void AnsiToUtf8();
+    void Utf8ToAnsi();
+
+private:
+    CBufferImplT<BYTE>       m_objData;   ///< 存储数据的内存缓冲区
+};
+
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// 文件流事务
+/// </summary>
+// --------------------------------------------------------------------------------
+class CFileStreamTrans : public CStreamTransAbstract
+{
+public:
+    CFileStreamTrans();
+	virtual ~CFileStreamTrans();
+
+public:
+    virtual int Read(BYTE* pBuffer, U32 nLength, bool bMoveCursor) override;
+    
+	virtual bool Write(const BYTE*, U32 nLength) override;
+    
+	virtual bool MoveReadingOffset(U64 nOffset) override;
+	
+	virtual bool MoveWritingOffset(U64 nOffset) override;
+
+    virtual std::string CalcMd5();
+	
+	virtual void SetLength(U64 nLength) override;
+
+	virtual U64 GetLength() override;
+
+	// 得到当前的读写偏移
+	virtual U64 GetReadingOffset() override;
+
+	// 判断当前的数据是否传输结束
+	virtual bool TransferOver() override;
+
+    virtual U32 GetTransferPercent() override;
+
+public:
+	bool Open(const std::string& strFile
+		, bool bRead = true
+		, std::ios_base::openmode nMode = std::ios_base::in | std::ios_base::out | std::ios_base::binary | std::ios_base::ate);
+	newfs::path&  GetPath() { return m_objPath; }
+
+#ifndef WIN32
+	// 锁住当前的文件
+	bool Lock();
+
+	// 解锁当前的文件
+	bool Unlock();
+#endif
+
+private:
+    newfs::fstream           m_objStream;   ///< 文件流
+    newfs::path              m_objPath;     ///< 文件路径
+    U32                      m_nOffset;     ///< 当前读写偏移（相对于文件开头）
+	int                      m_nfd;         ///< 文件句柄
+};
+
+typedef std::shared_ptr<CStreamTransAbstract> CStreamTransAbstractPtr;
+typedef std::shared_ptr<CMemoryStreamTrans> CMemoryStreamTransPtr;
+typedef std::shared_ptr<CTransAbstract> CTransAbstractPtr;
+typedef std::shared_ptr<CFileStreamTrans> CFileStreamTransPtr;

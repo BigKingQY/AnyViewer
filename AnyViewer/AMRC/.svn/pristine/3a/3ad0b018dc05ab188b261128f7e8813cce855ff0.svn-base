@@ -1,0 +1,65 @@
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// @file  
+// 树形数据管理器相关基类定义
+/// 
+///
+/// 
+/// @author 黄丽云
+/// @version 1.0
+/// @date        2019-1-15
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#pragma once
+#include "public.h"
+#include "SDPUndo.h"
+#include "MiscellaneousFunctions.h"
+#include "TreeManagerBase.h"
+
+class CEntryBase;
+
+
+//*******************************************************************
+/// <summary>
+/// 增加或删除条目undo命令
+/// </summary>
+//*******************************************************************
+class CAREntryUndoCmd : public CBaseCommand
+{
+public:
+	CAREntryUndoCmd();
+	virtual ~CAREntryUndoCmd();
+
+public:
+	virtual bool Execute() override;
+	virtual bool Unexecute() override;
+
+private:
+	DECLARE_MEMBER_AND_METHOD(ENTRY_ARRAY*, m_pEntryArray, EntryArray)    ///< 数组
+	DECLARE_MEMBER_AND_METHOD(CEntryBase *, m_pEntry, Entry)              ///< 当前被操作记录
+	DECLARE_MEMBER_AND_METHOD(bool, m_bAppending, Appending)              ///< 增加操作
+	DECLARE_MEMBER_AND_GET_METHOD(bool, m_bRelease, Release)              ///< 释放设置记录标志
+	DECLARE_MEMBER_AND_GET_METHOD(int, m_nPos, Pos)                       ///< 当前被操作记录位置	
+
+};
+
+
+//*******************************************************************
+/// <summary>
+/// 替换条目undo命令
+/// </summary>
+//*******************************************************************
+class CReplaceEntryUndoCmd : public CBaseCommand
+{
+public:
+	CReplaceEntryUndoCmd();
+	virtual ~CReplaceEntryUndoCmd();
+
+public:
+	virtual bool Execute() override;
+	virtual bool Unexecute() override;
+
+private:
+	DECLARE_MEMBER_AND_METHOD(ENTRY_ARRAY*, m_pEntryArray, EntryArray)       ///< 数组
+	DECLARE_MEMBER_AND_METHOD(CEntryBase *, m_pNewEntry, NewEntry)           ///< 新节点
+	DECLARE_MEMBER_AND_METHOD(CEntryBase *, m_pReplacedEntry, ReplacedEntry) ///< 被替换节点
+};

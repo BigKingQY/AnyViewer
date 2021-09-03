@@ -1,0 +1,39 @@
+#pragma once
+
+// This file contains all public names.
+#include "CommonHeader.h"
+
+class NamingDefs
+{
+public:
+  static const TCHAR MIRROR_DRIVER_MESSAGE_WINDOW_CLASS_NAME[];
+};
+
+
+
+
+
+class WindowNames
+{
+public:
+  static const TCHAR WINDOW_CLASS_NAME[];
+};
+
+
+
+class ClipboardNames
+{
+public:
+  static const TCHAR CLIPBOARD_WIN_CLASS_NAME[];
+};
+
+
+class HookDefinitions
+{
+public:
+  static const TCHAR HOOK_LOADER_WINDOW_CLASS[];
+  static const TCHAR HOOK_TARGET_WIN_CLASS_NAME[];
+  static const TCHAR HOOK_LOADER_NAME[];
+  static const UINT LOADER_CLOSE_CODE;
+  static const UINT SPEC_IPC_CODE;
+};

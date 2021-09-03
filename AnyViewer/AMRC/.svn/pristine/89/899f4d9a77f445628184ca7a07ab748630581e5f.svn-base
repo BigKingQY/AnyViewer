@@ -1,0 +1,741 @@
+/******************************************************************************
+* 
+* SaxMail
+* Version
+* Copyright (C) 2007 AxSoft Co., Ltd.
+* All Rights Reserved
+* $Header: /cvsdata/vc/SaxMail/Mailer.cpp,v 1.6 2015/06/11 07:31:59 administrator Exp $
+* 
+*******************************************************************************
+* 
+* Description:
+******************************************************************************/
+
+// $Nokeywords: $
+
+#include "AIMMailer.h"
+#include "ServiceImpl.h"
+#include "MiscellaneousFunctions.h"
+#include "LYCodeCvt.h"
+#include "AIMTime.h"
+#include <iostream>
+#include <stdlib.h>
+#include <fstream>
+
+
+enum {MAX_BUFFER_SIZE = 255};
+
+#define _MAX_PATH   260 // max. length of full pathname
+#define _MAX_DRIVE  3   // max. length of drive component
+#define _MAX_DIR    256 // max. length of path component
+#define _MAX_FNAME  256 // max. length of file name component
+#define _MAX_EXT    256 // max. length of extension component
+
+const char*  PRIORITY_IMPORTANT   = "1";
+const char*  PRIORITY_NORMAL      = "3";
+const char*  PRIORITY_TRIVIAL     = "5";
+
+const char*  MAILER_NAME          = "Sax_Mailer";
+const char*  BOUNDARY             = "#BOUNDARY#";
+
+// Member functions of class CMimeContent
+/////////////////////////////////////
+
+CMimeContent::CMimeContent(const std::string strContent) 
+	: m_strContent(strContent)
+{
+}
+
+std::string CMimeContent::GetDisposition() const
+{
+	return "";
+}
+
+// Member functions of class PlainTextContent
+/////////////////////////////////////
+
+CTextPlainContent::CTextPlainContent(
+	const std::string strContent, 
+	const std::string strCharSet)
+	: CMimeContent(strContent)
+	, m_strCharSet(strCharSet)
+{
+}
+
+std::string CTextPlainContent::GetType() const
+{
+	return "text/plain; strCharSet=" + m_strCharSet;
+}
+
+std::string CTextPlainContent::GetTransEncoding() const
+{
+	return "8bit";
+}
+
+std::string& CTextPlainContent::GetContent()
+{
+	// you can add more codes here, such as wrapping lines 
+	// or replacing '\n' with '\r\n', etc.
+	return m_strContent;
+}
+
+// Member functions of class CTextHtmlContent
+/////////////////////////////////////
+
+CTextHtmlContent::CTextHtmlContent(const std::string strContent, 
+	const std::string strCharSet)
+	: CMimeContent(strContent), m_strCharSet(strCharSet)
+{
+}
+
+std::string CTextHtmlContent::GetType() const
+{
+	return "text/html; strCharSet=" + m_strCharSet;
+}
+
+std::string CTextHtmlContent::GetTransEncoding() const
+{
+	return "8bit";
+}
+
+std::string& CTextHtmlContent::GetContent()
+{
+	// you can add more codes here, such as wrapping lines 
+	// or replacing '\n' with '\r\n', etc.
+	return m_strContent;
+}
+
+// Member functions of class CAttachContent
+/////////////////////////////////////
+
+CAttachContent::CAttachContent(const std::string strFileName)
+	: m_strFileName(strFileName)
+	, m_strName(strFileName)
+{
+}
+
+std::string CAttachContent::GetType() const
+{
+	return "application/octet-stream; strName=" + m_strName; 
+}
+
+std::string CAttachContent::GetDisposition() const
+{
+	return "attachment; filename=" + m_strName;
+}
+
+std::string CAttachContent::GetTransEncoding() const
+{
+	return "base64";
+}
+
+std::string& CAttachContent::GetContent()
+{
+	// you can add more codes here, such as wrapping lines 
+	// or replacing '\n' with '\r\n', etc.
+
+	std::ifstream objFileRead(m_strFileName, std::ios::in | std::ios::out | std::ios::binary);
+
+	if (objFileRead.is_open())
+	{
+		objFileRead.seekg(0, std::ios::end);       //设置文件指针到文件流的尾部
+		std::streampos ps = objFileRead.tellg();   //读取文件指针的位置
+
+		char* lpBuffer = new char[(int)ps + 1];
+
+		if (nullptr != lpBuffer)
+		{
+			objFileRead.seekg(0, std::ios::beg);          //设置文件指针到文件流的头部
+			objFileRead.read(lpBuffer, ps);
+
+			std::string strIn(lpBuffer);
+			std::string strOut;
+
+			CLYCodeCvt::Base64Encode(strIn, strOut);
+			m_strContent += strOut;
+
+			delete []lpBuffer;
+		}
+
+		objFileRead.close();
+	}
+
+	return m_strContent;
+}
+
+// Member functions of class CMailInfo
+/////////////////////////////////////
+
+CMailInfo::CMailInfo()
+	: m_strPriorty(PRIORITY_NORMAL)
+{}
+
+CMailInfo::~CMailInfo()
+{
+	ClearMimeContents();
+}
+
+void CMailInfo::AddReceiver(const std::string strName, const std::string strAddress)
+{
+	m_mmReceivers.insert(RECEIVERS_MAP::value_type(strName, strAddress));
+}
+
+void CMailInfo::SetReceiver(const std::string strName, const std::string strAddress)
+{
+	m_mmReceivers.empty();
+	m_mmReceivers.insert(RECEIVERS_MAP::value_type(strName, strAddress));
+}
+
+void CMailInfo::AddTextPlainContent(const char* pContent)
+{
+	CTextPlainContent* pTextPlainContent = new CTextPlainContent(pContent);
+
+	if(pTextPlainContent)
+	{
+		m_vtrContents.push_back(pTextPlainContent);
+	}
+}
+
+void CMailInfo::AddTextHtmlContent(char* pContent)
+{
+	CTextHtmlContent* pTextHtmlContent = new CTextHtmlContent(pContent);
+	if(pTextHtmlContent)
+	{
+		m_vtrContents.push_back(pTextHtmlContent);
+	}
+}
+
+void CMailInfo::AddAttachContent(char* pContent)
+{
+	CAttachContent* pAttachContent = new CAttachContent(pContent);
+	if(pAttachContent)
+	{
+		m_vtrContents.push_back(pAttachContent);
+	}
+}
+
+void CMailInfo::ClearMimeContents()
+{
+	for(size_t i = 0 ;i < m_vtrContents.size();i++)
+	{
+		delete m_vtrContents[i];
+	}
+	m_vtrContents.clear();
+}
+
+const MIME_CONTENTS_VECTOR& CMailInfo::GetMimeContents() const
+{
+	return m_vtrContents;
+}
+
+// Member functions of class CMailWrapper
+/////////////////////////////////////
+
+CMailWrapper::CMailWrapper(CMailInfoPtr pMailInfo) 
+	: m_pMailInfo(pMailInfo)
+{
+}
+
+std::string CMailWrapper::GetSenderAddress()
+{
+	std::string strAddress;
+
+	strAddress  = "<";
+	strAddress += m_pMailInfo->GetSenderAddress();
+	strAddress += ">";
+
+	return strAddress;
+}
+
+std::string CMailWrapper::GetHeader()
+{
+	std::string strHeader;
+
+	strHeader  = "From: ";
+	strHeader += PrepareFrom() + "\r\n";
+
+	strHeader += "To: ";
+	strHeader += PrepareTo() + "\r\n";
+
+	strHeader += "Date: ";
+	strHeader += PrepareDate() + "\r\n";
+
+	strHeader += "Subject: ";
+	strHeader += m_pMailInfo->GetSubject() + "\r\n";
+
+	strHeader += "X-Mailer: ";
+	strHeader += MAILER_NAME;
+	strHeader += "\r\n";
+
+	strHeader += "X-CPriority: ";
+	strHeader += m_pMailInfo->GetPriority() + "\r\n";
+
+	strHeader += "MIME-Version: 1.0\r\n";
+	strHeader += "Content-type: multipart/mixed; boundary=\"";
+	strHeader += BOUNDARY;
+	strHeader += "\"\r\n";
+
+	strHeader += "\r\n";
+
+	return strHeader;
+}
+
+void CMailWrapper::TraverseReceiver()
+{
+	m_objReceiverItr = m_pMailInfo->GetReceivers().begin();
+}
+
+bool CMailWrapper::HasMoreReceiver()
+{
+	return ( m_objReceiverItr != m_pMailInfo->GetReceivers().end() );
+}
+
+std::string CMailWrapper::NextReceiverAddress()
+{
+	std::string strAddress;
+
+	strAddress  = "<";
+	strAddress += (m_objReceiverItr++)->second;
+	strAddress += ">";
+
+	return strAddress;
+}
+
+void CMailWrapper::TraverseContent()
+{
+	m_objContentItr = m_pMailInfo->GetMimeContents().begin();
+}
+
+bool CMailWrapper::HasMoreContent()
+{
+	return ( m_objContentItr != m_pMailInfo->GetMimeContents().end() );
+}
+
+std::string& CMailWrapper::NextContent()
+{
+	m_strContent  = "--";
+	m_strContent += BOUNDARY;
+	m_strContent += "\r\n";
+
+	m_strContent += "Content-Type: ";
+	m_strContent += (*m_objContentItr)->GetType() + "\r\n";
+
+	std::string strDisposition = (*m_objContentItr)->GetDisposition();
+	if ( !strDisposition.size() )
+	{
+		m_strContent += "Content-Disposition: ";;
+		m_strContent += strDisposition + "\r\n";
+	}
+
+	m_strContent += "Content-Transfer-Encoding: ";
+	m_strContent += (*m_objContentItr)->GetTransEncoding() + "\r\n\r\n";
+
+	m_strContent += (*m_objContentItr)->GetContent() + "\r\n\r\n";
+
+	m_objContentItr++;
+
+	return m_strContent;
+}
+
+std::string CMailWrapper::GetEnd()
+{
+	std::string strEnd("\r\n--");
+
+	strEnd += BOUNDARY;
+	strEnd += "--\r\n";
+	strEnd += ".\r\n";
+
+	return strEnd;
+}
+
+std::string CMailWrapper::PrepareFrom()
+{
+	std::string strFrom;
+
+	strFrom = PrepareName(m_pMailInfo->GetSenderName());
+	strFrom += GetSenderAddress();
+
+	return strFrom;
+}
+
+std::string CMailWrapper::PrepareTo()
+{
+	std::string strTo;
+
+	TraverseReceiver();
+	
+	while(HasMoreReceiver())
+	{
+		strTo += PrepareName(m_objReceiverItr->first);
+		strTo += NextReceiverAddress() + ", ";
+	}
+
+	strTo.pop_back();
+	strTo.pop_back();
+
+	return strTo;
+}
+
+std::string CMailWrapper::PrepareDate()
+{
+	return CAIMTime::GetCurrentTime("%a, %d %b %y %H:%M:%S +0800");
+}
+
+std::string CMailWrapper::PrepareName(const std::string strRawName)
+{
+	std::string strDecoratedName;
+
+	if(!strRawName.size())
+	{
+		strDecoratedName  = "\"";
+		strDecoratedName += strRawName;
+		strDecoratedName += "\" ";
+	}
+
+	return strDecoratedName;
+}
+
+// Member functions of class CMailSender
+/////////////////////////////////////
+
+CMailSender::CMailSender()
+	: m_nSMTPSeverIP(0)
+{
+}
+
+CMailSender::~CMailSender()
+{
+	m_pTCPDataTransfer->Close();
+}
+void CMailSender::Close()
+{
+	m_pTCPDataTransfer->Close();
+}
+SAX_MAIL_ERROR_TYPE CMailSender::SendMail(CMailInfoPtr pMailInfoBase)
+{	
+	if(!pMailInfoBase)
+	{
+		return SMET_FAIL_SENT;
+	}
+
+	SAX_MAIL_ERROR_TYPE nResult = SMET_SUCCESSFULLY;
+
+	CMailWrapper  objMailWrapper((CMailInfoPtr)pMailInfoBase);
+
+	if(SendHeader(objMailWrapper))
+	{
+		if(SendContent(objMailWrapper))
+		{
+			if(!SendEnd(objMailWrapper))
+			{
+				nResult = SMET_FAIL_SEND_END;
+			}
+		}
+		else
+		{
+			nResult = SMET_FAIL_SEND_CONTENT;
+		}
+	}
+	else
+	{
+		nResult = SMET_FAIL_SEND_HEADER;
+	}
+
+	return nResult;
+}
+
+SAX_MAIL_ERROR_TYPE CMailSender::SendMailEx(CMailInfoPtr pMailInfoBase)
+{
+	if(!pMailInfoBase)
+	{
+		return SMET_FAIL_SENT;
+	}
+
+	SAX_MAIL_ERROR_TYPE nErrorType = SMET_SUCCESSFULLY;
+	try
+	{
+		CMailWrapper  objMailWrapper((CMailInfoPtr)pMailInfoBase);
+
+		nErrorType = Login();
+		if(nErrorType > 0)
+		{
+			if(SendHeader(objMailWrapper))
+			{
+				if(SendContent(objMailWrapper))
+				{
+					if(!SendEnd(objMailWrapper))
+					{
+						nErrorType = SMET_FAIL_SEND_END;
+					}
+				}
+				else
+				{
+					nErrorType = SMET_FAIL_SEND_CONTENT;
+				}
+			}
+			else
+			{
+				nErrorType = SMET_FAIL_SEND_HEADER;
+			}
+			nErrorType = Quit();
+		}				
+	}
+	catch(CMailException& e)
+	{		
+		m_strErrMessage = e.what();
+		nErrorType = SMET_FAIL_SENT;
+	}
+
+	return nErrorType;
+}
+
+void CMailSender::SetServerName(std::string strServerName) 
+{ 
+	m_strServerName = strServerName;
+	m_nSMTPSeverIP = IDE_IPv4_to_i_A(m_strServerName);
+
+	if(0 == m_nSMTPSeverIP)
+	{
+		m_strServerName = QueryDomainIP(strServerName);
+		m_nSMTPSeverIP = IDE_IPv4_to_i_A(m_strServerName);
+	}
+}
+
+bool CMailSender::Init()
+{
+	m_pTCPDataTransfer = std::make_shared<CNetTCPDataTransfer>();
+
+	return (nullptr != m_pTCPDataTransfer);
+}
+
+bool CMailSender::Connect()
+{
+	m_pTCPDataTransfer->SetIP(m_nSMTPSeverIP);
+	m_pTCPDataTransfer->SetPort(htons(SERVICE_PORT));
+	m_pTCPDataTransfer->SetIsClient(true);
+	const bool bResult = m_pTCPDataTransfer->Connect();
+
+	if(!bResult)
+	{
+		throw CMailException("Fail to establishes a connection to a specified socket!");
+	}
+
+	return RcvResponse("220");
+}
+
+void CMailSender::Hello()
+{
+	char szLocalHost[MAX_BUFFER_SIZE] = { 0 };
+
+	if( gethostname(szLocalHost, MAX_BUFFER_SIZE) != 0 )
+	{
+		throw CMailException("Get local host strName error");
+	}
+
+	std::string strMsg;
+
+	strMsg  = "HELO ";
+	strMsg += std::string(szLocalHost) + "\r\n";
+	SendRequest(SC_HELO, strMsg.c_str());
+	RcvResponse("250");
+}
+
+SAX_MAIL_ERROR_TYPE CMailSender::Login()
+{
+	if(!Connect())
+	{
+		return SMET_FAIL_CONNECT;
+	}
+
+	Hello();
+
+	std::string strMsg;
+
+	SendRequest(SC_AUTH, "AUTH LOGIN\r\n");
+
+	if(RcvResponse("334"))
+	{
+		std::string strBase64Out;
+
+		CLYCodeCvt::Base64Encode(m_strUserName, strBase64Out);
+		strMsg = strBase64Out;
+		strMsg += "\r\n";
+		SendRequest(SC_USER_NAME, strMsg.c_str());
+
+
+		if(RcvResponse("334"))
+		{
+			CLYCodeCvt::Base64Encode(m_strPassWord, strBase64Out);
+			strMsg = strBase64Out;
+			strMsg += "\r\n";			
+			
+			SendRequest(SC_PASSWORD, strMsg.c_str());
+
+			if(RcvResponse("235"))
+			{
+				return SMET_SUCCESSFULLY;
+			}
+		}
+	}
+	Quit();
+
+	return SMET_FAIL_LOGIN;
+}
+
+bool CMailSender::SendHeader(CMailWrapper& objMailWrapper)
+{
+	std::string strMsg;
+	bool bResult = true;
+
+	strMsg  = "MAIL FROM: ";
+	strMsg += objMailWrapper.GetSenderAddress() + "\r\n";
+	SendRequest(SC_MAIL, strMsg.c_str());
+	bResult &= RcvResponse("250");
+
+	objMailWrapper.TraverseReceiver();
+	while(objMailWrapper.HasMoreReceiver() )
+	{
+		strMsg  = "RCPT TO: ";
+		strMsg += objMailWrapper.NextReceiverAddress() + "\r\n";
+		SendRequest(SC_RCPT, strMsg.c_str());
+		bResult &= RcvResponse("250");
+	}
+
+	SendRequest(SC_DATA, "DATA\r\n");
+	bResult &= RcvResponse("354");
+
+	SendRequest(SC_HEADER, objMailWrapper.GetHeader().c_str());
+
+	return bResult;
+}
+
+bool CMailSender::SendContent(CMailWrapper& objMailWrapper)
+{
+	bool bResult = true;
+
+	objMailWrapper.TraverseContent();
+
+	do
+	{
+		if(!objMailWrapper.HasMoreContent())
+		{
+			break;
+		}
+
+		bResult = SendRequest(SC_CONTENT, objMailWrapper.NextContent().c_str());
+	}while(bResult);
+
+	return bResult;
+}
+
+bool CMailSender::SendEnd(CMailWrapper& objMailWrapper)
+{
+	bool bResult = false;
+
+	if(SendRequest(SC_END, objMailWrapper.GetEnd().c_str()))
+	{
+		bResult = RcvResponse("250");
+	}
+
+	return bResult;
+}
+
+SAX_MAIL_ERROR_TYPE CMailSender::Quit()
+{
+	SAX_MAIL_ERROR_TYPE bResult = SMET_FAIL_QUIT;
+
+	if(SendRequest(SC_QUIT, "QUIT\r\n"))
+	{
+		if(RcvResponse("221"))
+		{
+			bResult = SMET_SUCCESSFULLY; 
+		}
+	}
+	return bResult;
+}
+
+bool CMailSender::RcvResponse(const char* pExpectedResponse)
+{	
+	CHECK_POINTER_EX(pExpectedResponse, false);
+	CHECK_POINTER_EX(m_pTCPDataTransfer,false);
+
+	BYTE szResposeBuffer[MAX_BUFFER_SIZE] = {0};
+	const int nRecvBytes = m_pTCPDataTransfer->Recv(szResposeBuffer, MAX_BUFFER_SIZE);
+
+	if(nRecvBytes < 0 )
+	{
+		throw CMailException(CErrorMessage::GetInstance().Response(pExpectedResponse).c_str());
+	}
+
+	return (strncmp((const char*)szResposeBuffer,pExpectedResponse,3) == 0);
+}
+
+//--------------------------------------------------------------------------------
+/// <summary>
+/// 发送邮件命令
+/// </summary>
+/// <param name="nCommand">命令代码</param>
+/// <param name="pContent">命令信息</param>
+/// <returns>true:成功,false:失败</returns>
+/// <created>Andy,2020/7/7</created>
+/// <changed>Andy,2020/7/7</changed>
+//--------------------------------------------------------------------------------
+bool CMailSender::SendRequest(
+	SMTP_COMMAND nCommand, 
+	const char* pContent)
+{
+	CHECK_POINTER_EX(pContent, false);
+	CHECK_POINTER_EX(m_pTCPDataTransfer, false);
+
+	const int CONTENT_LEN = (int)strlen(pContent);
+	const int nTotalBytesSent = m_pTCPDataTransfer->Send((const BYTE*)pContent, CONTENT_LEN);
+
+	return (nTotalBytesSent == CONTENT_LEN);
+}
+
+std::string CMailSender::GetErrMessage()
+{
+	return m_strErrMessage;
+}
+
+// Member functions of class CErrorMessage
+/////////////////////////////////////
+
+CErrorMessage& CErrorMessage::GetInstance()
+{
+	static CErrorMessage _instance;
+	return _instance;
+}
+
+CErrorMessage::CErrorMessage()
+{
+	m_mapRequestErrMsg[CMailSender::SC_HELO]      = "Send HELO cmd error";
+	m_mapRequestErrMsg[CMailSender::SC_AUTH]      = "Send AUTH cmd error";
+	m_mapRequestErrMsg[CMailSender::SC_USER_NAME] = "Send user strName error";
+	m_mapRequestErrMsg[CMailSender::SC_PASSWORD]  = "Send user password error";
+	m_mapRequestErrMsg[CMailSender::SC_MAIL]      = "Send MAIL FROM cmd error";
+	m_mapRequestErrMsg[CMailSender::SC_RCPT]      = "Send RCPT TO cmd error";
+	m_mapRequestErrMsg[CMailSender::SC_DATA]      = "Send DATA cmd error";
+	m_mapRequestErrMsg[CMailSender::SC_HEADER  ]  = "Send pMailWrapper strHeader error";
+	m_mapRequestErrMsg[CMailSender::SC_CONTENT ]  = "Send pMailWrapper strContent error";
+	m_mapRequestErrMsg[CMailSender::SC_END     ]  = "Send pMailWrapper end error";
+	m_mapRequestErrMsg[CMailSender::SC_QUIT]      = "Send QUIT cmd error";
+
+	m_mapResponsErrMsg["220"] = "Server connect error";
+	m_mapResponsErrMsg["250"] = "General server error";
+	m_mapResponsErrMsg["334"] = "Server authentication error";
+	m_mapResponsErrMsg["235"] = "Password error";
+	m_mapResponsErrMsg["354"] = "Server not ready for data";
+	m_mapResponsErrMsg["221"] = "Server didn't terminate session";
+}
+
+std::string& CErrorMessage::Request(CMailSender::SMTP_COMMAND nRequestCommand)
+{
+	return m_mapRequestErrMsg[nRequestCommand];
+}
+
+std::string& CErrorMessage::Response(const std::string strExpectedResponse)
+{
+	return m_mapResponsErrMsg[strExpectedResponse];
+}
+

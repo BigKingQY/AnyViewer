@@ -1,0 +1,429 @@
+
+#include "CNetSSLDataTransfer.h"
+
+
+
+
+SSL_CTX* CNetSSLDataTransfer::s_pSSLContext = nullptr;
+
+//--------------------------------CNetSSLDataTransfer--------------------------------------------------------
+
+CNetSSLDataTransfer::CNetSSLDataTransfer()
+	: m_pSSLConnection(nullptr)
+{
+}
+
+CNetSSLDataTransfer::CNetSSLDataTransfer(unsigned int nIP, USHORT nPort)
+	: CNetTCPDataTransfer(nIP, nPort)
+	, m_pSSLConnection(nullptr)
+{
+}
+
+CNetSSLDataTransfer::~CNetSSLDataTransfer()
+{
+	if (GetIsClient())
+	{
+		FreeSSLContext();		
+	}
+
+	if (nullptr != m_pSSLConnection)
+	{
+		SSL_free(m_pSSLConnection);
+		m_pSSLConnection = nullptr;
+	}
+}
+
+
+//--------------------------------------------------------------------------------
+/// <summary>
+/// 初始化openssl库
+/// </summary>
+/// <returns></returns>
+/// <created>Andy,2019/10/8</created>
+/// <changed>Andy,2019/10/8</changed>
+//--------------------------------------------------------------------------------
+int CNetSSLDataTransfer::SSLInit()
+{
+#if OPENSSL_VERSION_NUMBER >= 0x10100003L
+
+	if (OPENSSL_init_ssl(OPENSSL_INIT_LOAD_CONFIG, nullptr) == 0)
+	{
+		return(ERR_SSL_INIT);
+	}
+
+#else
+
+	OPENSSL_config(nullptr);
+
+	SSL_library_init();
+	SSL_load_error_strings();
+
+	OpenSSL_add_all_algorithms();
+
+#endif
+
+	return(ERR_OK);
+}
+
+//--------------------------------------------------------------------------------
+/// <summary>
+/// 创建服务器端的会话上下文
+/// </summary>
+/// <returns></returns>
+/// <created>Andy,2019/10/8</created>
+/// <changed>Andy,2019/10/8</changed>
+//--------------------------------------------------------------------------------
+int CNetSSLDataTransfer::CreateSSLServerCtx()
+{
+	s_pSSLContext = SSL_CTX_new(SSLv23_server_method());
+
+	if (s_pSSLContext == nullptr)
+	{
+		return(ERR_SSL_CTX);
+	}
+
+	//SSL_CTX_set_min_proto_version(s_pSSLContext, TLS1_1_VERSION);
+
+#ifdef SSL_OP_SSLREF2_REUSE_CERT_TYPE_BUG
+	SSL_CTX_set_options(s_pSSLContext, SSL_OP_SSLREF2_REUSE_CERT_TYPE_BUG);
+#endif
+
+#ifdef SSL_OP_MICROSOFT_BIG_SSLV3_BUFFER
+	SSL_CTX_set_options(s_pSSLContext, SSL_OP_MICROSOFT_BIG_SSLV3_BUFFER);
+#endif
+
+#ifdef SSL_OP_TLS_D5_BUG
+	SSL_CTX_set_options(s_pSSLContext, SSL_OP_TLS_D5_BUG);
+#endif
+
+#ifdef SSL_OP_TLS_BLOCK_PADDING_BUG
+	SSL_CTX_set_options(s_pSSLContext, SSL_OP_TLS_BLOCK_PADDING_BUG);
+#endif
+
+#ifdef SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS
+	SSL_CTX_set_options(s_pSSLContext, SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS);
+#endif
+
+	SSL_CTX_set_options(s_pSSLContext, SSL_OP_SINGLE_DH_USE);
+
+#ifdef SSL_OP_NO_COMPRESSION
+	SSL_CTX_set_options(s_pSSLContext, SSL_OP_NO_COMPRESSION);
+#endif
+
+#ifdef SSL_MODE_RELEASE_BUFFERS
+	SSL_CTX_set_mode(s_pSSLContext, SSL_MODE_RELEASE_BUFFERS);
+#endif
+
+#ifdef SSL_MODE_NO_AUTO_CHAIN
+	SSL_CTX_set_mode(s_pSSLContext, SSL_MODE_NO_AUTO_CHAIN);
+#endif
+
+	SSL_CTX_set_read_ahead(s_pSSLContext, 1);
+
+	return(ERR_OK);
+}
+
+//--------------------------------------------------------------------------------
+/// <summary>
+/// 加载服务器端的证书文件
+/// </summary>
+/// <param name="strCertFile"></param>
+/// <param name="strKeyFile"></param>
+/// <returns></returns>
+/// <created>Andy,2019/10/8</created>
+/// <changed>Andy,2019/10/8</changed>
+//--------------------------------------------------------------------------------
+int CNetSSLDataTransfer::LoadSSLCertificate(
+	const std::string& strCertFile
+	, const std::string& strKeyFile)
+{
+	// 加载使用公钥证书
+	if (!SSL_CTX_use_certificate_chain_file(s_pSSLContext, strCertFile.c_str()))
+	{
+		return(ERR_SSL_CERTIFICATE);
+	}
+
+	// 加载使用私钥
+	if (!SSL_CTX_use_PrivateKey_file(s_pSSLContext, strKeyFile.c_str(), SSL_FILETYPE_PEM))
+	{
+		return(ERR_SSL_CERTIFICATE);
+	}
+
+	// 检查私钥与证书是否匹配
+	if (!SSL_CTX_check_private_key(s_pSSLContext))
+	{
+		return(ERR_SSL_CERTIFICATE);
+	}
+
+	return(ERR_OK);
+}
+
+//--------------------------------------------------------------------------------
+/// <summary>
+/// 释放上下文
+/// </summary>
+/// <created>Andy,2019/10/8</created>
+/// <changed>Andy,2019/10/8</changed>
+//--------------------------------------------------------------------------------
+void CNetSSLDataTransfer::FreeSSLContext()
+{
+	if (nullptr == s_pSSLContext)
+	{
+		SSL_CTX_free(s_pSSLContext);
+		s_pSSLContext = nullptr;
+	}	
+}
+
+
+//--------------------------------------------------------------------------------
+/// <summary>
+/// 创建客户端上下文
+/// </summary>
+/// <returns></returns>
+/// <created>Andy,2019/10/8</created>
+/// <changed>Andy,2019/10/8</changed>
+//--------------------------------------------------------------------------------
+int CNetSSLDataTransfer::CreateSSLClientCtx()
+{
+	if (s_pSSLContext == nullptr)
+	{
+		s_pSSLContext = SSL_CTX_new(SSLv23_client_method());		
+	}
+
+	return (s_pSSLContext == nullptr)? ERR_SSL_CTX : ERR_OK;
+}
+
+//--------------------------------------------------------------------------------
+/// <summary>
+/// 创建ssl连接
+/// </summary>
+/// <returns></returns>
+/// <created>Andy,2019/10/8</created>
+/// <changed>Andy,2019/10/8</changed>
+//--------------------------------------------------------------------------------
+int CNetSSLDataTransfer::CreateSSLConnection()
+{
+	m_pSSLConnection = SSL_new(s_pSSLContext);
+
+	if (m_pSSLConnection == nullptr)
+	{
+		return(ERR_SSL_NEW_CONNECTION);
+	}
+
+	if (!SSL_set_fd(m_pSSLConnection, GetSocketHandle()))
+	{
+		return(ERR_SSL_NEW_CONNECTION);
+	}
+
+	if (GetIsClient())
+	{
+		SSL_set_connect_state(m_pSSLConnection);
+	}
+	else
+	{
+		SSL_set_accept_state(m_pSSLConnection);
+	}
+
+	return(ERR_OK);
+}
+
+int CNetSSLDataTransfer::SslHandshake()
+{
+	const int iHandshakeResult = SSL_do_handshake(m_pSSLConnection);
+
+	if (iHandshakeResult == 1)
+	{
+		m_eSslChannelStatus = SSL_CHANNEL_ESTABLISHED;
+		return(ERR_OK);
+	}
+	else    // 0 and < 0
+	{
+		const int iErrCode = SSL_get_error(m_pSSLConnection, iHandshakeResult);
+
+		switch (iErrCode)
+		{
+		case SSL_ERROR_ZERO_RETURN:
+			return(ERR_SSL_HANDSHAKE);
+
+		case SSL_ERROR_WANT_READ:
+			m_eSslChannelStatus = SSL_CHANNEL_WANT_READ;
+			break;
+
+		case SSL_ERROR_WANT_WRITE:
+			m_eSslChannelStatus = SSL_CHANNEL_WANT_WRITE;
+			break;
+
+		case SSL_ERROR_WANT_CONNECT: // SSL_do_handshake() will never get this
+			return(ERR_SSL_HANDSHAKE);
+
+		case SSL_ERROR_WANT_ACCEPT: // SSL_do_handshake() will never get this
+			return(ERR_SSL_HANDSHAKE);
+
+		case SSL_ERROR_WANT_X509_LOOKUP: // SSL_do_handshake() will never get this
+			return(ERR_SSL_HANDSHAKE);
+		
+		case SSL_ERROR_SSL:
+			return(ERR_SSL_HANDSHAKE);
+
+		case SSL_ERROR_NONE:    // if and only if iHandshakeResult > 0
+			break;
+
+		default:
+			;
+		}
+	}
+
+	return(ERR_OK);
+}
+
+int CNetSSLDataTransfer::SSLShutdown()
+{
+	if (SSL_in_init(m_pSSLConnection))
+	{
+		/*
+		 * OpenSSL 1.0.2f complains if SSL_shutdown() is called during
+		 * an SSL handshake, while previous versions always return 0.
+		 * Avoid calling SSL_shutdown() if handshake wasn't completed.
+		 */
+		m_eSslChannelStatus = SSL_CHANNEL_SHUTDOWN;
+		SSL_free(m_pSSLConnection);
+		m_pSSLConnection = nullptr;
+
+		ERR_clear_error();
+#if OPENSSL_VERSION_NUMBER < 0x10100003L
+		EVP_cleanup();
+#ifndef OPENSSL_NO_ENGINE
+		ENGINE_cleanup();
+#endif
+#endif
+		return(ERR_OK);
+	}
+
+
+	int iShutdownResult = SSL_shutdown(m_pSSLConnection);
+
+	if (iShutdownResult == 1)
+	{
+		m_eSslChannelStatus = SSL_CHANNEL_SHUTDOWN;
+	}
+	else    // 0 and < 0
+	{
+		int iErrCode = SSL_get_error(m_pSSLConnection, iShutdownResult);
+
+		switch (iErrCode)
+		{
+		case SSL_ERROR_ZERO_RETURN:
+			break;
+		case SSL_ERROR_WANT_READ:
+			m_eSslChannelStatus = SSL_CHANNEL_SHUTING_WANT_READ;
+			return(ERR_OK);
+		case SSL_ERROR_WANT_WRITE:
+			m_eSslChannelStatus = SSL_CHANNEL_SHUTING_WANT_WRITE;
+			return(ERR_OK);
+		case SSL_ERROR_SYSCALL:
+			
+			break;
+
+		case SSL_ERROR_SSL:
+			break;
+		default:
+			;
+		}
+		m_eSslChannelStatus = SSL_CHANNEL_SHUTDOWN;
+	}
+
+	SSL_CTX_remove_session(s_pSSLContext, SSL_get0_session(m_pSSLConnection));
+
+	SSL_free(m_pSSLConnection);
+	m_pSSLConnection = nullptr;
+
+	ERR_clear_error();
+	CRYPTO_cleanup_all_ex_data();
+#if OPENSSL_VERSION_NUMBER < 0x10100003L
+	EVP_cleanup();
+#ifndef OPENSSL_NO_ENGINE
+	ENGINE_cleanup();
+#endif
+#endif
+
+	return(ERR_OK);
+}
+
+
+//--------------------------------------------------------------------------------
+/// <summary>
+/// 初始化当前传输对象
+/// </summary>
+/// <param name="bClient">true:是客户端,false:服务端</param>
+/// <returns>true:成功,false:失败</returns>
+/// <created>Andy,2019/10/8</created>
+/// <changed>Andy,2019/10/8</changed>
+//--------------------------------------------------------------------------------
+bool CNetSSLDataTransfer::Initial(bool bClient)
+{
+	bool bResult = true;
+
+	CNetTCPDataTransfer::Initial(bClient);
+
+	if (GetIsClient())
+	{
+		SSLInit();
+		CreateSSLClientCtx();
+	}
+
+	return bResult;
+}
+
+
+
+
+//--------------------------------------------------------------------------------
+/// <summary>
+/// 连接到服务器
+/// </summary>
+/// <param name="nTimeout"></param>
+/// <returns></returns>
+/// <created>Andy,2019/10/8</created>
+/// <changed>Andy,2019/10/8</changed>
+//--------------------------------------------------------------------------------
+bool CNetSSLDataTransfer::Connect(int nTimeout)
+{
+	bool bResult = CNetTCPDataTransfer::Connect(nTimeout);
+
+	if (bResult)
+	{
+		bResult = (CreateSSLConnection() == ERR_OK);
+	}
+
+	return bResult;
+}
+
+int CNetSSLDataTransfer::Send(const BYTE * pBuffer, int nLen)
+{
+	return SSL_write(m_pSSLConnection, pBuffer, nLen);
+}
+
+int CNetSSLDataTransfer::Recv(BYTE * pBuffer, int nLen)
+{
+	return SSL_read(m_pSSLConnection, pBuffer, nLen);
+}
+
+void CNetSSLDataTransfer::Close()
+{
+	SSL_shutdown(m_pSSLConnection);
+	CNetTCPDataTransfer::Close();	
+	SSL_free(m_pSSLConnection);
+
+	m_pSSLConnection = nullptr;
+}
+
+bool CNetSSLDataTransfer::Shutdown(int how)
+{
+	SSL_shutdown(m_pSSLConnection);
+	const bool nResult = CNetTCPDataTransfer::Shutdown(how);
+	SSL_free(m_pSSLConnection);
+
+	m_pSSLConnection = nullptr;
+
+	return nResult;
+}

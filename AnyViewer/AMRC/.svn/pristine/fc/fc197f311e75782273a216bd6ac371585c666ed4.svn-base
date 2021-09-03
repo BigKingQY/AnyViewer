@@ -1,0 +1,2159 @@
+/******************************************************************************
+*
+* IDEDetectionModule
+* Version
+* Copyright (C) 2007 AxSoft Co., Ltd.
+* All Rights Reserved
+* $Header: /cvsdata/vc/Common/Ax3MultiPatternMatcher.cpp,v 1.3 2014/12/13 01:42:26 administrator Exp $
+*
+*******************************************************************************
+*
+* Description:
+******************************************************************************/
+
+// $Nokeywords: $
+#ifdef WIN32
+#include "StdAfx.h"				  
+#endif // WIN32
+
+
+#include "Ax3MultiPatternMatcher.h"
+
+const unsigned int  PATTERNS_LIMIT_OF_SUNDAY_MATCH = 5;
+
+
+/*------------------Implement of CKMPMatch class----------------*/
+CKMPMatch::CKMPMatch(void)
+	: m_bCaseSensitivity(true)
+	, m_pPatternData(nullptr)
+	, m_nPatternLen(0)
+	, m_pNextValue(nullptr)
+{
+}
+
+CKMPMatch::~CKMPMatch(void)
+{
+	if (nullptr != m_pPatternData)
+	{
+		delete[]m_pPatternData;
+		m_pPatternData = nullptr;
+	}
+}
+
+//--------------------------------------------------------------------------------
+/// <summary>
+/// 设置查找模式
+/// </summary>
+/// <param name="pPatternData">模式数据指针</param>
+/// <param name="nPatternLen">模式数据长度</param>
+/// <param name="bCaseSensitivity">大小写是否敏感</param>
+/// <returns></returns>
+/// <created>Andy,2020/6/5</created>
+/// <changed>Andy,2020/6/5</changed>
+//--------------------------------------------------------------------------------
+bool CKMPMatch::SetPatternData(
+	const unsigned char* const pPatternData
+	, const int nPatternLen
+	, const bool bCaseSensitivity)
+{
+	assert(nPatternLen > 0 && nullptr != pPatternData);
+
+	if (nPatternLen > 0 && nullptr != pPatternData)
+	{
+		if (m_nPatternLen != nPatternLen)
+		{
+			if (m_pPatternData)
+			{
+				delete[]m_pPatternData;
+				m_nPatternLen = 0;
+			}
+			m_pPatternData = new unsigned char[nPatternLen * 3]; //分配了全部空间
+			m_nPatternLen = nPatternLen;
+
+			m_pNextValue = (unsigned short*)(m_pPatternData + m_nPatternLen);
+		}
+
+		m_bCaseSensitivity = bCaseSensitivity;
+
+		if (m_pPatternData)
+		{
+			if (!m_bCaseSensitivity)  //如果大小写不敏感，就转换模式到小写
+			{
+				for (int i = 0; i < m_nPatternLen; i++)
+				{
+					m_pPatternData[i] = (unsigned char)Sax_tolower(pPatternData[i]);
+				}
+			}
+			else
+			{
+				memcpy(m_pPatternData, pPatternData, nPatternLen);
+			}
+
+			Next();
+		}
+	}
+
+	return (nullptr != m_pPatternData);
+}
+
+/*-----------------------------------------------------------------
+| Name      : CKMPMatch::Next
+| Desc      : 计算串的模式值并存在模式向量数组中
+| Return    : void
+| Author    : Andy.h
+| Date      : 星期日, 四月 12 2009
+-----------------------------------------------------------------*/
+
+void CKMPMatch::Next()
+{
+	int i = 1;
+	m_pNextValue[0] = 0;
+
+	for (; i < m_nPatternLen; i++)                                 //循环求特征向量
+	{
+		int k = m_pNextValue[i - 1];
+		while (k > 0 && m_pPatternData[i] != m_pPatternData[k])
+		{
+			if (m_pPatternData[i] == '?' || m_pPatternData[k] == '?') //当不匹配的字符是由于“？”引起的情况发生时
+			{
+				m_pNextValue[i] = (unsigned short)(k + 1);                              //特征值视为匹配
+				break;                                 //匹配后进行下一位比较，退出本循环，break语句与下面的continue连用，避免了goto语句的出现
+			}
+			else
+			{
+				k = m_pNextValue[k - 1];
+			}
+		}
+		if ((m_pPatternData[i] == '?' || m_pPatternData[k] == '?')
+			&& (k != 0)
+			&& m_pPatternData[i] != m_pPatternData[k]) //由于“？”的关系，进行下一位比较
+		{
+			continue;
+		}
+
+		if ((m_pPatternData[k] == m_pPatternData[i]))                   //当前位匹配
+		{
+			m_pNextValue[i] = (unsigned short)(k + 1);
+		}
+		else
+		{
+			if (m_pPatternData[0] == '?' || m_pPatternData[i] == '?')       //不匹配时若第一比较位为“？”特征值为1
+			{
+				m_pNextValue[i] = 1;
+			}
+			else                                       //否则第一比较位特征值为0
+			{
+				m_pNextValue[i] = 0;
+			}
+		}
+	}
+}
+
+/*-----------------------------------------------------------------
+| Name      : CKMPMatch::KMPFindPat
+| Desc      : 改进的kmp算法进行模式匹配
+| Parameter : unsigned char* pByteStream——>目标数据流
+|             int nStreamLen——>目标数据流长度
+| Return    : int(如果成功就返回匹配位置，失败后返回-1)
+| Author    : Andy.h
+| Date      : 星期日, 四月 12 2009
+-----------------------------------------------------------------*/
+int CKMPMatch::KMPFindPat(const unsigned char* const pByteStream, const int nStreamLen) const
+{
+	assert(nStreamLen > 0 && nullptr != pByteStream);
+	if (nStreamLen <= 0 || nullptr == pByteStream)
+	{
+		return -1;
+	}
+
+	int nResult = -1;
+	if (nStreamLen < m_nPatternLen)
+	{
+		return nResult;
+	}
+
+	int i = 0;
+	int j = 0;
+	if ('?' == m_pPatternData[0])  //Pattern的第一个字符为“？”的处理情况
+	{
+		i = 1;
+		j = 1;
+	}
+
+	if (m_bCaseSensitivity)
+	{
+		for (; i < nStreamLen; i++)
+		{
+
+			while (m_pPatternData[j] != pByteStream[i] && j > 0)
+			{
+				if (m_pPatternData[j] == '?')
+				{                                        //由于“？”引起的字符不匹配被当作匹配，跳出while循环
+					j++;
+					break;
+				}
+				j = m_pNextValue[j - 1];
+			}
+
+			if ((m_pPatternData[j] == '?')
+				&& j != m_nPatternLen
+				&& j != 0)
+			{
+				continue;                                //这个语句的实现与Next函数中一样，与break一起避免了goto的出现
+			}
+
+			if (j == 0 && m_pPatternData[0] == '?')
+			{
+				j++;
+			}
+			if (m_pPatternData[j] == pByteStream[i])
+			{
+				j++;
+			}
+			if (j == m_nPatternLen)
+			{
+				return /*nResult = */i - j + 1;                             //匹配成功，返回匹配地址值
+			}
+		}
+	}
+	else
+	{
+		for (; i < nStreamLen; i++)
+		{
+			while (m_pPatternData[j] != pByteStream[i]
+				&& m_pPatternData[j] != Sax_tolower(pByteStream[i])
+				&& j > 0)
+			{
+				if (m_pPatternData[j] == '?')
+				{                                        //由于“？”引起的字符不匹配被当作匹配，跳出while循环
+					j++;
+					break;
+				}
+				j = m_pNextValue[j - 1];
+			}
+
+			if ((m_pPatternData[j] == '?')
+				&& j != m_nPatternLen
+				&& j != 0)
+			{
+				continue;                                //这个语句的实现与Next函数中一样，与break一起避免了goto的出现
+			}
+
+			if (j == 0 && m_pPatternData[0] == '?')
+			{
+				j++;
+			}
+			if (m_pPatternData[j] == pByteStream[i]
+				|| m_pPatternData[j] == Sax_tolower(pByteStream[i]))
+			{
+				j++;
+			}
+			if (j == m_nPatternLen)
+			{
+				return /*nResult = */i - j + 1;                             //匹配成功，返回匹配地址值
+			}
+		}
+	}
+
+	return nResult;
+}
+
+
+
+
+/*------------------Implement of CKMPMatchWithWildcard class----------------*/
+CKMPMatchWithWildcard::CKMPMatchWithWildcard(void)
+{
+}
+
+CKMPMatchWithWildcard::~CKMPMatchWithWildcard(void)
+{
+	Clear();
+}
+
+void CKMPMatchWithWildcard::Clear()
+{
+	for (size_t i = 0; i < m_objKMPMatchArray.size(); i++)
+	{
+		delete m_objKMPMatchArray[i];
+	}
+
+	m_objKMPMatchArray.clear();
+}
+/*-----------------------------------------------------------------
+| Name      : CKMPMatchWithWildcard::SetPatternData
+| Desc      : 设置模式数据,将模式串以“*”为间隔前后分割，存入数组中,
+|             本函数处理含“*”的情况
+| Parameter : unsigned char* pPatternData——>模式数据指针
+|             unsigned int nPatternLen——>模式数据长度
+|             bool bCaseSensitivity——>大小写是否敏感
+| Return    : CKMPMatch*
+| Author    : Andy.h
+| Date      : 星期日, 四月 12 2009
+-----------------------------------------------------------------*/
+
+void CKMPMatchWithWildcard::SetPatternData(
+	const unsigned char* const pPatternData
+	, const int nPatternLen
+	, const bool bCaseSensitivity)
+{
+	assert(nPatternLen > 0 && nullptr != pPatternData);
+
+	if (nPatternLen > 0 && nullptr != pPatternData)
+	{
+		Clear();
+
+		int i = 0, nStartPos = 0;
+		if (pPatternData[i] == '*')          //特殊情况的处理：第一个字符就是“*”
+		{
+			i = 1;
+			nStartPos = 1;
+		}
+
+		for (; i < nPatternLen;)
+		{
+			if ('*' == pPatternData[i++] || nPatternLen == i) //要测试该语句
+			{
+				int nNewPatLen = (nPatternLen == i) ? (i - nStartPos) : (i - nStartPos - 1);
+				if (nNewPatLen > 0)
+				{
+					CKMPMatch*  pNewKMPMatchObj = new CKMPMatch;
+					if (pNewKMPMatchObj)
+					{
+						pNewKMPMatchObj->SetPatternData(pPatternData + nStartPos
+							, nNewPatLen, bCaseSensitivity);
+						m_objKMPMatchArray.push_back(pNewKMPMatchObj);
+					}
+				}
+
+				nStartPos = i;
+			}
+		}
+	}
+}
+
+/*-----------------------------------------------------------------
+| Name      : CKMPMatchWithWildcard::GetMaxChildPatternData
+| Desc      :
+| Parameter : unsigned char* pRetData——>
+| Return    : int
+| Author    : Andy.h
+| Date      : 星期二, 四月 21 2009
+-----------------------------------------------------------------*/
+
+int CKMPMatchWithWildcard::GetMaxChildPatternData(unsigned char* pRetData)
+{
+	CKMPMatch* pKMPMatch = nullptr;
+	for (size_t i = 0; i < m_objKMPMatchArray.size(); i++)
+	{
+		if (nullptr == pKMPMatch
+			|| pKMPMatch->GetPatternLen() < m_objKMPMatchArray[i]->GetPatternLen())
+		{
+			pKMPMatch = m_objKMPMatchArray[i];
+		}
+	}
+
+	int nPatternDataLen = 0;
+	if (pKMPMatch)
+	{
+		unsigned char* pSrcPatternData = pKMPMatch->GetPatternData();
+		for (int i = 0; i < pKMPMatch->GetPatternLen(); i++)
+		{
+			if ('?' != pSrcPatternData[i])
+			{
+				pRetData[nPatternDataLen++] = pSrcPatternData[i];
+			}
+		}
+	}
+
+	return nPatternDataLen;
+}
+
+/*-----------------------------------------------------------------
+| Name      : CKMPMatchWithWildcard::Search
+| Desc      : 在指定的数据流中查找模式
+| Parameter : unsigned char *pByteStream——>
+|             unsigned int nStreamLen——>
+|             int* pRetStartPos——>
+|             int* pRetLen——>
+| Return    : int
+| Author    : Andy.h
+| Date      : 星期三, 四月 22 2009
+-----------------------------------------------------------------*/
+
+int CKMPMatchWithWildcard::Search(
+	const unsigned char* const pByteStream
+	, const unsigned int nStreamLen
+	, int* pRetStartPos
+	, int* pRetLen) const
+{
+	*pRetStartPos = -1;
+	int nCurStartSearchPos = 0;
+	int nCurSearchResult = 0;
+
+	for (size_t i = 0; i < m_objKMPMatchArray.size(); i++)
+	{
+		nCurSearchResult = m_objKMPMatchArray[i]->KMPFindPat(
+			pByteStream + nCurStartSearchPos
+			, nStreamLen - nCurStartSearchPos);
+
+		if (-1 == nCurSearchResult)
+		{//匹配失败
+			return false;
+		}
+		if (-1 == *pRetStartPos)
+		{
+			*pRetStartPos = nCurSearchResult;
+		}
+
+		nCurStartSearchPos += nCurSearchResult + m_objKMPMatchArray[i]->GetPatternLen();
+	}
+	*pRetLen = (nCurStartSearchPos - *pRetStartPos);
+
+	return true;
+}
+
+
+/*------------------Implement of CMatchingPattern class----------------*/
+CMatchingPattern::CMatchingPattern(void)
+{
+
+}
+CMatchingPattern::~CMatchingPattern(void)
+{
+	if (m_pPatternData)
+	{
+		delete[]m_pPatternData;
+		m_pPatternData = nullptr;
+	}
+	if (m_pShiftTable)
+	{
+		delete[]m_pShiftTable;
+		m_pShiftTable = nullptr;
+	}
+	if (m_pKMPMatchWithWildcard)
+	{
+		delete m_pKMPMatchWithWildcard;
+		m_pKMPMatchWithWildcard = nullptr;
+	}
+}
+
+/*-----------------------------------------------------------------
+|  函数名称  : CMatchingPattern::ConvertPatterToLower
+|  描    述  : 转化模式到小写
+|  返 回 值  :
+|  注    释  :
+|  修改记录  : 2008-5-23 10:47:38   -huangdy-   创建
+-----------------------------------------------------------------*/
+void CMatchingPattern::ConvertPatterToLower()
+{
+	for (unsigned int i = 0; i < m_nPatternLen; i++)
+	{
+		if (m_pPatternData[i] >= 65 && m_pPatternData[i] <= 90)
+		{
+			m_pPatternData[i] += 32;
+		}
+	}
+}
+
+/*-----------------------------------------------------------------
+| Name      : CMatchingPattern::SetPatternData
+| Desc      : 设置查找模式数据
+| Parameter : unsigned char* pPatternData——>模式数据指针
+|             unsigned int nPatternLen——>模式数据长度
+|             bool bCaseSensitivity——>大小写是否敏感
+|             bool bHasWildcard——>模式中是否包含有通配符
+| Return    : bool
+| Author    : Andy.h
+| Date      : 星期二, 四月 21 2009
+-----------------------------------------------------------------*/
+
+bool CMatchingPattern::SetPatternData(
+	const unsigned char* const pPatternData
+	, const unsigned int nPatternLen
+	, const bool bCaseSensitivity
+	, const bool bHasWildcard)
+{
+	assert(nPatternLen < HASHTABLESIZE);
+	assert(pPatternData);
+
+	m_bCaseSensitivity = bCaseSensitivity;
+
+	if (m_nPatternLen != nPatternLen)
+	{
+		if (m_pPatternData)
+		{
+			delete[]m_pPatternData;
+			m_nPatternLen = 0;
+		}
+		m_pPatternData = new unsigned char[nPatternLen];
+	}
+
+	if (bHasWildcard)   //包含有通配符
+	{
+		if (!m_pKMPMatchWithWildcard)
+		{
+			m_pKMPMatchWithWildcard = new CKMPMatchWithWildcard;
+		}
+		if (m_pKMPMatchWithWildcard)
+		{
+			m_pKMPMatchWithWildcard->SetPatternData(pPatternData
+				, nPatternLen, bCaseSensitivity);
+
+			if (m_pPatternData)
+			{
+				m_nPatternLen = m_pKMPMatchWithWildcard->GetMaxChildPatternData(m_pPatternData);
+				return true;
+			}
+		}
+	}
+	else
+	{
+		if (m_pKMPMatchWithWildcard)
+		{
+			delete m_pKMPMatchWithWildcard;
+			m_pKMPMatchWithWildcard = nullptr;
+		}
+
+		if (m_pPatternData)
+		{
+			memcpy(m_pPatternData, pPatternData, nPatternLen);
+			m_nPatternLen = nPatternLen;
+			return true;
+		}
+	}
+
+	return false;
+}
+
+
+/*-----------------------------------------------------------------
+|  函数名称  : CMatchingPattern::ConstructShiftTable
+|  描    述  : construct the delta shift table for  sunday search arithmetic
+|  返 回 值  : true----successfull
+|              false---fail
+|  修改记录  : 2007-11-12 10:36:38   -huangdy-   创建
+-----------------------------------------------------------------*/
+bool CMatchingPattern::ConstructShiftTable()
+{
+	if (m_pKMPMatchWithWildcard) //如果模式带有通配符就不采用Sunday方法匹配
+	{
+		return false;
+	}
+	if (!m_pShiftTable)
+	{
+		m_pShiftTable = new unsigned short[256];
+	}
+	if (!m_pShiftTable)
+	{
+		return false;
+	}
+
+	for (unsigned int i = 0; i < 256; i++)
+	{
+		m_pShiftTable[i] = (unsigned short)(m_nPatternLen + 1);
+	}
+
+	if (m_bCaseSensitivity)
+	{
+		for (unsigned int i = 0; i < m_nPatternLen; i++)
+		{
+			m_pShiftTable[m_pPatternData[i]] = (unsigned short)(m_nPatternLen - i);
+		}
+	}
+	else
+	{
+		for (unsigned int i = 0; i < m_nPatternLen; i++)
+		{
+			m_pShiftTable[Sax_tolower(m_pPatternData[i])] = (unsigned short)(m_nPatternLen - i);
+			m_pShiftTable[Sax_toupper(m_pPatternData[i])] = (unsigned short)(m_nPatternLen - i);
+		}
+	}
+
+	return true;
+}
+
+
+//--------------------------------------------------------------------------------
+/// <summary>
+/// earch the pattern by sunday arithmetic
+/// </summary>
+/// <param name="pByteStream"></param>
+/// <param name="nStreamLen"></param>
+/// <returns></returns>
+/// <created>Andy,2020/6/5</created>
+/// <changed>Andy,2020/6/5</changed>
+//--------------------------------------------------------------------------------
+const unsigned char* CMatchingPattern::SundayMatch(
+	const unsigned char* pByteStream
+	, const unsigned int nStreamLen) const
+{
+	assert(pByteStream);
+	if (nullptr == pByteStream)
+	{
+		return nullptr;
+	}
+	if (nStreamLen < m_nPatternLen)
+	{
+		return nullptr;
+	}
+	assert(m_pPatternData);
+	if (nullptr == m_pPatternData)               //空模式匹配任何流
+	{
+		return pByteStream;
+	}
+
+	if (m_bCaseSensitivity)
+	{
+		/* Handle 1 Byte patterns - it's a faster loop */
+		if (1 == m_nPatternLen)
+		{
+			for (unsigned int i = 0; i < nStreamLen; i++)
+			{
+				if (pByteStream[i] == m_pPatternData[0])
+				{
+					return &pByteStream[i];
+				}
+			}
+			return nullptr;
+		}
+		else
+		{
+			// start searching...
+			const unsigned char *t, *tx = pByteStream;
+			const unsigned char* pStreamEnd = pByteStream + nStreamLen;
+
+			while ((tx + m_nPatternLen) <= pStreamEnd) // the main searching loop
+			{
+				t = tx;
+
+				unsigned int i = 0;
+				for (; i < m_nPatternLen; i++, ++t)
+				{
+					if (m_pPatternData[i] != *t) // found a mismatch
+					{
+						break;
+					}
+				}
+
+				if (i == m_nPatternLen) // Yes! we found it!
+				{
+					return tx;
+				}
+
+				tx += m_pShiftTable[tx[m_nPatternLen]]; // move the pattern by a distance
+			}
+		}
+	}
+	else
+	{
+		/* Handle 1 Byte patterns - it's a faster loop */
+		if (1 == m_nPatternLen)
+		{
+			for (unsigned int i = 0; i < nStreamLen; i++)
+			{
+				if (pByteStream[i] == m_pPatternData[0]
+					|| Sax_tolower(pByteStream[i]) == m_pPatternData[0])
+				{
+					return &pByteStream[i];
+				}
+			}
+			return nullptr;
+		}
+		else
+		{
+			// start searching...
+			const unsigned char *t, *tx = pByteStream;
+			const unsigned char* pStreamEnd = pByteStream + nStreamLen;
+			while ((tx + m_nPatternLen) <= pStreamEnd)  // the main searching loop
+			{
+				t = tx;
+				unsigned int i = 0;
+				for (; i < m_nPatternLen; i++, ++t)
+				{
+					if (m_pPatternData[i] != Sax_tolower(*t)) // found a mismatch
+					{
+						break;
+					}
+				}
+
+				if (i == m_nPatternLen)   // Yes! we found it!
+				{
+					return tx;
+				}
+
+				tx += m_pShiftTable[tx[m_nPatternLen]]; // move the pattern by a distance
+			}
+		}
+	}
+
+	return nullptr;
+}
+
+///---------------------------CAx3MultiPatternMatcher--------------
+CAx3MultiPatternMatcher::CAx3MultiPatternMatcher(void)
+	: m_nMatchingMethod(MTH_WU_MANBER)
+	, m_nPatternsArraySize(0)
+	, m_pPatternsArray(nullptr)
+	, m_pGroupCountsArray(nullptr)
+	, m_nNumPatterns(0)
+	, m_pHashTable(nullptr)
+	, m_pHashTable1(nullptr)
+	, m_pShiftTable(nullptr)
+	, m_nShiftLen(0)
+	, m_pLargeShiftTable(nullptr)
+	, m_bLargeShiftTableSize(0)
+	, m_nMatchingFunction(MF_SEARCHEXNOBC)
+{
+}
+
+CAx3MultiPatternMatcher::~CAx3MultiPatternMatcher(void)
+{
+	if (m_pPatternsArray)
+	{
+		delete[]m_pPatternsArray;
+		m_pPatternsArray = nullptr;
+	}
+	if (m_pGroupCountsArray)
+	{
+		delete[]m_pGroupCountsArray;
+		m_pGroupCountsArray = nullptr;
+	}
+
+	FreeMemForWuManberMethod();
+	Clear();
+}
+
+void CAx3MultiPatternMatcher::Clear()
+{
+	std::lock_guard<std::recursive_mutex> objLocker(m_objMutex);
+
+	assert(!m_bEnable);
+
+	if (m_bEnable)
+	{
+		return;
+	}
+
+
+	if (m_pPatternsArray)
+	{
+		delete[]m_pPatternsArray;
+		m_pPatternsArray = nullptr;
+		m_nPatternsArraySize = 0;
+	}
+
+
+	if (m_pGroupCountsArray)
+	{
+		delete[]m_pGroupCountsArray;
+		m_pGroupCountsArray = nullptr;
+	}
+}
+
+/*-----------------------------------------------------------------
+|  函数名称  : CAx3MultiPatternMatcher::AllocateParrernsArray
+|  描    述  : Allocate the parrerns array
+|  参    数  : unsigned int nPatterns——number of Patterns
+|  返 回 值  : true----
+|              false---
+|  修改记录  : 2007-11-11 19:09:06   -huangdy-   创建
+-----------------------------------------------------------------*/
+bool CAx3MultiPatternMatcher::AllocateParrernsArray(const unsigned int nPatterns)
+{
+	std::lock_guard<std::recursive_mutex> objLocker(m_objMutex);
+
+	assert(!m_bEnable);
+
+	if (m_bEnable)
+	{
+		return false;
+	}
+
+	assert(nPatterns < HASHTABLESIZE);
+
+	if (nPatterns > HASHTABLESIZE)
+	{
+		return false;
+	}
+
+	m_nNumPatterns = 0;
+
+	if (m_nPatternsArraySize != nPatterns) //如果相等就不用重新分配
+	{
+		Clear();
+
+		if (nPatterns > 0)
+		{
+			m_pPatternsArray = new CMatchingPattern[nPatterns];
+			m_pGroupCountsArray = new unsigned short[nPatterns];
+		}
+
+		if (m_pPatternsArray)
+		{
+			m_nPatternsArraySize = nPatterns;
+		}
+	}
+
+
+	return (nullptr != m_pPatternsArray);
+}
+
+/*-----------------------------------------------------------------
+| Name      : CAx3MultiPatternMatcher::FindWildcard
+| Desc      : 查找模式中是否有通配符
+| Parameter : unsigned char *pPatternData——>
+|             int nPatternLen——>
+| Return    : bool
+| Author    : Andy.h
+| Date      : 星期日, 四月 12 2009
+-----------------------------------------------------------------*/
+
+bool CAx3MultiPatternMatcher::FindWildcard(
+	const unsigned char* const pPatternData
+	, const int nPatternLen)
+{
+	assert(nullptr != pPatternData && nPatternLen > 0);
+
+	if (nullptr != pPatternData && nPatternLen > 0)
+	{
+		for (int i = 0; i < nPatternLen; i++)
+		{
+			if ('*' == pPatternData[i]
+				&& i + 1 < nPatternLen)
+			{
+				return true;
+			}
+			else if ('?' == pPatternData[i])
+			{
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+//--------------------------------------------------------------------------------
+/// <summary>
+/// 增加一个新的模式
+/// 
+/// </summary>
+/// <param name="pPatternData">模式数据</param>
+/// <param name="nPatternLen">模式数据据长度</param>
+/// <param name="bCaseSensitivity">是否大小写匹配</param>
+/// <param name="nID"></param>
+/// <param name="pCookie"></param>
+/// <param name="bHasWildcard">是否有统配符号</param>
+/// <returns></returns>
+/// <created>Andy,2020/9/2</created>
+/// <changed>Andy,2020/9/2</changed>
+//--------------------------------------------------------------------------------
+int CAx3MultiPatternMatcher::AppendPattern(
+	const unsigned char* const pPatternData
+	, const int      nPatternLen
+	, const bool     bCaseSensitivity
+	, const unsigned int     nID
+	, const void *pCookie
+	, const bool bHasWildcard/* = false*/)
+{
+	std::lock_guard<std::recursive_mutex> objLocker(m_objMutex);
+
+	assert(!m_bEnable);
+
+	if (m_bEnable)
+	{
+		return -1;
+	}
+
+	assert(m_nNumPatterns < m_nPatternsArraySize);
+
+	if (m_nNumPatterns >= m_nPatternsArraySize)
+	{
+		return -1;
+	}
+
+	CMatchingPattern& objMatchingPattern = m_pPatternsArray[m_nNumPatterns];
+	objMatchingPattern.SetPatternData(pPatternData, nPatternLen
+		, bCaseSensitivity, bHasWildcard);
+
+	objMatchingPattern.SetID(nID);
+	objMatchingPattern.SetCookie(const_cast<void*>(pCookie));
+	m_nNumPatterns++;
+
+	return 1;
+}
+
+int CAx3MultiPatternMatcher::AppendStringPattern(
+	const unsigned char* const pPatternData
+	, const bool     bCaseSensitivity
+	, const unsigned int     nID
+	, const void *pCookie
+	, const bool bHasWildcard/* = false*/)
+{
+	return AppendPattern((unsigned char*)pPatternData
+		, strlen((char*)pPatternData)
+		, bCaseSensitivity
+		, nID
+		, pCookie
+		, bHasWildcard);
+}
+
+#ifdef _DEBUG
+
+/*-----------------------------------------------------------------
+|  函数名称  : CAx3MultiPatternMatcher::ShowBytes
+|  描    述  : Display function for testing
+|  参    数  : unsigned char *pBytes——
+|              unsigned int nLen——
+|  返 回 值  :
+|  修改记录  : 2007-11-12 11:40:37   -huangdy-   创建
+-----------------------------------------------------------------*/
+void CAx3MultiPatternMatcher::ShowBytes(unsigned char *pBytes, int nLen)
+{
+	ATLTRACE(std::string((char*)pBytes, nLen));
+}
+
+
+/*-----------------------------------------------------------------
+|  函数名称  : CAx3MultiPatternMatcher::ShowGroupDetails
+|  描    述  : Display patterns in this group
+|  返 回 值  :
+|  修改记录  : 2007-11-12 11:45:30   -huangdy-   创建
+-----------------------------------------------------------------*/
+void CAx3MultiPatternMatcher::ShowGroupDetails()
+{
+	if (m_nMatchingMethod != MTH_WU_MANBER)
+	{
+		return;
+	}
+	int index, i, m, gmax = 0, total = 0, gavg = 0, subgroups;
+	static int k = 0;
+	CMatchingPattern *pPatternGourpHead, *pPatternGourpTail;
+
+	ATLTRACE(("*** MWM-Pattern-Group: %d\n"), k++);
+	subgroups = 0;
+
+	for (i = 0; i < 65536; i++)
+	{
+		if ((index = m_pHashTable[i]) == (unsigned short)-1)
+		{
+			continue;
+		}
+		pPatternGourpHead = &m_pPatternsArray[index];             /* 1st pattern of HashKey group is here */
+		pPatternGourpTail = pPatternGourpHead + m_pGroupCountsArray[index]; /* never go here... */
+		ATLTRACE(("  Sub-Pattern-Group: %d-%d\n"), subgroups, i);
+		subgroups++;
+
+		for (m = 0; pPatternGourpHead < pPatternGourpTail; m++, pPatternGourpHead++)
+		{ /* Test all patterns in the group */
+			ATLTRACE(("   Pattern[%d] : "), m);
+			ShowBytes(pPatternGourpHead->GetPatternData(), pPatternGourpHead->GetPatternLen());
+			ATLTRACE(("\n"));
+		}
+
+		if (m > gmax)
+		{
+			gmax = m;
+		}
+
+		total += m;
+		gavg = total / subgroups;
+	}
+	ATLTRACE("m_nTotal Group Patterns    : %d\n", total);
+	ATLTRACE("  Number of Sub-Groups  : %d\n", subgroups);
+	ATLTRACE("  Sub-Group Max Patterns: %d\n", gmax);
+	ATLTRACE("  Sub-Group Avg Patterns: %d\n", gavg);
+}
+
+
+
+#endif
+
+//--------------------------------------------------------------------------------
+/// <summary>
+/// 启用匹配器
+/// </summary>
+/// <param name="bEnable">true:启用，false: 禁用</param>
+/// <created>Andy,2020/6/5</created>
+/// <changed>Andy,2020/6/5</changed>
+//--------------------------------------------------------------------------------
+void CAx3MultiPatternMatcher::Enable(bool bEnable)
+{
+	std::lock_guard<std::recursive_mutex> objLocker(m_objMutex);
+
+	m_bEnable = bEnable;
+}
+
+
+
+/*-----------------------------------------------------------------
+|  函数名称  : BytesDataCMP
+|  描    述  :
+|  参    数  : unsigned char *pData1——
+|              unsigned char *pData2——
+|              int nLen——
+|  返 回 值  :
+|  修改记录  : 2007-11-12 18:41:51   -huangdy-   创建
+-----------------------------------------------------------------*/
+static int BytesDataCMP(unsigned char *pData1, unsigned char *pData2, int nLen)
+{
+#ifdef ENABLE_CASE_NO_INSENSITIVE
+	for (int i = 0; i < nLen; i++)
+	{
+		if (Sax_tolower(pData1[i]) > Sax_tolower(pData2[i]))
+		{
+			return 1;
+		}
+		else if (Sax_tolower(pData1[i]) < Sax_tolower(pData2[i]))
+		{
+			return -1;
+		}
+	}
+
+	return 0;
+#else
+	return memcmp(pData1, pData2, nLen);
+#endif
+}
+/*-----------------------------------------------------------------
+|  函数名称  : Compare
+|  描    述  : Perform a Binary comparsion of 2 byte sequences of possibly
+|              differing lengths.
+|  参    数  : unsigned char *pData1——
+|              int nDataLen1——
+|              unsigned char *pData2——
+|              int nDataLen2——
+|  返 回 值  : -1 a < b
+|              +1 a > b
+|              0 a = b
+|  修改记录  : 2007-11-11 20:02:16   -huangdy-   创建
+-----------------------------------------------------------------*/
+static int Compare(unsigned char *pData1, int nDataLen1, unsigned char *pData2, int nDataLen2)
+{
+	int nResult = 0;
+
+	if (nDataLen1 == nDataLen2)
+	{
+		return BytesDataCMP(pData1, pData2, nDataLen1);
+	}
+	else if (nDataLen1 < nDataLen2)
+	{
+		if ((nResult = BytesDataCMP(pData1, pData2, nDataLen1)) != 0)
+		{
+			return nResult;
+		}
+		return -1;
+	}
+	else
+	{
+		if ((nResult = BytesDataCMP(pData1, pData2, nDataLen2)) != 0)
+		{
+			return nResult;
+		}
+		return +1;
+	}
+}
+
+/*-----------------------------------------------------------------
+|  函数名称  : SortCmp
+|  描    述  :  qsort callback
+|  参    数  : const void *pMatchingPattern1——
+|              const void *pMatchingPattern2——
+|  返 回 值  :
+|  修改记录  : 2007-11-11 20:11:05   -huangdy-   创建
+-----------------------------------------------------------------*/
+static int SortCmp(const void *pMatchingPattern1, const void *pMatchingPattern2)
+{
+	return Compare(((CMatchingPattern*)pMatchingPattern1)->GetPatternData()
+		, ((CMatchingPattern*)pMatchingPattern1)->GetPatternLen()
+		, ((CMatchingPattern*)pMatchingPattern2)->GetPatternData()
+		, ((CMatchingPattern*)pMatchingPattern2)->GetPatternLen());
+}
+
+
+/*-----------------------------------------------------------------
+|  函数名称  : unsigned short HashKey
+|  描    述  : HASH ROUTINE - used during pattern setup, but inline during searches
+|  参    数  : unsigned char *T——
+|  返 回 值  :
+|  修改记录  : 2007-11-11 20:24:57   -huangdy-   创建
+-----------------------------------------------------------------*/
+static inline unsigned short HashKey(unsigned char *T)
+{
+	return (unsigned short)(((*T) << 8) | *(T + 1));
+}
+
+/*-----------------------------------------------------------------
+|  函数名称  : unsigned short HashKeyEx1
+|  描    述  : HASH ROUTINE - used during pattern setup, but inline during searches
+|  参    数  : unsigned char *T——
+|  返 回 值  :
+|  修改记录  : 2007-11-11 20:24:57   -huangdy-   创建
+-----------------------------------------------------------------*/
+static inline unsigned short HashKeyEx1(unsigned char *T)
+{
+	return (unsigned short)((Sax_tolower(*T) << 8) | Sax_tolower(*(T + 1)));
+}
+/*-----------------------------------------------------------------
+|  函数名称  : unsigned short HashKeyEx2
+|  描    述  : HASH ROUTINE - used during pattern setup, but inline during searches
+|  参    数  : unsigned char *T——
+|  返 回 值  :
+|  修改记录  : 2007-11-11 20:24:57   -huangdy-   创建
+-----------------------------------------------------------------*/
+static inline unsigned short HashKeyEx2(unsigned char *T)
+{
+	return (unsigned short)((Sax_tolower(*T) << 8) | Sax_toupper(*(T + 1)));
+}
+/*-----------------------------------------------------------------
+|  函数名称  : unsigned short HashKeyEx3
+|  描    述  : HASH ROUTINE - used during pattern setup, but inline during searches
+|  参    数  : unsigned char *T——
+|  返 回 值  :
+|  修改记录  : 2007-11-11 20:24:57   -huangdy-   创建
+-----------------------------------------------------------------*/
+static inline unsigned short HashKeyEx3(unsigned char *T)
+{
+	return (unsigned short)((Sax_toupper(*T) << 8) | Sax_tolower(*(T + 1)));
+}
+/*-----------------------------------------------------------------
+|  函数名称  : unsigned short HashKeyEx4
+|  描    述  : HASH ROUTINE - used during pattern setup, but inline during searches
+|  参    数  : unsigned char *T——
+|  返 回 值  :
+|  修改记录  : 2007-11-11 20:24:57   -huangdy-   创建
+-----------------------------------------------------------------*/
+static inline unsigned short HashKeyEx4(unsigned char *T)
+{
+	return (unsigned short)((Sax_toupper(*T) << 8) | Sax_toupper(*(T + 1)));
+}
+
+/*-----------------------------------------------------------------
+|  函数名称  : PrepHashedPatternGroups
+|  描    述  : Build the HashKey table, and pattern groups
+|  返 回 值  :
+|  修改记录  : 2007-11-11 20:11:18   -huangdy-   创建
+-----------------------------------------------------------------*/
+void CAx3MultiPatternMatcher::PrepHashedPatternGroups()
+{
+	std::lock_guard<std::recursive_mutex> objLocker(m_objMutex);
+
+	assert(!m_bEnable);
+
+	if (m_bEnable)
+	{
+		return;
+	}
+
+	/*Allocate and Init 2+ byte pattern HashKey table */
+
+	if (!m_pHashTable)
+	{
+		m_pHashTable = new unsigned short[HASHTABLESIZE];
+		if (!m_pHashTable)
+		{
+			return;
+		}
+	}
+
+	unsigned int nPatternIdx, nHashKey, nInGroup;
+	unsigned int nHashKey1 = 0;
+	unsigned int nHashKey2 = 0;
+	unsigned int nHashKey3 = 0;
+	unsigned int nHashKey4 = 0;
+	unsigned int i;
+
+	/* Init Hash table to default value */
+	for (i = 0; i < HASHTABLESIZE; i++)
+	{
+		m_pHashTable[i] = (unsigned short)-1;
+	}
+
+	/* Initialize The One Byte Pattern Hash Table */
+	for (i = 0; i < 256; i++)
+	{
+		m_pHashTable1[i] = (unsigned short)-1;
+	}
+
+	/*
+	** Add the patterns to the HashKey table
+	*/
+	for (i = 0; i < m_nNumPatterns; i++)
+	{
+		if (m_pPatternsArray[i].GetPatternLen() > 1)
+		{
+			nInGroup = 1;
+			nPatternIdx = (unsigned short)i;
+#ifdef ENABLE_CASE_NO_INSENSITIVE
+			nHashKey1 = HashKeyEx1(m_pPatternsArray[i].GetPatternData());
+			nHashKey2 = HashKeyEx2(m_pPatternsArray[i].GetPatternData());
+			nHashKey3 = HashKeyEx3(m_pPatternsArray[i].GetPatternData());
+			nHashKey4 = HashKeyEx4(m_pPatternsArray[i].GetPatternData());
+
+			m_pHashTable[nHashKey1] = (unsigned short)i;
+			m_pHashTable[nHashKey2] = (unsigned short)i;
+			m_pHashTable[nHashKey3] = (unsigned short)i;
+			m_pHashTable[nHashKey4] = (unsigned short)i;
+			while ((++i < m_nNumPatterns)
+				&& (nHashKey1 == HashKeyEx1(m_pPatternsArray[i].GetPatternData())
+					|| nHashKey2 == HashKeyEx2(m_pPatternsArray[i].GetPatternData())
+					|| nHashKey3 == HashKeyEx3(m_pPatternsArray[i].GetPatternData())
+					|| nHashKey4 == HashKeyEx4(m_pPatternsArray[i].GetPatternData())))
+			{
+				nInGroup++;
+			}
+#else
+			nHashKey = HashKey(m_pPatternsArray[i].GetPatternData());
+			m_pHashTable[nHashKey] = (unsigned short)i;
+
+			while ((++i < m_nNumPatterns)
+				&& (nHashKey == HashKey(m_pPatternsArray[i].GetPatternData())))
+			{
+				nInGroup++;
+			}
+#endif
+
+			m_pGroupCountsArray[nPatternIdx] = (unsigned short)nInGroup;
+			i--;
+		}
+		else if (m_pPatternsArray[i].GetPatternLen() == 1)
+		{
+			nHashKey = m_pPatternsArray[i].GetFirstByteOfPatternData();
+			nPatternIdx = (unsigned short)i;
+			nInGroup = 1;
+
+#ifdef ENABLE_CASE_NO_INSENSITIVE
+			m_pHashTable1[Sax_tolower(nHashKey)] = (unsigned short)i;
+			m_pHashTable1[Sax_toupper(nHashKey)] = (unsigned short)i;
+			while ((++i < m_nNumPatterns)
+				&& m_pPatternsArray[i].GetPatternLen() == 1
+				&& (Sax_tolower(nHashKey) == m_pPatternsArray[i].GetFirstByteOfPatternData()
+					|| Sax_toupper(nHashKey) == m_pPatternsArray[i].GetFirstByteOfPatternData()))
+			{
+				nInGroup++;
+			}
+#else
+			m_pHashTable1[nHashKey] = (unsigned short)i;
+			while ((++i < m_nNumPatterns)
+				&& m_pPatternsArray[i].GetPatternLen() == 1
+				&& (nHashKey == m_pPatternsArray[i].GetFirstByteOfPatternData()))
+			{
+				nInGroup++;
+			}
+#endif
+			m_pGroupCountsArray[nPatternIdx] = (unsigned short)nInGroup;
+			i--;
+		}
+	}
+}
+
+/*-----------------------------------------------------------------
+|  函数名称  : CAx3MultiPatternMatcher::PrepBadCharTable
+|  描    述  : Standard Bad Character Multi-Pattern Skip Table
+|  返 回 值  :
+|  修改记录  : 2007-11-11 20:42:41   -huangdy-   创建
+-----------------------------------------------------------------*/
+void CAx3MultiPatternMatcher::PrepBadCharTable()
+{
+	std::lock_guard<std::recursive_mutex> objLocker(m_objMutex);
+
+	assert(!m_bEnable);
+
+	if (m_bEnable)
+	{
+		return;
+	}
+
+	unsigned short k = 0, nCharIdx = 0, nShift = 0;
+	unsigned int nSmallest = 32000;
+	unsigned int nLargest = 0;
+	unsigned int i = 0;
+
+	/* Determine largest and smallest pattern sizes */
+	for (i = 0; i < m_nNumPatterns; i++)
+	{
+		if (m_pPatternsArray[i].GetPatternLen() < nSmallest)
+		{
+			nSmallest = m_pPatternsArray[i].GetPatternLen();
+		}
+		if (m_pPatternsArray[i].GetPatternLen() > nLargest)
+		{
+			nLargest = m_pPatternsArray[i].GetPatternLen();
+		}
+	}
+
+	m_nShiftLen = (unsigned short)nSmallest;
+	if (m_nShiftLen > 255)
+	{
+		m_nShiftLen = 255;
+	}
+
+	/* Initialze the default nShift table. Max nShift of 256 characters */
+	for (i = 0; i < 256; i++)
+	{
+		m_pShiftTable[i] = (unsigned char)m_nShiftLen;
+	}
+
+	/*  Multi-Pattern BAD CHARACTER SHIFT */
+	for (i = 0; i < m_nNumPatterns; i++)
+	{
+		unsigned char* pPatternData = m_pPatternsArray[i].GetPatternData();
+		for (k = 0; k < m_nShiftLen; k++)
+		{
+			nShift = (unsigned short)(m_nShiftLen - 1 - k);
+			if (nShift > 255)
+			{
+				nShift = 255;
+			}
+			nCharIdx = pPatternData[k];
+			if (nShift < m_pShiftTable[nCharIdx])
+			{
+#ifdef ENABLE_CASE_NO_INSENSITIVE
+				m_pShiftTable[Sax_tolower(nCharIdx)] = nShift;
+				m_pShiftTable[Sax_toupper(nCharIdx)] = nShift;
+#else 
+				m_pShiftTable[nCharIdx] = nShift;
+#endif
+			}
+		}
+	}
+}
+
+/*-----------------------------------------------------------------
+|  函数名称  : CAx3MultiPatternMatcher::PrepBadWordTable
+|  描    述  : Prep and Build a Bad Word Shift table
+|  返 回 值  :
+|  修改记录  : 2007-11-12 8:54:30   -huangdy-   创建
+-----------------------------------------------------------------*/
+void CAx3MultiPatternMatcher::PrepBadWordTable()
+{
+	std::lock_guard<std::recursive_mutex> objLocker(m_objMutex);
+
+	assert(!m_bEnable);
+
+	if (m_bEnable)
+	{
+		return;
+	}
+
+	unsigned int i;
+	unsigned short k, nCharIdx;
+	unsigned int nSmallest = 32000, nLargest = 0;
+	unsigned int nShift;
+
+	if (!m_pLargeShiftTable)
+	{
+		m_pLargeShiftTable = new unsigned char[BWSHIFTABLESIZE];
+		if (!m_pLargeShiftTable)
+		{
+			return;
+		}
+	}
+
+	/* Determine largest and smallest pattern sizes */
+	for (i = 0; i < m_nNumPatterns; i++)
+	{
+		if (m_pPatternsArray[i].GetPatternLen() < nSmallest)
+		{
+			nSmallest = m_pPatternsArray[i].GetPatternLen();
+		}
+		if (m_pPatternsArray[i].GetPatternLen() > nLargest)
+		{
+			nLargest = m_pPatternsArray[i].GetPatternLen();
+		}
+	}
+
+	m_nShiftLen = (unsigned short)nSmallest; /* Maximum Boyer-Moore Shift */
+
+	/* Limit the maximum size of the smallest pattern to 255 bytes */
+	if (m_nShiftLen > 255)
+	{
+		m_nShiftLen = 255;
+	}
+
+	/* Initialze the default nShift table. */
+	for (i = 0; i < BWSHIFTABLESIZE; i++)
+	{
+		m_pLargeShiftTable[i] = (unsigned char)(m_nShiftLen - 1);
+	}
+
+	/* Multi-Pattern Bad Word Shift Table Values */
+	for (i = 0; i < m_nNumPatterns; i++)
+	{
+		unsigned char* pPatternData = m_pPatternsArray[i].GetPatternData();
+		for (k = 0; k < m_nShiftLen - 1; k++)
+		{
+			nShift = (unsigned short)(m_nShiftLen - 2 - k);
+			if (nShift > 255)
+			{
+				nShift = 255;
+			}
+
+			nCharIdx = (pPatternData[k] | (pPatternData[k + 1] << 8));
+			if (nShift < m_pLargeShiftTable[nCharIdx])
+			{
+#ifdef ENABLE_CASE_NO_INSENSITIVE
+				m_pLargeShiftTable[Sax_tolower(pPatternData[k]) | (Sax_tolower(pPatternData[k + 1]) << 8)] = (unsigned char)nShift;
+				m_pLargeShiftTable[Sax_toupper(pPatternData[k]) | (Sax_tolower(pPatternData[k + 1]) << 8)] = (unsigned char)nShift;
+				m_pLargeShiftTable[Sax_tolower(pPatternData[k]) | (Sax_toupper(pPatternData[k + 1]) << 8)] = (unsigned char)nShift;
+				m_pLargeShiftTable[Sax_toupper(pPatternData[k]) | (Sax_toupper(pPatternData[k + 1]) << 8)] = (unsigned char)nShift;
+#else 
+				m_pLargeShiftTable[nCharIdx] = (unsigned char)nShift;
+#endif
+			}
+		}
+	}
+}
+/*-----------------------------------------------------------------
+| Name      : CAx3MultiPatternMatcher::Search2
+| Desc      : 二次搜索，检查模式是否有通配符，如果有那么就采用通配符
+|             搜索
+| Parameter : CSearchContext& objSearchContext——>上下文
+|             CMatchingPattern* pMatchingPattern——>当前的模式
+|             int nCurStartPos——>当前查找成功的开始位置
+| Return    : bool
+| Author    : Andy.h
+| Date      : 星期三, 四月 22 2009
+-----------------------------------------------------------------*/
+
+bool CAx3MultiPatternMatcher::Search2(CSearchContext& objSearchContext
+	, CMatchingPattern* pMatchingPattern
+	, const int nCurStartPos) const
+{
+	bool bResult = false;
+	std::lock_guard<std::recursive_mutex> objLocker(m_objMutex);
+
+	assert(m_bEnable);
+
+	if (!m_bEnable)
+	{
+		return bResult;
+	}
+
+	CKMPMatchWithWildcard* pKMPMatchWithWildcard =
+		pMatchingPattern->GetKMPMatchWithWildcard();
+	if (pKMPMatchWithWildcard)
+	{
+		if (pKMPMatchWithWildcard->Search(objSearchContext.m_pByteStream
+			, objSearchContext.m_nStreamLen
+			, &(objSearchContext.m_nStartPos)
+			, &(objSearchContext.m_nLength)))
+		{
+			objSearchContext.m_nID = pMatchingPattern->GetID();
+			objSearchContext.m_pCookie = pMatchingPattern->GetCookie();
+
+
+			if (objSearchContext.m_objOnMatchCallBack != nullptr)
+			{
+				objSearchContext.m_objOnMatchCallBack(&objSearchContext);
+			}
+			bResult = true;
+		}
+	}
+	else
+	{
+		if (objSearchContext.m_objOnMatchCallBack != nullptr)
+		{
+			objSearchContext.m_nStartPos = nCurStartPos;
+			objSearchContext.m_nLength = pMatchingPattern->GetPatternLen();
+			objSearchContext.m_nID = pMatchingPattern->GetID();
+			objSearchContext.m_pCookie = pMatchingPattern->GetCookie();
+
+			objSearchContext.m_objOnMatchCallBack(&objSearchContext);
+		}
+
+		bResult = true;
+	}
+
+	return bResult;
+}
+/*-----------------------------------------------------------------
+|  函数名称  : CAx3MultiPatternMatcher::SearchExNoBC
+|  描    述  :  No Bad Character Shifts
+|               Handles pattern groups with one byte patterns
+|               Uses 2 byte HashKey table to group patterns
+|  参    数  : unsigned char *pByteStream——
+|              int nStreamLen——
+|              ON_MATCH_CALLBACK pOnMatchCallBack——
+|  返 回 值  :
+|  修改记录  : 2007-11-12 10:26:21   -huangdy-   创建
+-----------------------------------------------------------------*/
+int CAx3MultiPatternMatcher::SearchExNoBC(CSearchContext& objSearchContext) const
+{
+	std::lock_guard<std::recursive_mutex> objLocker(m_objMutex);
+
+	assert(m_bEnable);
+
+	if (!m_bEnable)
+	{
+		return -1;
+	}
+
+	int nPatternIndex = 0, k = 0;
+
+	CMatchingPattern *pPatternGourpHead = nullptr;
+	CMatchingPattern *pPatternGourpTail = nullptr;
+
+	int   nPattenrFound = 0;
+	int   nStreamLeft = objSearchContext.m_nStreamLen;
+	const unsigned char* pStreamTail = objSearchContext.m_pByteStream + objSearchContext.m_nStreamLen;
+
+	/* Test if text is shorter than the shortest pattern */
+	if ((unsigned int)objSearchContext.m_nStreamLen < m_nShiftLen)
+	{
+		return 0;
+	}
+	const unsigned char *T = objSearchContext.m_pByteStream;
+	const unsigned char * B = objSearchContext.m_pByteStream + m_nShiftLen - 1;
+
+	/*  Process each suffix of the Text, left to right, incrementing T so T = S[j] */
+	for (;B < pStreamTail; T++, B++, nStreamLeft--)
+	{
+		/* Test for single char pattern matches */
+		if ((nPatternIndex = m_pHashTable1[*T]) != (unsigned short)-1)
+		{  //找到匹配的
+			pPatternGourpHead = &m_pPatternsArray[nPatternIndex];
+			pPatternGourpTail = pPatternGourpHead + m_pGroupCountsArray[nPatternIndex];
+
+			for (; pPatternGourpHead < pPatternGourpTail; pPatternGourpHead++)  //此处必须测试
+			{
+#ifdef ENABLE_CASE_NO_INSENSITIVE
+				if (pPatternGourpHead->GetCaseSensitivity())
+				{
+					if (pPatternGourpHead->GetFirstByteOfPatternData() == *T)
+					{
+						if (Search2(objSearchContext, pPatternGourpHead
+							, (int)(T - objSearchContext.m_pByteStream)))
+						{
+							nPattenrFound++;
+						}
+					}
+				}
+				else
+				{
+					if (Search2(objSearchContext, pPatternGourpHead
+						, (int)(T - objSearchContext.m_pByteStream)))
+					{
+						nPattenrFound++;
+					}
+				}
+#else
+				if (Search2(objSearchContext, pPatternGourpHead
+					, (int)(T - objSearchContext.m_pByteStream)))
+				{
+					nPattenrFound++;
+				}
+#endif
+			}
+		}
+
+		/* Test for last char in Text, one byte pattern test was done above, were done. */
+		if (nStreamLeft == 1)
+		{
+			return nPattenrFound;
+		}
+
+		/* Test if the 2 char prefix of this suffix shows up in the HashKey table */
+		if ((nPatternIndex = m_pHashTable[((*T) << 8) | *(T + 1)]) == (unsigned short)-1)
+		{
+			continue;
+		}
+
+		/* Process the Hash Group Patterns against the current Text Suffix */
+		pPatternGourpHead = &m_pPatternsArray[nPatternIndex];
+		pPatternGourpTail = pPatternGourpHead + m_pGroupCountsArray[nPatternIndex];
+
+		/*  Match Loop - Test each pattern in the group against the Text */
+		for (; pPatternGourpHead < pPatternGourpTail; pPatternGourpHead++)
+		{
+			const unsigned char *p = nullptr, *q = nullptr;
+
+			/* Test if this Pattern is to big for Text, not a possible match */
+			if ((unsigned int)nStreamLeft < pPatternGourpHead->GetPatternLen())
+			{
+				continue;
+			}
+
+			/* Compare strings backward, unrolling does not help in perf tests. */
+#ifdef ENABLE_CASE_NO_INSENSITIVE
+			if (pPatternGourpHead->GetCaseSensitivity())
+			{
+				/* Setup the reverse string compare */
+				k = pPatternGourpHead->GetPatternLen() - 1;
+				q = pPatternGourpHead->GetPatternData();
+				p = T;
+
+				while (k >= 0 && (q[k] == p[k]))
+				{
+					k--;
+				}
+			}
+			else
+			{
+				/* Setup the reverse string compare */
+				k = pPatternGourpHead->GetPatternLen() - HASHBYTES16 - 1;
+				q = pPatternGourpHead->GetPatternData() + HASHBYTES16;
+				p = T + HASHBYTES16;
+
+				while (k >= 0 && (q[k] == p[k] || q[k] == Sax_tolower(p[k])))
+				{
+					k--;
+				}
+			}
+#else
+			/* Setup the reverse string compare */
+			k = pPatternGourpHead->GetPatternLen() - HASHBYTES16 - 1;
+			q = pPatternGourpHead->GetPatternData() + HASHBYTES16;
+			p = T + HASHBYTES16;
+
+			while (k >= 0 && (q[k] == p[k]))
+			{
+				k--;
+			}
+#endif
+
+			/* Test for a Match ! */
+			if (k < 0)
+			{
+				if (Search2(objSearchContext, pPatternGourpHead
+					, (int)(T - objSearchContext.m_pByteStream)))
+				{
+					nPattenrFound++;
+				}
+			}
+		}
+	}
+	return nPattenrFound;
+}
+
+/*-----------------------------------------------------------------
+|  函数名称  : CAx3MultiPatternMatcher::SearchExBC
+|  描    述  :  Uses Bad Character Shifts
+|               Handles pattern groups with 2 or more bytes per pattern
+|               Uses 2 byte HashKey table to group patterns
+|  参    数  : unsigned char *pByteStream——
+|              int nStreamLen——
+|              ON_MATCH_CALLBACK pOnMatchCallBack——
+|  返 回 值  :
+|  修改记录  : 2007-11-12 10:26:21   -huangdy-   创建
+-----------------------------------------------------------------*/
+int CAx3MultiPatternMatcher::SearchExBC(CSearchContext& objSearchContext) const
+{
+	std::lock_guard<std::recursive_mutex> objLocker(m_objMutex);
+
+	assert(m_bEnable);
+
+	if (!m_bEnable)
+	{
+		return -1;
+	}
+
+	int nPatternIndex = 0, k = 0, nTShift = 0;
+	CMatchingPattern *pPatternGourpHead = nullptr;
+	CMatchingPattern *pPatternGourpTail = nullptr;
+
+	int   nPattenrFound = 0;
+	int   nStreamLeft = objSearchContext.m_nStreamLen;
+	const unsigned char* pStreamTail = objSearchContext.m_pByteStream + objSearchContext.m_nStreamLen;
+
+	/* Test if text is shorter than the shortest pattern */
+	if ((unsigned int)objSearchContext.m_nStreamLen < m_nShiftLen)
+	{
+		return 0;
+	}
+
+	const unsigned char *T = objSearchContext.m_pByteStream;
+	const unsigned char * B = objSearchContext.m_pByteStream + m_nShiftLen - 1;
+
+	/*  Process each suffix of the Text, left to right, incrementing T so T = S[j] */
+	for (; B < pStreamTail; T++, B++, nStreamLeft--)
+	{
+		/* Multi-Pattern Bad Character Shift */
+		while ((nTShift = m_pShiftTable[*B]) > 0)
+		{
+			B += nTShift;
+			T += nTShift;
+			nStreamLeft -= nTShift;
+			if (B >= pStreamTail)
+			{
+				return nPattenrFound;
+			}
+
+			nTShift = m_pShiftTable[*B];
+			B += nTShift;
+			T += nTShift;
+			nStreamLeft -= nTShift;
+			if (B >= pStreamTail)
+			{
+				return nPattenrFound;
+			}
+		}
+
+		/* Test for last char in Text, one byte pattern test was done above, were done. */
+		if (nStreamLeft == 1)
+		{
+			return nPattenrFound;
+		}
+
+		/* Test if the 2 char prefix of this suffix shows up in the HashKey table */
+		if ((nPatternIndex = m_pHashTable[((*T) << 8) | *(T + 1)]) == (unsigned short)-1)
+		{
+			continue;
+		}
+
+		/* Process the Hash Group Patterns against the current Text Suffix */
+		pPatternGourpHead = &m_pPatternsArray[nPatternIndex];
+		pPatternGourpTail = pPatternGourpHead + m_pGroupCountsArray[nPatternIndex];
+
+		/*  Match Loop - Test each pattern in the group against the Text */
+		for (; pPatternGourpHead < pPatternGourpTail; pPatternGourpHead++)
+		{
+			const unsigned char *p = nullptr, *q = nullptr;
+
+			/* Test if this Pattern is to big for Text, not a possible pOnMatchCallBack */
+			if ((unsigned int)nStreamLeft < pPatternGourpHead->GetPatternLen())
+			{
+				continue;
+			}
+
+			/* Compare strings backward, unrolling does not help in perf tests. */
+#ifdef ENABLE_CASE_NO_INSENSITIVE
+			if (pPatternGourpHead->GetCaseSensitivity())
+			{
+				/* Setup the reverse string compare */
+				k = pPatternGourpHead->GetPatternLen() - 1;
+				q = pPatternGourpHead->GetPatternData();
+				p = T;
+
+				while (k >= 0 && (q[k] == p[k]))
+				{
+					k--;
+				}
+			}
+			else
+			{
+				/* Setup the reverse string compare */
+				k = pPatternGourpHead->GetPatternLen() - HASHBYTES16 - 1;
+				q = pPatternGourpHead->GetPatternData() + HASHBYTES16;
+				p = T + HASHBYTES16;
+
+				while (k >= 0 && (q[k] == p[k] || q[k] == Sax_tolower(p[k])))
+				{
+					k--;
+				}
+			}
+#else
+			/* Setup the reverse string compare */
+			k = pPatternGourpHead->GetPatternLen() - HASHBYTES16 - 1;
+			q = pPatternGourpHead->GetPatternData() + HASHBYTES16;
+			p = T + HASHBYTES16;
+
+			while (k >= 0 && (q[k] == p[k]))
+			{
+				k--;
+			}
+#endif
+
+			/* Test for a Match ! */
+			if (k < 0)
+			{
+				if (Search2(objSearchContext, pPatternGourpHead
+					, (int)(T - objSearchContext.m_pByteStream)))
+				{
+					nPattenrFound++;
+				}
+			}
+		}
+	}
+
+	return nPattenrFound;
+}
+
+/*-----------------------------------------------------------------
+|  函数名称  : CAx3MultiPatternMatcher::SearchExBW
+|  描    述  :  Uses Bad Word Shifts
+|               Handles pattern groups with 2 or more bytes per pattern
+|               Uses 2 byte HashKey table to group patterns
+|  参    数  : unsigned char *pByteStream——
+|              int nStreamLen——
+|              ON_MATCH_CALLBACK pOnMatchCallBack——
+|  返 回 值  :
+|  修改记录  : 2007-11-12 10:26:21   -huangdy-   创建
+-----------------------------------------------------------------*/
+int CAx3MultiPatternMatcher::SearchExBW(CSearchContext& objSearchContext) const
+{
+	std::lock_guard<std::recursive_mutex> objLocker(m_objMutex);
+
+	assert(m_bEnable);
+
+	if (!m_bEnable)
+	{
+		return -1;
+	}
+
+	int nPatternIndex = 0, k = 0, nTShift = 0;
+	CMatchingPattern *pPatternGourpHead = nullptr;
+	CMatchingPattern *pPatternGourpTail = nullptr;
+
+	int   nPattenrFound = 0;
+	int   nStreamLeft = objSearchContext.m_nStreamLen;
+	const unsigned char* pStreamTail = objSearchContext.m_pByteStream + objSearchContext.m_nStreamLen;
+
+	/* Test if text is shorter than the shortest pattern */
+	if ((unsigned int)objSearchContext.m_nStreamLen < m_nShiftLen)
+	{
+		return 0;
+	}
+
+	const unsigned char *T = objSearchContext.m_pByteStream;
+	const unsigned char * B = objSearchContext.m_pByteStream + m_nShiftLen - 1;
+
+	/*  Process each suffix of the Text, left to right, incrementing T so T = S[j] */
+	for (; B < pStreamTail; T++, B++, nStreamLeft--)
+	{
+		/* Multi-Pattern Bad Word Shift */
+		nTShift = m_pLargeShiftTable[((*B) << 8) | *(B - 1)];
+		while (nTShift)
+		{
+			B += nTShift;
+			T += nTShift;
+			nStreamLeft -= nTShift;
+			if (B >= pStreamTail)
+			{
+				return nPattenrFound;
+			}
+			nTShift = m_pLargeShiftTable[((*B) << 8) | *(B - 1)];
+		}
+
+		/* Test for last char in Text, we are done, one byte pattern test was done above. */
+		if (nStreamLeft == 1)
+		{
+			return nPattenrFound;
+		}
+
+		/* Test if the 2 char prefix of this suffix shows up in the HashKey table */
+		if ((nPatternIndex = m_pHashTable[((*T) << 8) | *(T + 1)]) == (unsigned short)-1)
+		{
+			continue;
+		}
+
+		/* Process the Hash Group Patterns against the current Text Suffix */
+		pPatternGourpHead = &m_pPatternsArray[nPatternIndex];
+		pPatternGourpTail = pPatternGourpHead + m_pGroupCountsArray[nPatternIndex];
+
+		/*  Match Loop - Test each pattern in the group against the Text */
+		for (; pPatternGourpHead < pPatternGourpTail; pPatternGourpHead++)
+		{
+			const unsigned char *p = nullptr, *q = nullptr;
+			/* Test if this Pattern is to big for Text, not a possible pOnMatchCallBack */
+			if ((unsigned int)nStreamLeft < pPatternGourpHead->GetPatternLen())
+			{
+				continue;
+			}
+
+			/* Compare strings backward, unrolling does not help in perf tests. */
+#ifdef ENABLE_CASE_NO_INSENSITIVE
+			if (pPatternGourpHead->GetCaseSensitivity())
+			{
+				/* Setup the reverse string compare */
+				k = pPatternGourpHead->GetPatternLen() - 1;
+				q = pPatternGourpHead->GetPatternData();
+				p = T;
+
+				while (k >= 0 && (q[k] == p[k]))
+				{
+					k--;
+				}
+			}
+			else
+			{
+				/* Setup the reverse string compare */
+				k = pPatternGourpHead->GetPatternLen() - HASHBYTES16 - 1;
+				q = pPatternGourpHead->GetPatternData() + HASHBYTES16;
+				p = T + HASHBYTES16;
+
+				while (k >= 0 && (q[k] == p[k] || q[k] == Sax_tolower(p[k])))
+				{
+					k--;
+				}
+			}
+#else
+			/* Setup the reverse string compare */
+			k = pPatternGourpHead->GetPatternLen() - HASHBYTES16 - 1;
+			q = pPatternGourpHead->GetPatternData() + HASHBYTES16;
+			p = T + HASHBYTES16;
+
+			while (k >= 0 && (q[k] == p[k]))
+			{
+				k--;
+			}
+#endif
+
+			/* Test for a Match ! */
+			if (k < 0)
+			{
+				if (Search2(objSearchContext, pPatternGourpHead
+					, (int)(T - objSearchContext.m_pByteStream)))
+				{
+					nPattenrFound++;
+				}
+			}
+		}
+	}
+
+	return nPattenrFound;
+}
+
+
+/*-----------------------------------------------------------------
+|  函数名称  : CAx3MultiPatternMatcher::AllocateMemForWuManberMethod
+|  描    述  : Allocate memeory for wu manber method
+|  返 回 值  :
+|  修改记录  : 2007-11-13 11:13:49   -huangdy-   创建
+-----------------------------------------------------------------*/
+bool CAx3MultiPatternMatcher::AllocateMemForWuManberMethod()
+{
+	if (!m_pHashTable1)
+	{
+		m_pHashTable1 = new unsigned short[256];
+	}
+
+	if (!m_pShiftTable)
+	{
+		m_pShiftTable = new unsigned short[256];
+	}
+	return (m_pHashTable1 && m_pShiftTable);
+}
+
+
+/*-----------------------------------------------------------------
+|  函数名称  : CAx3MultiPatternMatcher::FreeMemForWuManberMethod
+|  描    述  : free memeory for wu manber method
+|  返 回 值  : true----
+|              false---
+|  修改记录  : 2007-11-13 11:26:50   -huangdy-   创建
+-----------------------------------------------------------------*/
+void CAx3MultiPatternMatcher::FreeMemForWuManberMethod()
+{
+	if (m_pHashTable1)
+	{
+		delete[]m_pHashTable1;
+		m_pHashTable1 = nullptr;
+	}
+
+	if (m_pShiftTable)
+	{
+		delete[]m_pShiftTable;
+		m_pShiftTable = nullptr;
+	}
+
+	if (m_pHashTable)
+	{
+		delete[]m_pHashTable;
+		m_pHashTable = nullptr;
+	}
+
+	if (m_pLargeShiftTable)
+	{
+		delete[]m_pLargeShiftTable;
+		m_pLargeShiftTable = nullptr;
+	}
+}
+
+/*-----------------------------------------------------------------
+|  函数名称  : CAx3MultiPatternMatcher::PrepPatterns
+|  描    述  : Prepare the pattern group for searching
+|  返 回 值  :
+|  修改记录  : 2007-11-11 20:11:33   -huangdy-   创建
+-----------------------------------------------------------------*/
+int CAx3MultiPatternMatcher::PrepPatterns()
+{
+	std::lock_guard<std::recursive_mutex> objLocker(m_objMutex);
+
+	assert(!m_bEnable);
+
+	if (m_bEnable)
+	{
+		return -1;
+	}
+
+	assert(m_nNumPatterns == m_nPatternsArraySize);
+	/* Select the Pattern Matcher Class */
+	if (0 == m_nNumPatterns)
+	{
+		m_nMatchingMethod = MTH_INVALIDATION;
+	}
+	else if (m_nNumPatterns < PATTERNS_LIMIT_OF_SUNDAY_MATCH)
+	{
+		m_nMatchingMethod = MTH_SUNDAY;
+		FreeMemForWuManberMethod();
+	}
+	else
+	{
+		m_nMatchingMethod = MTH_WU_MANBER;
+		if (!AllocateMemForWuManberMethod())
+		{
+			m_nMatchingMethod = MTH_INVALIDATION;
+		}
+	}
+
+	switch (m_nMatchingMethod)
+	{
+	case MTH_WU_MANBER:/* Setup Wu-Manber */
+	{
+		/* Sort the patterns */
+		qsort(m_pPatternsArray, m_nNumPatterns, sizeof(CMatchingPattern), SortCmp);
+
+		/* Build the Hash table, and pattern groups, per Wu & Manber */
+		PrepHashedPatternGroups();
+
+		/* Build the Bad Char Shift Table per Wu & Manber */
+		PrepBadCharTable();
+
+		/* Build the Bad Word Shift Table per Wu & Manber */
+		if ((m_nShiftLen > 1) && m_bLargeShiftTableSize)
+		{
+			PrepBadWordTable();
+		}
+
+		if (m_nShiftLen == 1)  /* Min patterns is 1 byte */
+		{
+			m_nMatchingFunction = MF_SEARCHEXNOBC;
+		}
+		else if ((m_nShiftLen > 1) && !m_bLargeShiftTableSize)/* Min patterns is >1 byte */
+		{
+			m_nMatchingFunction = MF_SEARCHEXBC;
+		}
+		else if ((m_nShiftLen > 1) && m_bLargeShiftTableSize
+			&& m_pLargeShiftTable)
+		{/* Min patterns is >1 byte - and we've been asked to use a 2 byte bad words nShift instead. */
+			m_nMatchingFunction = MF_SEARCHEXBW;
+		}
+		else /* Min patterns is >1 byte */
+		{
+			m_nMatchingFunction = MF_SEARCHEXBC;
+		}
+	}
+	break;
+
+	case MTH_SUNDAY: /* Initialize the Boyer-Moore Pattern data */
+	{
+		/* Allocate and initialize the BMH data for each pattern */
+		for (unsigned int i = 0; i < m_nNumPatterns; i++)
+		{
+			m_pPatternsArray[i].ConstructShiftTable();
+		}
+	}
+	break;
+	}
+
+	for (unsigned int i = 0; i < m_nNumPatterns; i++)
+	{
+		if (!m_pPatternsArray[i].GetCaseSensitivity())  //如果大小写不敏感就全部转换为小写
+		{
+			m_pPatternsArray[i].ConvertPatterToLower();
+		}
+	}
+
+	return 0;
+}
+
+/*-----------------------------------------------------------------
+|  函数名称  : CAx3MultiPatternMatcher::Search
+|  描    述  :  Search a body of text or data for paterns
+|  参    数  : unsigned char *pByteStream——
+|              int nStreamLen——
+|              ON_MATCH_CALLBACK pOnMatchCallBack——
+|  返 回 值  :
+|  修改记录  : 2007-11-12 10:56:36   -huangdy-   创建
+-----------------------------------------------------------------*/
+int CAx3MultiPatternMatcher::Search(CSearchContext& objSearchContext) const
+{
+	std::lock_guard<std::recursive_mutex> objLocker(m_objMutex);
+
+	assert(m_bEnable);
+
+	if (!m_bEnable)
+	{
+		return -1;
+	}
+
+	int  nFound = 0;
+
+	switch (m_nMatchingMethod)
+	{
+	case MTH_SUNDAY:
+	{
+		for (unsigned int i = 0; i < m_nNumPatterns; i++)
+		{
+			CMatchingPattern& refMatchingPattern = m_pPatternsArray[i];
+
+			CKMPMatchWithWildcard* pKMPMatchWithWildcard =
+				refMatchingPattern.GetKMPMatchWithWildcard();
+			if (pKMPMatchWithWildcard)
+			{
+				if (pKMPMatchWithWildcard->Search(objSearchContext.m_pByteStream
+					, objSearchContext.m_nStreamLen
+					, &(objSearchContext.m_nStartPos)
+					, &(objSearchContext.m_nLength)))
+				{
+					objSearchContext.m_nID = refMatchingPattern.GetID();
+					objSearchContext.m_pCookie = refMatchingPattern.GetCookie();
+
+					nFound++;
+
+					if (objSearchContext.m_objOnMatchCallBack)
+					{
+						objSearchContext.m_objOnMatchCallBack(&objSearchContext);
+					}
+				}
+			}
+			else
+			{
+				const unsigned char *pStartPtr = refMatchingPattern.SundayMatch(
+					objSearchContext.m_pByteStream, objSearchContext.m_nStreamLen);
+				if (pStartPtr)
+				{
+					objSearchContext.m_nStartPos = (int)(pStartPtr - objSearchContext.m_pByteStream);
+					objSearchContext.m_nLength = refMatchingPattern.GetPatternLen();
+					objSearchContext.m_nID = refMatchingPattern.GetID();
+					objSearchContext.m_pCookie = refMatchingPattern.GetCookie();
+
+					nFound++;
+
+					if (objSearchContext.m_objOnMatchCallBack)
+					{
+						objSearchContext.m_objOnMatchCallBack(&objSearchContext);
+					}
+				}
+			}
+		}
+	}
+	break;
+
+	case MTH_WU_MANBER:/* Setup Wu-Manber */
+	{
+		switch (m_nMatchingFunction)
+		{
+		case MF_SEARCHEXNOBC:
+			nFound = SearchExNoBC(objSearchContext);
+			break;
+
+		case MF_SEARCHEXBC:
+			nFound = SearchExBC(objSearchContext);
+			break;
+
+		case MF_SEARCHEXBW:
+			nFound = SearchExBW(objSearchContext);
+			break;
+
+		default:
+			assert(false);
+		};
+	}
+	break;
+	}
+
+	return nFound;
+}

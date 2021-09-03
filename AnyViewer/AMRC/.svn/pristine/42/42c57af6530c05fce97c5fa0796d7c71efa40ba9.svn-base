@@ -1,0 +1,272 @@
+/******************************************************************************
+* 
+* SaxListCtrl
+* Version
+* Copyright (C) 2007 Ax3soft Co., Ltd.
+* All Rights Reserved
+* $Header: /cvsdata/vc/Common/GeneralFunctions.h,v 1.17 2014/12/13 01:42:27 administrator Exp $
+* 
+*******************************************************************************
+* 
+* Description:General functions define,Dependent MFC library
+******************************************************************************/
+#include "stdafx.h"
+#include "NetSCYProtocol.h"
+
+
+namespace NetSCYProtocol
+{
+
+	REGISTER_CLASS(CBaseAccountInfo)
+		REGISTER_CLASS(CCreateSNArgus)
+		REGISTER_CLASS(CSNInfo)
+		REGISTER_CLASS(CActivtionArgus)
+
+
+		const STATUS_CODE_DESC StatusCodeDescItem[] =
+	{
+		{ ES_SUCCESS, "成功"},
+		{ ES_INVALID_ACCOUNT, "用户名或密码错误"},
+		{ ES_CREATE_ACCOUNT_FAILED, "创建账号失败"},
+		{ ES_INVALID_NAME, "用户名或密码错误"} ,
+		{ ES_EXIST_NAME, "账号已存在" },
+		{ ES_INVALID_PASSWD, "用户名或密码错误"},
+		{ ES_REPEAT_LOGIN, "重复登录" },
+		{ ES_TIME_OUT, "等待超时"},
+		{ ES_NOT_LOGGED_IN,"未登录" },
+		{ ES_NOT_FOUND_TRANS, "没有找到指定事务" },
+		{ ES_RETRANSFER, "传输数据失败" },
+		{ ES_ALLOCATE_TRANS_UNSUCCESSFULLY, "分配事务上下文失败" },
+		{ ES_OPEN_FILE_UNSUCCESSFULLY, "打开文件失败" },
+		{ ES_SERVICE_ERR, "服务器错误" },
+		{ ES_INVALID_SN ,"无效激活码"},
+		{ ES_REACH_AUTHORIZATION_LIMIT,"授权数已经满,无法在激活"},
+		{ ES_SEND_FAILED, "发送数据失败" },
+		{ ES_UNKNOWN_ERR, "未知错误" }
+	};
+
+	std::string GetStatusCodeDesc(EXCEPTION_STATUS nStatusCode)
+	{
+		std::string strResult("未知错误");
+		const int nCount = sizeof(StatusCodeDescItem) / sizeof(StatusCodeDescItem[0]);
+
+		for (int i = 0; i < nCount; ++i)
+		{
+			if (nStatusCode == EXCEPTION_STATUS(StatusCodeDescItem[i].m_nStatusCode))
+			{
+				strResult = StatusCodeDescItem[i].m_strDesc;
+				break;
+			}
+		}
+
+		return strResult;
+	}
+
+
+		/*--------------------------CBaseAccountInfo--------------------------------*/
+		CBaseAccountInfo::CBaseAccountInfo(const char* pName)
+		: CSerializeEntry()
+		, m_strName(pName)
+		, m_nType(0)
+	{
+	}
+
+	CBaseAccountInfo::~CBaseAccountInfo()
+	{
+
+	}
+
+	CBaseAccountInfo::CBaseAccountInfo(const CBaseAccountInfo & refBaseAccountInfo)
+		: m_nID(refBaseAccountInfo.m_nID)
+		, m_strAccount(refBaseAccountInfo.m_strAccount)
+		, m_strName(refBaseAccountInfo.m_strName)
+		, m_nType(refBaseAccountInfo.m_nType)
+		, m_strMemo(refBaseAccountInfo.m_strMemo)
+	{
+	}
+
+	CBaseAccountInfo & CBaseAccountInfo::operator=(const CBaseAccountInfo & refBaseAccountInfo)
+	{
+		if (this == &refBaseAccountInfo)
+		{
+			return *this;
+		}
+
+		m_nID = refBaseAccountInfo.m_nID;
+		m_strAccount = refBaseAccountInfo.m_strAccount;
+		m_strName = refBaseAccountInfo.m_strName;
+		m_nType = refBaseAccountInfo.m_nType;
+		m_strMemo = refBaseAccountInfo.m_strMemo;
+
+		return *this;
+	}
+
+	void CBaseAccountInfo::Serialize(CJSONSerializer& refJsonSerializer) const
+	{
+		CSerializeEntry::Serialize(refJsonSerializer);
+
+		refJsonSerializer.Serialize("m1", m_nID);
+		refJsonSerializer.Serialize("m2", m_strAccount);
+		refJsonSerializer.Serialize("m3", m_strName);
+		refJsonSerializer.Serialize("m4", m_nType);
+		refJsonSerializer.Serialize("m5", m_strMemo);
+	}
+
+	void CBaseAccountInfo::DeSerialize(CJSONSerializer& refJsonSerializer)
+	{
+		CSerializeEntry::DeSerialize(refJsonSerializer);
+
+		refJsonSerializer.DeSerialize("m1", m_nID);
+		refJsonSerializer.DeSerialize("m2", m_strAccount);
+		refJsonSerializer.DeSerialize("m3", m_strName);
+		refJsonSerializer.DeSerialize("m4", m_nType);
+		refJsonSerializer.DeSerialize("m5", m_strMemo);
+	}
+
+	CAccountInfo::CAccountInfo(const char* pName, const char* pPwd)
+		: CBaseAccountInfo(pName)
+		, m_strPWD(pPwd)
+		, m_strTel("")
+		, m_strCompany("")
+		, m_strEmail("")
+		, m_strWeb("")
+		, m_strAddr("")
+		, m_nMoney(0)
+		, m_nIP(0)
+	{
+	}
+
+	CAccountInfo::CAccountInfo(const CAccountInfo & refAccountInfo)
+		:CBaseAccountInfo(refAccountInfo)
+		, m_strPWD(refAccountInfo.m_strPWD)
+		, m_strTel(refAccountInfo.m_strTel)
+		, m_strCompany(refAccountInfo.m_strCompany)
+		, m_strEmail(refAccountInfo.m_strEmail)
+		, m_strWeb(refAccountInfo.m_strWeb)
+		, m_strAddr(refAccountInfo.m_strAddr)
+		, m_nMoney(refAccountInfo.m_nMoney)
+		, m_strMachineID(refAccountInfo.m_strMachineID)
+		, m_nIP(refAccountInfo.m_nIP)
+	{
+	}
+
+	CAccountInfo & CAccountInfo::operator=(const CAccountInfo & refAccountInfo)
+	{
+		if (this == &refAccountInfo)
+		{
+			return *this;
+		}
+
+		CBaseAccountInfo::operator=(refAccountInfo);
+
+		m_strPWD = refAccountInfo.m_strPWD;
+		m_strTel = refAccountInfo.m_strTel;
+		m_strCompany = refAccountInfo.m_strCompany;
+		m_strEmail = refAccountInfo.m_strEmail;
+		m_strWeb = refAccountInfo.m_strWeb;
+		m_strAddr = refAccountInfo.m_strAddr;
+		m_strMemo = refAccountInfo.m_strMemo;
+		m_nMoney = refAccountInfo.m_nMoney;
+		m_strMachineID = refAccountInfo.m_strMachineID;
+		m_nIP = refAccountInfo.m_nIP;
+
+		return *this;
+	}
+
+	void CAccountInfo::Serialize(CJSONSerializer& refJsonSerializer) const
+	{
+		CBaseAccountInfo::Serialize(refJsonSerializer);
+
+		refJsonSerializer.Serialize("m11", m_strPWD);
+		refJsonSerializer.Serialize("m12", m_strTel);
+		refJsonSerializer.Serialize("m13", m_strCompany);
+		refJsonSerializer.Serialize("m14", m_strEmail);
+		refJsonSerializer.Serialize("m15", m_strWeb);
+		refJsonSerializer.Serialize("m16", m_strAddr);
+		refJsonSerializer.Serialize("m18", m_nMoney);
+		refJsonSerializer.Serialize("m19", m_strMachineID);
+		refJsonSerializer.Serialize("m20", m_nIP);
+		refJsonSerializer.Serialize("m21", m_strUnionid);
+		refJsonSerializer.Serialize("m22", m_strNickname);
+		refJsonSerializer.Serialize("m23", m_bSex);
+	}
+
+	void CAccountInfo::DeSerialize(CJSONSerializer& refJsonSerializer)
+	{
+		CBaseAccountInfo::DeSerialize(refJsonSerializer);
+
+		refJsonSerializer.DeSerialize("m11", m_strPWD);
+		refJsonSerializer.DeSerialize("m12", m_strTel);
+		refJsonSerializer.DeSerialize("m13", m_strCompany);
+		refJsonSerializer.DeSerialize("m14", m_strEmail);
+		refJsonSerializer.DeSerialize("m15", m_strWeb);
+		refJsonSerializer.DeSerialize("m16", m_strAddr);
+		refJsonSerializer.DeSerialize("m18", m_nMoney);
+		refJsonSerializer.DeSerialize("m19", m_strMachineID);
+		refJsonSerializer.DeSerialize("m20", m_nIP);
+		refJsonSerializer.DeSerialize("m21", m_strUnionid);
+		refJsonSerializer.DeSerialize("m22", m_strNickname);
+		refJsonSerializer.DeSerialize("m23", m_bSex);
+	}
+
+	CCreateSNArgus::CCreateSNArgus()
+	{
+	}
+
+	CCreateSNArgus::~CCreateSNArgus()
+	{
+	}
+
+	void CCreateSNArgus::Serialize(CJSONSerializer& refJsonSerializer) const
+	{
+		CSerializeEntry::Serialize(refJsonSerializer);
+
+		refJsonSerializer.Serialize("m11", m_nSNs);
+		refJsonSerializer.Serialize("m12", m_strProduct);
+		refJsonSerializer.Serialize("m13", m_strEdition);
+		refJsonSerializer.Serialize("m14", m_nCurrentVersion);
+		refJsonSerializer.Serialize("m15", m_nMaxVersion);
+		refJsonSerializer.Serialize("m16", m_nLicenseNumber);
+		refJsonSerializer.Serialize("m17", m_strLanguage);
+		refJsonSerializer.Serialize("m18", m_nDefaultSubscription);
+		refJsonSerializer.Serialize("m20", m_nType);
+	}
+
+	void CCreateSNArgus::DeSerialize(CJSONSerializer& refJsonSerializer)
+	{
+		CSerializeEntry::DeSerialize(refJsonSerializer);
+
+		refJsonSerializer.DeSerialize("m11", m_nSNs);
+		refJsonSerializer.DeSerialize("m12", m_strProduct);
+		refJsonSerializer.DeSerialize("m13", m_strEdition);
+		refJsonSerializer.DeSerialize("m14", m_nCurrentVersion);
+		refJsonSerializer.DeSerialize("m15", m_nMaxVersion);
+		refJsonSerializer.DeSerialize("m16", m_nLicenseNumber);
+		refJsonSerializer.DeSerialize("m17", m_strLanguage);
+		refJsonSerializer.DeSerialize("m18", m_nDefaultSubscription);
+		refJsonSerializer.DeSerialize("m20", m_nType);
+	}
+
+	CSNInfo::CSNInfo(const std::string& szActivationCodes)
+		: m_strActivationCodes(szActivationCodes)
+	{
+	}
+
+	CSNInfo::~CSNInfo()
+	{
+	}
+
+	void CSNInfo::Serialize(CJSONSerializer& refJsonSerializer) const
+	{
+		CSerializeEntry::Serialize(refJsonSerializer);
+
+		refJsonSerializer.Serialize("m10", m_strActivationCodes);
+	}
+
+	void CSNInfo::DeSerialize(CJSONSerializer& refJsonSerializer)
+	{
+		CSerializeEntry::DeSerialize(refJsonSerializer);
+
+		refJsonSerializer.DeSerialize("m10", m_strActivationCodes);
+	}
+}

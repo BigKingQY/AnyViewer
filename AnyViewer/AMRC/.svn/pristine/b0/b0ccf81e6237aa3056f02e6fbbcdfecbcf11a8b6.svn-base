@@ -1,0 +1,397 @@
+/******************************************************************************
+* 
+* CSPAE
+* Version
+* Copyright (C) 2002, 2003 Colasoft Co., Ltd.
+* All Rights Reserved
+* $Header: /cvsdata/vc/Common/CacheFile.cpp,v 1.6 2015/09/17 07:53:59 administrator Exp $
+* 
+*******************************************************************************
+* 
+* Description:缓存文件类实现
+******************************************************************************/
+
+#include "CacheFile.h"
+#include <stdlib.h>
+#include <string.h>
+#include <algorithm>
+
+#ifdef _WRITE_LOG
+int64_t      CCacheFile::s_nMemoSizeAllocated = 0;
+#include "AtlFile.h"
+#endif
+
+CCacheFile::CCacheFile( int nGrowBytes)
+{
+	assert((unsigned int)nGrowBytes <= UINT_MAX);
+
+	m_nGrowBytes  = nGrowBytes;
+	m_nPosition   = 0;
+	m_nBufferSize = 0;
+	m_nFileSize   = 0;
+	m_lpBuffer    = nullptr;
+	m_bAutoDelete = false;
+}
+
+CCacheFile::CCacheFile(char* lpBuffer,  int nBufferSize,  int nGrowBytes)
+{
+	assert((unsigned int)nGrowBytes <= UINT_MAX);
+	m_nGrowBytes  = nGrowBytes;
+	m_nPosition   = 0;
+	m_nBufferSize = nBufferSize;
+	m_nFileSize   = nGrowBytes == 0 ? nBufferSize : 0;
+	m_lpBuffer    = lpBuffer;
+	m_bAutoDelete = false;
+}
+
+void CCacheFile::Attach(char* lpBuffer,  int nBufferSize,  int nGrowBytes) 
+{	
+	assert(m_lpBuffer == nullptr);
+
+	m_nGrowBytes  = nGrowBytes;
+	m_nPosition   = 0;
+	m_nBufferSize = nBufferSize;
+	m_nFileSize   = nGrowBytes == 0 ? nBufferSize : 0;
+	m_lpBuffer    = lpBuffer;
+	m_bAutoDelete = false;
+}
+
+const char* CCacheFile::Detach()
+{
+	const char* lpBuffer = m_lpBuffer;
+	m_lpBuffer     = nullptr;
+	m_nFileSize    = 0;
+	m_nBufferSize  = 0;
+	m_nPosition    = 0;
+
+	return lpBuffer;
+}
+
+CCacheFile::~CCacheFile()
+{
+	// Close should have already been called, but we check anyway
+	if(m_lpBuffer)
+	{
+		Close();
+	}
+	assert(m_lpBuffer == nullptr);
+
+	m_nGrowBytes  = 0;
+	m_nPosition   = 0;
+	m_nBufferSize = 0;
+	m_nFileSize   = 0;
+}
+
+char* CCacheFile::Alloc(int nBytes)
+{
+	m_bAutoDelete = true;
+	return (char*)malloc(nBytes);
+}
+
+char* CCacheFile::Realloc(char* lpMem, int nBytes)
+{
+	m_bAutoDelete = true;
+	assert(nBytes > 0);	// nBytes == 0 means free		
+	return (char*)realloc(lpMem, nBytes);
+}
+
+//#pragma intrinsic(memcpy)
+char* CCacheFile::Memcpy(char* lpMemTarget, const char* lpMemSource,
+	int nBytes)
+{
+	assert(lpMemTarget != nullptr);
+	assert(lpMemSource != nullptr);
+
+	return (char*)memcpy(lpMemTarget, lpMemSource, nBytes);
+}
+//#pragma function(memcpy)
+
+void CCacheFile::Free(char* lpMem)
+{
+	assert(lpMem != nullptr);
+
+	free(lpMem);
+}
+
+
+
+void CCacheFile::GrowFile(int dwNewLen)
+{
+	if (dwNewLen > m_nBufferSize)
+	{
+#ifdef _WRITE_LOG
+		s_nMemoSizeAllocated -= m_nBufferSize;
+#endif
+
+		// grow the buffer
+		int dwNewBufferSize = m_nBufferSize;
+
+		// watch out for buffers which cannot be grown!
+		assert(m_nGrowBytes != 0);
+		
+		// determine new buffer size
+		while(dwNewBufferSize < dwNewLen)
+		{
+			dwNewBufferSize += m_nGrowBytes;
+		}
+
+#ifdef _WRITE_LOG
+		s_nMemoSizeAllocated += dwNewBufferSize;
+#ifdef _DEBUG
+		//ATLTRACE(_T("Totoal memory size allocated (%I64d Kb) for CacheFile!\r\n"),s_nMemoSizeAllocated/1024);
+#else		
+		std::fstream m_objFile;
+		bool bResult = m_objFile.Create(_T("CCacheFile"),GENERIC_WRITE | GENERIC_READ,FILE_SHARE_READ,OPEN_ALWAYS);
+		if(SUCCEEDED(bResult))
+		{
+			std::string strLog;
+			strLog.Format("Totoal memory size allocated (%I64d Kb) for CacheFile!\r\n",s_nMemoSizeAllocated/1024);
+			m_objFile.write((const char*)strLog,strLog.GetLength());	
+			m_objFile.Close();
+		}
+#endif
+#endif
+
+		// allocate new buffer
+		char* lpNew = nullptr;
+
+		if(nullptr == m_lpBuffer)
+		{
+			lpNew = Alloc(dwNewBufferSize);
+		}
+		else
+		{
+			lpNew = Realloc(m_lpBuffer, dwNewBufferSize);	
+		}
+
+		assert(lpNew);
+
+		if(lpNew)
+		{
+			m_lpBuffer = lpNew;		
+			m_nBufferSize = (m_lpBuffer)? dwNewBufferSize : 0;	
+		}
+	}
+	
+}
+
+
+void CCacheFile::SetLength(int dwNewLen)
+{
+	if (dwNewLen > m_nBufferSize)
+	{
+		GrowFile((int)dwNewLen);
+	}
+
+	if (dwNewLen < m_nPosition)
+	{
+		m_nPosition = (int)dwNewLen;
+	}
+
+	m_nFileSize = (int)dwNewLen;
+	
+}
+
+ int CCacheFile::Read(void* lpBuf, int nCount)
+{
+	if(nCount == 0)
+	{
+		return 0;
+	}
+	assert(lpBuf != nullptr);
+
+	if(m_nPosition > m_nFileSize)
+	{
+		return 0;
+	}
+
+	int nRead = 0;
+
+	if (m_nPosition + nCount > m_nFileSize)
+	{
+		nRead = (m_nFileSize - m_nPosition);
+	}
+	else
+	{
+		nRead = nCount;
+	}
+
+	Memcpy((char*)lpBuf, (char*)m_lpBuffer + m_nPosition, nRead);
+	m_nPosition += nRead;
+	return nRead;
+}
+
+bool CCacheFile::Write(const void* lpBuf, int nCount)
+{
+	bool bResult = false;
+
+	if (nCount == 0)
+	{
+		return bResult;
+	}
+
+	assert(lpBuf != nullptr);
+
+	if(m_nPosition + nCount > m_nBufferSize)
+	{
+		GrowFile(m_nPosition + nCount);
+		bResult = true;
+	}
+
+	assert(m_nPosition + nCount <= m_nBufferSize);
+	if(m_nPosition + nCount <= m_nBufferSize)           //分配内存有可能失败
+	{
+		Memcpy((char*)m_lpBuffer + m_nPosition, (char*)lpBuf, nCount);
+
+		m_nPosition += nCount;
+
+		if (m_nPosition > m_nFileSize)
+		{
+			m_nFileSize = m_nPosition;
+		}	
+	}
+
+	return bResult;
+}
+
+int CCacheFile::Seek(int lOff,  int nFrom)
+{	
+	assert(nFrom == begin || nFrom == end || nFrom == current);
+
+	int64_t lNewPos = m_nPosition;
+
+	if (nFrom == begin)
+	{
+		lNewPos = lOff;
+	}
+	else if (nFrom == current)
+	{
+		lNewPos += lOff;
+	}
+	else if (nFrom == end) 
+	{		
+		lNewPos = m_nFileSize + lOff;	
+	}
+	else
+	{
+		return m_nPosition;	
+	}
+	if (static_cast< int>(lNewPos) > m_nFileSize)
+	{
+		GrowFile((int)lNewPos);
+	}
+	m_nPosition = (int)lNewPos;
+	
+	return m_nPosition;
+}
+
+void CCacheFile::Close()
+{
+#ifdef _WRITE_LOG
+	s_nMemoSizeAllocated -= m_nBufferSize;
+#endif
+	assert(m_nFileSize <= m_nBufferSize);
+
+	if(nullptr != m_lpBuffer && m_bAutoDelete)
+	{
+		Free(m_lpBuffer); 
+	}
+	m_lpBuffer = nullptr;
+
+	//m_nGrowBytes  = 0;
+	m_nPosition   = 0;
+	m_nBufferSize = 0;
+	m_nFileSize   = 0;
+}
+
+void CCacheFile::Abort()
+{
+	Close();
+}
+
+
+bool  WriteString(CCacheFile& file, const char* string)
+{
+	bool bRealloc = false;
+	if (nullptr != string)
+	{
+		//#ifdef _UNICODE 
+		//	CW2A w2a(string);
+		//	bRealloc = file.write(w2a.m_psz,unsigned int(strlen(w2a.m_psz)) + 1);
+		//#else
+		bRealloc = file.Write(string, strlen(string) + 1);
+		//#endif 
+	}
+	else
+	{
+		char btZero = 0;
+		bRealloc = file.Write(&btZero, 1);
+	}
+
+	return bRealloc;
+}
+
+// only CCacheFile supports "direct buffering" interaction with CArchive
+unsigned int CCacheFile::GetBufferPtrEx(
+	unsigned int nCommand
+	, unsigned int nCount
+	, void** ppBufStart
+	, void**ppBufMax)
+{
+	assert(nCommand == bufferCheck || nCommand == bufferCommit ||
+		nCommand == bufferRead || nCommand == bufferWrite);
+
+
+
+	if (nCommand == bufferCheck)
+	{
+		// only allow direct buffering if we're 
+		// growable
+		if (m_nGrowBytes > 0)
+			return bufferDirect;
+		else
+			return 0;
+	}
+
+	if (nCommand == bufferCommit)
+	{
+		// commit buffer
+		assert(ppBufStart == nullptr);
+		assert(ppBufMax == nullptr);
+		m_nPosition += nCount;
+		if (m_nPosition > m_nFileSize)
+			m_nFileSize = m_nPosition;
+		return 0;
+	}
+
+
+	assert(nCommand == bufferWrite || nCommand == bufferRead);
+	assert(ppBufStart != nullptr);
+	assert(ppBufMax != nullptr);
+
+	if (ppBufStart == nullptr || ppBufMax == nullptr)
+	{
+		return 0;
+	}
+
+	// when storing, grow file as necessary to satisfy buffer request
+	if (nCommand == bufferWrite && int(m_nPosition + nCount) > m_nBufferSize)
+		GrowFile(m_nPosition + nCount);
+
+	// store buffer max and min
+	*ppBufStart = m_lpBuffer + m_nPosition;
+
+	// end of buffer depends on whether you are reading or writing
+	if (nCommand == bufferWrite)
+		*ppBufMax = m_lpBuffer + std::min(m_nBufferSize, int(m_nPosition + nCount));
+	else
+	{
+		if (nCount == (unsigned int)-1)
+			nCount = (unsigned int)(m_nBufferSize - m_nPosition);
+		*ppBufMax = m_lpBuffer + std::min(m_nFileSize, int(m_nPosition + nCount));
+		m_nPosition += (unsigned char*)(*ppBufMax) - (unsigned char*)(*ppBufStart);
+	}
+
+	// return number of bytes in returned buffer space (may be <= nCount)
+	return (unsigned long)((unsigned char*)(*ppBufMax) - (unsigned char*)(*ppBufStart));
+}

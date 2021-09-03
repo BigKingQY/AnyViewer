@@ -1,0 +1,472 @@
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// @file  LVNCEndpoint.cpp
+/// @brief 本地VNC端点类实现
+/// 
+/// @author 黄丽云
+/// @version 1.0
+/// @date        2021-1-21
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#include "stdafx.h"
+#include "LVNCEndpoint.h"
+#include "VNCProtocol.h"
+#include "Region.h"
+#include "FrameBuffer.h"
+
+
+CLVNCEndpoint::CLVNCEndpoint(CNetEndpointEventSink * pNetEndpointEventSink)
+	:CNetEndpoint< CLVNCDataPacket, CNetTCPDataTransfer, CLVNCDataPacket::PACKET_LEN_MAX>(pNetEndpointEventSink)
+{
+}
+
+CLVNCEndpoint::~CLVNCEndpoint()
+{
+
+}
+
+bool CLVNCEndpoint::Send(CNetPacket * pPacket)
+{
+	if (!GetNetEndpointEventSink()->OnPreSendPacketEventHandle(shared_from_this(), pPacket))
+	{
+		return false;
+	}
+
+	return CNetEndpoint< CLVNCDataPacket, CNetTCPDataTransfer, CLVNCDataPacket::PACKET_LEN_MAX>::Send(pPacket);
+}
+
+//--------------------------------------------------------------------------------
+/// <summary>
+/// 发送通用请求消息
+/// </summary>
+/// <param name="nMsg">消息类型</param>
+/// <param name="nStatus">参数代码</param>
+/// <created>Andy,2019-03-25</created>
+/// <changed>Andy,2019-03-25</changed>
+//--------------------------------------------------------------------------------
+
+bool CLVNCEndpoint::SendCommonRequest(UINT nMsg, U64 nStatus)
+{
+	CLVNCDataPacket objRequestPacket;
+	objRequestPacket.InitialT<COMMON_REQUEST>(
+		GetMsgId()
+		, (WORD)nMsg
+		, WORD(OT_REQUEST));
+
+	COMMON_REQUEST* pRequestPacket = (COMMON_REQUEST*)objRequestPacket.GetHeaderPtr();
+
+	pRequestPacket->nStatusCode = nStatus;
+
+	return Send(&objRequestPacket);
+}
+
+// ********************************************************************************
+/// <summary>
+/// 发送通用应答消息
+/// </summary>
+/// <param name="pDataPacket">指向需要应答的数据包对象指针</param>
+/// <param name="bStatus">需要返回的结果</param>
+/// <created>Andy,2021/1/21</created>
+/// <changed>Andy,2021/1/21</changed>
+// ********************************************************************************
+
+bool CLVNCEndpoint::SendCommonResponse(CLVNCDataPacket* pDataPacket,  const BOOL bStatus, const U64 nCode)
+{
+	CHECK_POINTER_EX(pDataPacket, false);
+
+	CLVNCDataPacket objRequestPacket;
+
+	objRequestPacket.InitialT<COMMON_RESPONSE>(
+		pDataPacket->GetPacketId()
+		, (WORD)pDataPacket->GetPacketType()
+		, BYTE(OT_RESPONSE | (bStatus ? OR_SUCCESS:OR_FAILURE)));
+
+	COMMON_RESPONSE* pResponsePacket = (COMMON_RESPONSE*)objRequestPacket.GetHeaderPtr();
+
+	pResponsePacket->nStatusCode = nCode;
+
+	return Send(&objRequestPacket);
+}
+
+// ********************************************************************************
+/// <summary>
+/// 发送服务器初始化
+/// </summary>
+/// <param name="refDim"></param>
+/// <param name="refPixelFormat"></param>
+/// <created>Andy,2020/12/2</created>
+/// <changed>Andy,2020/12/2</changed>
+// ********************************************************************************
+
+bool CLVNCEndpoint::SendFrameProperty(
+	const UINT nMsg
+	, const U8 nFlag
+	, const CSize& refDim
+	, const CPixelFormat& refPixelFormat)
+{
+	CLVNCDataPacket objRequestPacket;
+
+	objRequestPacket.InitialT<MESSAGE_HEADER>(
+		nMsg
+		, LVNCP::MT_SET_FRAME_PROPERTY_REQUEST
+		, nFlag
+		, sizeof(VNCP::SERVER_INIT_REQUEST));
+
+	VNCP::SERVER_INIT_REQUEST* pInitRequest = (VNCP::SERVER_INIT_REQUEST*)MESSAGE_DATA_PTR(objRequestPacket.GetBufferHeadPtr());
+
+	pInitRequest->nFrameBufWidth = refDim.width;
+	pInitRequest->nFrameBufHeight = refDim.height;
+
+	pInitRequest->objServerPixelFormat.nBitsPerPixel = refPixelFormat.nBitsPerPixel;
+	pInitRequest->objServerPixelFormat.nColorDepth = refPixelFormat.colorDepth;
+	pInitRequest->objServerPixelFormat.nRedMax = refPixelFormat.redMax;
+	pInitRequest->objServerPixelFormat.nGreenMax = refPixelFormat.greenMax;
+	pInitRequest->objServerPixelFormat.nBlueMax = refPixelFormat.blueMax;
+	pInitRequest->objServerPixelFormat.nRedShift = refPixelFormat.redShift;
+	pInitRequest->objServerPixelFormat.nGreenShift = refPixelFormat.greenShift;
+	pInitRequest->objServerPixelFormat.nBlueShift = refPixelFormat.blueShift;
+	pInitRequest->objServerPixelFormat.nBigEndianFlag = refPixelFormat.bigEndian;
+
+	return Send(&objRequestPacket);
+}
+
+// ********************************************************************************
+/// <summary>
+/// 发送鼠标事件
+/// </summary>
+/// <param name="pNewPos">鼠标位置</param>
+/// <param name="nKeyFlag">按键掩码</param>
+/// <returns>true:成功,false:失败</returns>
+/// <created>Andy,2021/1/21</created>
+/// <changed>Andy,2021/1/21</changed>
+// ********************************************************************************
+
+bool CLVNCEndpoint::SendMouseEvent(const Point *pNewPos, const UINT8 nKeyFlag)
+{
+	CHECK_POINTER_EX(pNewPos, false);
+
+	CLVNCDataPacket objRequestPacket;
+
+	objRequestPacket.InitialT<MESSAGE_HEADER>(
+		GetMsgId()
+		, LVNCP::MT_POINTER_POS_CHANGED
+		, OT_REQUEST
+		, sizeof(VNCP::MT_POINTER_EVENT_REQUEST));
+
+	VNCP::MT_POINTER_EVENT_REQUEST* pEventRequest = (VNCP::MT_POINTER_EVENT_REQUEST*)MESSAGE_DATA_PTR(objRequestPacket.GetBufferHeadPtr());
+
+	pEventRequest->nX = pNewPos->x;
+	pEventRequest->nY = pNewPos->y;
+	pEventRequest->nButtonMask = nKeyFlag;
+
+	return Send(&objRequestPacket);
+}
+
+// ********************************************************************************
+/// <summary>
+/// 发送新的剪贴板消息
+/// </summary>
+/// <param name="pNewClipboard"></param>
+/// <returns></returns>
+/// <created>Andy,2021/1/21</created>
+/// <changed>Andy,2021/1/21</changed>
+// ********************************************************************************
+
+bool CLVNCEndpoint::SendNewClipboard(const std::string & refCutText)
+{
+	CLVNCDataPacket objRequestPacket;
+
+	objRequestPacket.InitialT<MESSAGE_HEADER>(
+		GetMsgId()
+		, LVNCP::MT_CLIPBOARD_CHANGED
+		, OT_REQUEST
+		, sizeof(VNCP::CUT_TEXT_EVENT) + refCutText.size());
+
+	VNCP::CUT_TEXT_EVENT* pCutTextInfo = (VNCP::CUT_TEXT_EVENT*)MESSAGE_DATA_PTR(objRequestPacket.GetBufferHeadPtr());
+
+	pCutTextInfo->nLength = refCutText.size();
+	memcpy(pCutTextInfo->pText, refCutText.c_str(), refCutText.size());
+
+	return Send(&objRequestPacket);
+}
+
+
+// ********************************************************************************
+/// <summary>
+/// 发送键盘事件
+/// </summary>
+/// <param name="nKeySym"></param>
+/// <param name="bDown"></param>
+/// <returns></returns>
+/// <created>Andy,2021/1/21</created>
+/// <changed>Andy,2021/1/21</changed>
+// ********************************************************************************
+
+bool CLVNCEndpoint::SendKeyboardEvent(const UINT32 nKeySym, const bool bDown)
+{
+	CLVNCDataPacket objRequestPacket;
+
+	objRequestPacket.InitialT<MESSAGE_HEADER>(
+		GetMsgId()
+		, LVNCP::MT_CLIENT_KEY_EVENT
+		, OT_REQUEST
+		, sizeof(VNCP::KEY_EVENT_REQUEST));
+
+	VNCP::KEY_EVENT_REQUEST* pKeyEventInfo = (VNCP::KEY_EVENT_REQUEST*)MESSAGE_DATA_PTR(objRequestPacket.GetBufferHeadPtr());
+
+	pKeyEventInfo->nDowndFlag = bDown;
+	pKeyEventInfo->nKey = nKeySym;
+
+	return Send(&objRequestPacket);
+}
+
+// ********************************************************************************
+/// <summary>
+/// 发送区域
+/// </summary>
+/// <param name="nMsg">消息类型</param>
+/// <param name="pRegion">指向区域对象的指针</param>
+/// <returns></returns>
+/// <created>Andy,2021/1/21</created>
+/// <changed>Andy,2021/1/21</changed>
+// ********************************************************************************
+
+bool CLVNCEndpoint::SendRegion(const UINT nMsg, const CRegion *pRegion)
+{
+	CHECK_POINTER_EX(pRegion, false);
+
+	CLVNCDataPacket objRequestPacket;
+	CRectArray objRects;
+
+	pRegion->GetRectVector(&objRects);
+
+	objRequestPacket.InitialT<MESSAGE_HEADER>(
+		GetMsgId()
+		, nMsg
+		, OT_REQUEST
+		, sizeof(VNCP::FRAME_BUFFER_UPDATE_INFO) + sizeof(VNCP::DESKTOP_COORDS_INFO) * objRects.size());
+
+	objRequestPacket.FillRegion(*pRegion);
+
+	return Send(&objRequestPacket);
+}
+
+
+// ********************************************************************************
+/// <summary>
+/// 发送区域变化消息
+/// </summary>
+/// <param name="pFrameBuffer"></param>
+/// <param name="refRegion"></param>
+/// <created>Andy,2021/1/22</created>
+/// <changed>Andy,2021/1/22</changed>
+// ********************************************************************************
+
+bool CLVNCEndpoint::SendRegionChanged(
+	const CFrameBuffer *pFrameBuffer
+	, const CRegion& refRegion
+	, CLVNCDataPacket& refRequestPacket)
+{
+	CHECK_POINTER_EX(pFrameBuffer, false);
+
+	bool bResult = false;
+	CRectArray objRects;
+	size_t nBegin = 0;
+	CPixelFormat objPixelFormat = pFrameBuffer->GetPixelFormat();
+	const int FIXED_DATA_LEN = sizeof(MESSAGE_HEADER) + sizeof(VNCP::FRAME_BUFFER_UPDATE_INFO);   ///< 固定数据的长度
+	const int PAYLOAD_LEN_MAX = CLVNCDataPacket::PACKET_LEN_MAX - FIXED_DATA_LEN; ///< 最大载荷数据长度数据的长度
+
+	refRegion.GetRectVector(&objRects);
+
+	do
+	{
+		refRequestPacket.InitialT<MESSAGE_HEADER>(
+			GetMsgId()
+			, LVNCP::MT_CHANGED_REGION
+			, OT_REQUEST
+			, sizeof(VNCP::FRAME_BUFFER_UPDATE_INFO) + PAYLOAD_LEN_MAX);
+
+		// 应为函数InitialT会移动写指针到缓冲区末尾，所以需要重新调整到开始写的位置
+		refRequestPacket.SetWritingOffset(FIXED_DATA_LEN);
+
+		VNCP::FRAME_BUFFER_UPDATE_INFO* pBufferInfo = (VNCP::FRAME_BUFFER_UPDATE_INFO*)MESSAGE_DATA_PTR(refRequestPacket.GetBufferHeadPtr());
+		int nTotalLen = FIXED_DATA_LEN;
+		VNCP::RECT_INFO objRectInfo;
+
+		pBufferInfo->nRects = 0;
+
+		while (nBegin < objRects.size())
+		{
+			const Rect&& refRect = &objRects[nBegin];
+			const int nCurLen = sizeof(VNCP::RECT_INFO) + refRect.Area() * objPixelFormat.nBitsPerPixel / 8;
+
+			if (nCurLen > PAYLOAD_LEN_MAX)
+			{
+				// 丢弃单个太大的矩形
+				LOG_ERROR("Too large rect (%d)", nCurLen);
+				nBegin++;
+				continue;
+			}
+
+			if (nTotalLen + nCurLen > PAYLOAD_LEN_MAX)
+			{
+				assert(false);
+				bResult = false;
+				break;
+			}
+
+			objRectInfo.nX = refRect.left;
+			objRectInfo.nY = refRect.top;
+			objRectInfo.nWidth = refRect.getWidth();
+			objRectInfo.nHeight = refRect.getHeight();
+			refRequestPacket.Write((const U8*)&objRectInfo, sizeof(VNCP::RECT_INFO));
+
+			CFrameBuffer objFrameBuffer;
+
+			objFrameBuffer.SetProperties(&refRect, &objPixelFormat);
+			objFrameBuffer.CopyFrom(pFrameBuffer, refRect.left, refRect.top);
+
+			refRequestPacket.Write((const U8*)objFrameBuffer.GetBuffer(), objFrameBuffer.GetBufferSize());
+
+			pBufferInfo->nRects++;
+			nTotalLen += nCurLen;
+			nBegin++;
+		}
+
+		refRequestPacket.CalcPayloadLen();
+		Send(&refRequestPacket);
+	} while (nBegin < objRects.size());
+
+	bResult = (nBegin == objRects.size());
+
+	return bResult;
+}
+
+
+// ********************************************************************************
+/// <summary>
+/// 发送需要拷贝的区域信息
+/// </summary>
+/// <param name="ptPos"></param>
+/// <param name="pFrameBuffer"></param>
+/// <param name="refRect"></param>
+/// <returns></returns>
+/// <created>Andy,2021/1/22</created>
+/// <changed>Andy,2021/1/22</changed>
+// ********************************************************************************
+
+bool CLVNCEndpoint::SendRegionCopied(
+	const Point& ptPos
+	, const CFrameBuffer *pFrameBuffer
+	, const Rect& refRect
+	, CLVNCDataPacket& refRequestPacket)
+{
+	bool bResult = false;
+	const int FIXED_DATA_LEN = sizeof(MESSAGE_HEADER);   ///< 固定数据的长度
+	const int PAYLOAD_LEN_MAX = CLVNCDataPacket::PACKET_LEN_MAX - FIXED_DATA_LEN; ///< 最大载荷数据长度数据的长度
+
+	refRequestPacket.InitialT<MESSAGE_HEADER>(
+		GetMsgId()
+		, LVNCP::MT_COPIED_REGION
+		, OT_REQUEST
+		, PAYLOAD_LEN_MAX);
+
+	refRequestPacket.SetWritingOffset(sizeof(MESSAGE_HEADER));
+
+	VNCP::POINT_INFO objPoint = { U16(ptPos.x),U16(ptPos.y) };
+
+	refRequestPacket.Write((const U8*)&objPoint, sizeof(VNCP::POINT_INFO));
+
+	VNCP::RECT_INFO objRectInfo;
+
+	objRectInfo.nX = refRect.left;
+	objRectInfo.nY = refRect.top;
+	objRectInfo.nWidth = refRect.getWidth();
+	objRectInfo.nHeight = refRect.getHeight();
+	refRequestPacket.Write((const U8*)&objRectInfo, sizeof(VNCP::RECT_INFO));
+
+	CFrameBuffer objFrameBuffer;
+	CPixelFormat objPixelFormat = pFrameBuffer->GetPixelFormat();
+
+	objFrameBuffer.SetProperties(&refRect, &objPixelFormat);
+	objFrameBuffer.CopyFrom(pFrameBuffer, refRect.left, refRect.top);
+
+	if (objFrameBuffer.GetBufferSize() < PAYLOAD_LEN_MAX - sizeof(VNCP::POINT_INFO) - sizeof(VNCP::RECT_INFO))
+	{
+		refRequestPacket.Write((const U8*)objFrameBuffer.GetBuffer(), objFrameBuffer.GetBufferSize());
+		refRequestPacket.CalcPayloadLen();
+
+		bResult = Send(&refRequestPacket);
+	}
+	else
+	{
+		LOG_ERROR("Buffer is small!");
+		assert(false);
+	}
+
+	return bResult;
+}
+
+// ********************************************************************************
+/// <summary>
+/// 发送光标新的位置
+/// </summary>
+/// <param name="ptPos"></param>
+/// <returns></returns>
+/// <created>Andy,2021/1/22</created>
+/// <changed>Andy,2021/1/22</changed>
+// ********************************************************************************
+
+bool CLVNCEndpoint::SendCursorPosChanged(const Point& ptPos)
+{
+	CLVNCDataPacket objRequestPacket;
+
+	objRequestPacket.InitialT<MESSAGE_HEADER>(
+		GetMsgId()
+		, LVNCP::MT_CURSOR_POS_CHANGED
+		, OT_REQUEST
+		, sizeof(VNCP::POINT_INFO));
+
+	VNCP::POINT_INFO* pPosInfo = (VNCP::POINT_INFO*)MESSAGE_DATA_PTR(objRequestPacket.GetBufferHeadPtr());
+
+	pPosInfo->nX = ptPos.x;
+	pPosInfo->nY = ptPos.y;
+
+	return Send(&objRequestPacket);
+}
+
+
+// ********************************************************************************
+/// <summary>
+/// 发送光标形状改变
+/// </summary>
+/// <param name="refCursorShape"></param>
+/// <returns></returns>
+/// <created>Andy,2021/1/22</created>
+/// <changed>Andy,2021/1/22</changed>
+// ********************************************************************************
+
+bool CLVNCEndpoint::SendCursorShapeChanged(const CCursorShape& refCursorShape)
+{
+	CLVNCDataPacket objRequestPacket;
+
+	objRequestPacket.InitialT<MESSAGE_HEADER>(
+		GetMsgId()
+		, LVNCP::MT_CURSOR_SHAPE_CHANGED
+		, OT_REQUEST
+		, sizeof(VNCP::CURSOR_SHAPE_INFO) + refCursorShape.getPixelsSize() + refCursorShape.GetMaskSize());
+
+	VNCP::CURSOR_SHAPE_INFO* pShapeInfo = (VNCP::CURSOR_SHAPE_INFO*)MESSAGE_DATA_PTR(objRequestPacket.GetBufferHeadPtr());
+	const CSize&& refDimension = refCursorShape.GetDimension();
+	const Point&& ptHostSpot = refCursorShape.GetHotSpot();
+
+	pShapeInfo->nX = ptHostSpot.x;
+	pShapeInfo->nY = ptHostSpot.y;
+	pShapeInfo->nWidth = refDimension.width;
+	pShapeInfo->nHeight = refDimension.height;
+
+	objRequestPacket.SetWritingOffset(sizeof(MESSAGE_HEADER) + sizeof(VNCP::CURSOR_SHAPE_INFO));
+	objRequestPacket.Write((const U8*)refCursorShape.getPixels()->GetBuffer(), refCursorShape.getPixelsSize());
+	objRequestPacket.Write((const U8*)refCursorShape.GetMask(), refCursorShape.GetMaskSize());
+	objRequestPacket.CalcPayloadLen();
+
+	return Send(&objRequestPacket);
+}

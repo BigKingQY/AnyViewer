@@ -1,0 +1,524 @@
+/******************************************************************************
+*
+* CAPSAEMAIL
+* Version
+* Copyright (C) 2002, 2003 Colasoft Co., Ltd.
+* All Rights Reserved
+* $Header: /cvsdata/vc/SaxIDE/Common/StreamManager.cpp,v 1.10 2015/09/12 11:28:08 administrator Exp $
+*
+*******************************************************************************
+*
+* Description:邮件流管理类实现
+******************************************************************************/
+
+#include "stdafx.h"
+// $Nokeywords: $
+#include "StreamManager.h"
+#include "LYCodeCvt.h"
+#include <string.h>
+
+#ifdef WIN32
+#define MIN min
+#define MAX max
+#else
+#define MIN std::min
+#define MAX std::max
+#endif
+
+
+/*-----------------------------------------------------------------
+|  函数名称  :  CStreamManager::URLDecode
+|  描    述  : 把管理器中指定的URL字符串转换为ANSI字符串
+|  参    数  : char* pOutBuffer——输出缓冲区指针必须保证足够大
+|              int nStartPos——转换开始位置
+|              int nLen——转换结束位置
+|  返 回 值  : 成功转换数据长度
+|  修改记录  : 2007-12-3 16:49:40   -huangdy-   创建
+-----------------------------------------------------------------*/
+int  CStreamManager::URLDecode(char* pOutBuffer, int nStartPos, const int nLen) const
+{
+	if (nStartPos < 0 || nLen <= 0 || nStartPos + nLen > GetLength())
+	{
+		return -1;
+	}
+	char* pOutBufferEnd = pOutBuffer;
+	char chTmp = 0;
+	char chTmp1 = 0;
+	int nEndPos = nStartPos + nLen;
+
+	while (nStartPos < nEndPos)
+	{
+		chTmp = GetAt(nStartPos++);
+		if (chTmp != '%')
+		{
+			*pOutBufferEnd = chTmp;
+			pOutBufferEnd++;
+		}
+		else
+		{
+			chTmp1 = GetAt(nStartPos++);
+			chTmp = GetAt(nStartPos++);
+			*pOutBufferEnd = (char)(CLYCodeCvt::HexChar2Dec(chTmp1) * 16 + CLYCodeCvt::HexChar2Dec(chTmp));
+			pOutBufferEnd++;
+		}
+	}
+
+	return (int)(pOutBufferEnd - pOutBuffer);
+}
+
+void CStreamManager::Clear()
+{
+	m_nBufferDataLen = 0;
+	m_pSteamData = nullptr;
+	m_nSteamDataLen = 0;
+}
+
+
+/*********************************************************************
+*  函数名称  : CStreamManager::AddTail
+*  描    述  : 增加新的流数据,它并不把数据拷贝到缓冲区中,而仅仅保存
+*              其指针和长度
+*  参    数  : unsigned char* pNewSteam——新流指针
+*              int nNewSteamLen——新流数据的长度
+*  修改记录  : 2005-06-14 10:05:40   -huangdy-   创建
+*********************************************************************/
+void CStreamManager::AddTail(unsigned char* pNewSteam, const int nNewSteamLen)
+{
+	if (nullptr != pNewSteam)
+	{
+		m_pSteamData = pNewSteam;
+		m_nSteamDataLen = nNewSteamLen;
+	}
+	else
+	{
+		m_pSteamData = nullptr;
+		m_nSteamDataLen = 0;
+	}
+}
+
+/*********************************************************************
+*  函数名称  : CStreamManager::GetAt
+*  描    述  : 得到制定位置的数据
+*  参    数  : UINT nIndex——索引号
+*  返 回 值  :
+*  修改记录  : 2005-06-14 10:23:53   -huangdy-   创建
+*********************************************************************/
+unsigned char CStreamManager::GetAt(int nIndex) const
+{
+	if (nIndex < m_nBufferDataLen)
+	{
+		return m_pBuffer[nIndex];
+	}
+	else
+	{
+		nIndex -= m_nBufferDataLen;
+
+		if (nIndex < m_nSteamDataLen)
+		{
+			return m_pSteamData[nIndex];
+		}
+	}
+
+	return 0;
+}
+
+
+/*********************************************************************
+*  函数名称  :  CStreamManager::CompareNoCase
+*  描    述  : 将指定范围的内容与另外的ANSI字符串比较（区别大小写）
+*  参    数  : char* psz——字符串指针
+*              int nLen——字符串长度
+*              int nStartPos——开始位置
+*  返 回 值  : true：相等,false:不等
+*  修改记录  : 2005-07-18 11:34:32   -huangdy-   创建
+*********************************************************************/
+bool  CStreamManager::CompareNoCase(const char* psz, const int nLen, const int nStartPos) const
+{
+	//assert(ATL::AtlIsValidAddress(psz,nLen));
+
+	bool bResult = false;
+	if (nLen < GetLength() - nStartPos)
+	{
+		int i = 0;
+		while (i < nLen)
+		{
+			unsigned char btCurChar = GetAt(i + nStartPos);
+
+			if (!(psz[i] == btCurChar
+				|| psz[i] == btCurChar + 32
+				|| psz[i] == btCurChar - 32))
+			{
+				break;
+			}
+			i++;
+		}
+		bResult = (i == nLen);
+	}
+
+	return bResult;
+}
+
+/*********************************************************************
+*  函数名称  :  CStreamManager::Find
+*  描    述  : 从指定的位置查找所给的子串
+*  参    数  : char* psz——字符串指针
+*              int nLen——字符串长度
+*              int nStartPos——开始位置
+*              int nEndPos——结束位置
+*              int* pShitTable——为了提高速度可以自带移动表
+*  返 回 值  : 成功返回子串的起始位置否则返回-1
+*  修改记录  : 2005-07-18 11:20:59   -huangdy-   创建
+*********************************************************************/
+int  CStreamManager::Find(
+	const char* psz
+	, const int nLen
+	, const int nStartPos
+	, int nEndPos/* = -1*/
+	, const int* pShitTable/* = nullptr*/) const
+{
+	assert(nullptr != psz);
+	assert(nStartPos >= 0 && nStartPos <= GetLength());
+
+	if (nullptr == psz)
+	{
+		return -1;
+	}
+
+	if (-1 == nEndPos || nEndPos >= GetLength())
+	{
+		nEndPos = GetLength();
+	}
+	if (nStartPos + nLen > nEndPos)
+	{
+		return -1;
+	}
+
+
+	if (1 == nLen)
+	{
+		for (int i = nStartPos; i < nEndPos; i++)
+		{
+			if (GetAt(i) == psz[0])
+			{
+				return i;
+			}
+		}
+	}
+	else
+	{
+		int  i = 0;
+		// construct delta shift table
+		if (!pShitTable)
+		{
+			static int  arrShitTable[256] = { 0 };
+
+			for (i = 0; i < 256;)
+			{
+				arrShitTable[i++] = nLen + 1;
+				arrShitTable[i++] = nLen + 1;
+				arrShitTable[i++] = nLen + 1;
+				arrShitTable[i++] = nLen + 1;
+				arrShitTable[i++] = nLen + 1;
+				arrShitTable[i++] = nLen + 1;
+				arrShitTable[i++] = nLen + 1;
+				arrShitTable[i++] = nLen + 1;
+				arrShitTable[i++] = nLen + 1;
+				arrShitTable[i++] = nLen + 1;
+				arrShitTable[i++] = nLen + 1;
+				arrShitTable[i++] = nLen + 1;
+				arrShitTable[i++] = nLen + 1;
+				arrShitTable[i++] = nLen + 1;
+				arrShitTable[i++] = nLen + 1;
+				arrShitTable[i++] = nLen + 1;
+			}
+			for (i = 0; i < nLen; i++)
+			{
+				arrShitTable[(int)psz[i]] = nLen - i;
+			}
+			pShitTable = arrShitTable;
+		}
+
+		// start searching...
+		i = nStartPos;
+		int j = 0;
+		int k = 0;
+		// the main searching loop
+		while ((i + nLen) <= nEndPos)
+		{
+			for (k = 0, j = i; k < nLen; j++, k++)
+			{
+				if (psz[k] != GetAt(j)) // found a mismatch
+				{
+					break;
+				}
+			}
+			if (k == nLen) // Yes! we found it!
+			{
+				return i;
+			}
+			i += pShitTable[GetAt(i + nLen)]; // move the pattern by a distance
+		}
+	}
+
+	return -1;
+}
+/*********************************************************************
+*  函数名称  :  CStreamManager::Find
+*  描    述  : 从指定的位置查找所给的子串
+*  参    数  : CString strSub——子串
+*              int nStartPos——开始位置
+*              int nEndPos——结束位置
+*  返 回 值  : 成功返回子串的起始位置否则返回-1
+*  修改记录  : 2005-06-14 10:32:36   -huangdy-   创建
+*********************************************************************/
+int  CStreamManager::Find(std::string& strSub, const int nStartPos, const int nEndPos, const int* pShitTable) const
+{
+	return Find(strSub.c_str(), strSub.size(), nStartPos, nEndPos, pShitTable);
+}
+
+
+/*-----------------------------------------------------------------
+|  函数名称  :  CStreamManager::UTF8ToAnsi
+|  描    述  : 把管理器中指定的UTF8字符串转换为ANSI字符串
+|  参    数  : char* pOutBuffer——输出缓冲区指针必须保证足够大
+|              int nStartPos——转换开始位置
+|              int nLen——转换结束位置
+|  返 回 值  : 成功转换数据长度
+|  修改记录  : 2007-12-3 16:49:40   -huangdy-   创建
+-----------------------------------------------------------------*/
+int  CStreamManager::UTF8ToAnsi(
+	char* pOutBuffer
+	, const int nBufferLen
+	, const int nStartPos
+	, const int nLen) const
+{
+	if (nStartPos < 0 || nLen <= 0 || nStartPos + nLen > GetLength())
+	{
+		return -1;
+	}
+
+	std::string strAnsi;
+
+	GetAsANSIString(nStartPos, nLen, strAnsi);
+	strncpy(pOutBuffer, strAnsi.c_str(), MIN(int(strAnsi.size()), nBufferLen));
+
+	return int(strAnsi.size());
+}
+
+//--------------------------------------------------------------------------------
+/// <summary>
+/// 拷贝数据到缓冲区
+/// </summary>
+/// <param name="pBuffer">输出缓冲区</param>
+/// <param name="nStartPos">开始拷贝位置</param>
+/// <param name="nLen">拷贝长度</param>
+/// <created>Andy,2020/8/2</created>
+/// <changed>Andy,2020/8/2</changed>
+//--------------------------------------------------------------------------------
+void CStreamManager::CopyStreamtoBuffer(char* pBuffer, const int nStartPos, const int nLen) const
+{
+	assert(nullptr != pBuffer && nStartPos >= 0);
+
+	if (nLen > 0)
+	{
+		if (nStartPos >= m_nBufferDataLen &&
+			nLen <= m_nSteamDataLen - (nStartPos - m_nBufferDataLen))   //说明数据在新的数据流中
+		{
+			memcpy((void*)pBuffer, (void*)(m_pSteamData + nStartPos - m_nBufferDataLen), nLen);
+		}
+		else  if (nStartPos + nLen <= m_nBufferDataLen)  //说明数据在分析剩下的数据缓冲区中
+		{
+			memcpy((void*)pBuffer, (void*)&m_pBuffer[nStartPos], nLen);
+		}
+		else if (nStartPos < m_nBufferDataLen &&  nStartPos + nLen > m_nBufferDataLen)  //说明数据在两个缓冲中
+		{
+			const int nTmp = m_nBufferDataLen - nStartPos;
+
+			if (nTmp > 0)
+			{
+				memcpy((void*)pBuffer, (void*)&m_pBuffer[nStartPos], nTmp);
+				memcpy((void*)(pBuffer + nTmp), (void*)&m_pBuffer[nStartPos], nLen - nTmp);
+			}
+		}
+	}
+}
+
+//--------------------------------------------------------------------------------
+/// <summary>
+/// 获取缓冲区的数据作为字符串
+/// </summary>
+/// <param name="nStartPos">开始拷贝位置</param>
+/// <param name="nLen">拷贝长度</param>
+/// <param name="strResult">输出</param>
+/// <created>Andy,2020/8/2</created>
+/// <changed>Andy,2020/8/2</changed>
+//--------------------------------------------------------------------------------
+void CStreamManager::GetAsANSIString(const int nStartPos, int nLen, std::string& strResult) const
+{
+	assert(nStartPos >= 0);
+
+	strResult.clear();
+
+	if (nLen > 0 && m_nBufferDataLen + m_nSteamDataLen > 0)
+	{
+		if (nStartPos >= m_nBufferDataLen)   //说明数据在新的数据流中
+		{
+			nLen = MIN(nLen, m_nSteamDataLen - (nStartPos - m_nBufferDataLen));
+			strResult = std::string((LPCSTR)(m_pSteamData + nStartPos - m_nBufferDataLen), nLen);
+		}
+		else  if (nStartPos + nLen <= m_nBufferDataLen)  //说明数据在分析剩下的数据缓冲区中
+		{
+			strResult = std::string((LPCSTR)&m_pBuffer[nStartPos], nLen);
+		}
+		else /*if(nStartPos < m_nBufferDataLen &&  nStartPos + nLen > m_nBufferDataLen) */ //说明数据在两个缓冲中
+		{
+			assert(nStartPos < m_nBufferDataLen &&  nStartPos + nLen > m_nBufferDataLen);
+			strResult = std::string((LPCSTR)&m_pBuffer[nStartPos],
+				m_nBufferDataLen - nStartPos);
+			strResult += std::string((LPCSTR)m_pSteamData,
+				MIN(nLen - (m_nBufferDataLen - nStartPos), m_nSteamDataLen));
+		}
+	}
+}
+
+
+/*********************************************************************
+*  函数名称  : CStreamManager::DestroyBuffer
+*  描    述  : 释放缓冲区
+*  修改记录  : 2005-07-20 9:03:55   -huangdy-   创建
+*********************************************************************/
+void CStreamManager::DestroyBuffer()
+{
+	if (nullptr != m_pBuffer)
+	{
+		free(m_pBuffer);
+		m_nBufferSize = 0;
+		m_pBuffer = nullptr;
+	}
+}
+/*********************************************************************
+*  函数名称  : CStreamManager::AllocateBuffer
+*  描    述  : 重新分配缓冲区
+*  参    数  : int nBufferSize——缓冲区新尺寸
+*  返 回 值  : true----成功
+*              false---失败
+*  修改记录  : 2005-07-14 16:14:55   -huangdy-   创建
+*********************************************************************/
+bool CStreamManager::AllocateBuffer(int nBufferSize)
+{
+	bool nResult = false;
+
+	if (nBufferSize > m_nBufferSize && nBufferSize < m_nMaxBufferSize)
+	{
+		nBufferSize = m_nBufferSize + ((nBufferSize - m_nBufferSize) / 1024 + 1) * 1024;
+
+		try
+		{
+			unsigned char* pNewBuffer = (unsigned char*)realloc(m_pBuffer, nBufferSize);
+			m_pBuffer = pNewBuffer;
+
+			if (nullptr != m_pBuffer)
+			{
+				m_nBufferSize = nBufferSize;
+				nResult = true;
+			}
+			else
+			{
+				m_nBufferSize = 0;
+				m_nBufferDataLen = 0;
+			}
+		}
+		catch (...)
+		{
+		}
+	}
+
+	return nResult;
+}
+
+/*********************************************************************
+*  函数名称  : CStreamManager::SaveRemainData
+*  描    述  : 把分析剩下的数据拷贝到缓冲区中
+*  参    数  : int nStartPos——起始位置
+*  返 回 值  : 成功返回true,否则返回false;
+*  修改记录  : 2005-06-14 11:09:32   -huangdy-   创建
+*********************************************************************/
+bool CStreamManager::SaveRemainData(const int nStartPos)
+{
+	bool nResult = true;
+	int nLen = 0;
+
+	if (nStartPos < m_nBufferDataLen)        //保存部分缓冲区数据和所有的新数据
+	{
+		if (m_nSteamDataLen + m_nBufferDataLen - nStartPos > m_nBufferSize)
+		{
+			AllocateBuffer(m_nSteamDataLen + m_nBufferDataLen - nStartPos);
+		}
+		if (nullptr != m_pBuffer)              //内存分配成功
+		{
+			if (nStartPos > 0)
+			{
+				m_nBufferDataLen -= nStartPos;
+				memmove(m_pBuffer, &m_pBuffer[nStartPos], m_nBufferDataLen);
+			}
+
+			nLen = MIN(m_nSteamDataLen, m_nBufferSize - m_nBufferDataLen);
+			memcpy(&m_pBuffer[m_nBufferDataLen], m_pSteamData, nLen);
+			m_nBufferDataLen += nLen;
+		}
+	}
+	else if (nStartPos < GetLength())                               //仅仅保存新数据
+	{
+		if (nullptr != m_pBuffer)              //内存分配成功
+		{
+			if (m_nSteamDataLen + m_nBufferDataLen - nStartPos > m_nBufferSize)
+			{
+				AllocateBuffer(m_nSteamDataLen + m_nBufferDataLen - nStartPos);
+			}
+
+			nLen = MIN(GetLength() - nStartPos, m_nBufferSize);
+			memcpy(m_pBuffer, m_pSteamData + (nStartPos - m_nBufferDataLen), nLen);
+			m_nBufferDataLen = nLen;
+		}
+	}
+	else
+	{
+		m_nBufferDataLen = 0;
+	}
+
+	m_pSteamData = nullptr;
+	m_nSteamDataLen = 0;
+
+	return nResult;
+}
+
+/*-----------------------------------------------------------------
+|  函数名称  : CStreamManager::GetBufferPtr
+|  描    述  : 得到开始位置所在的缓冲区及结束位置
+|  参    数  : int nStartPos——
+|  返 回 值  :
+|  修改记录  : 2007-12-3 18:37:49   -huangdy-   创建
+-----------------------------------------------------------------*/
+unsigned char* CStreamManager::GetBufferPtr(int nStartPos, int nEndPos, int& nLen)
+{
+	assert(nEndPos >= nStartPos);
+
+	if (nStartPos >= m_nBufferDataLen)        //保存部分缓冲区数据和所有的新数据
+	{
+		nStartPos -= m_nBufferDataLen;
+		if (nStartPos < m_nSteamDataLen)
+		{
+			nLen = MIN(m_nSteamDataLen, nEndPos) - nStartPos;
+			return &m_pSteamData[nStartPos];
+		}
+	}
+	else
+	{
+		nLen = MIN(m_nBufferDataLen, nEndPos) - nStartPos;
+		return &m_pBuffer[nStartPos];
+	}
+
+	nLen = 0;
+	return nullptr;
+}
+

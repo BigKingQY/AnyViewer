@@ -1,0 +1,1521 @@
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// @file  
+/// @brief 防水墙探头部分
+/// 
+/// 防水墙探头与服务器之间通信所需要的消息类型定义.所有的消息都由消息头和消息\n
+/// 数据量部分组成，消息头的结构都是相同的，但是消息数据根据消息类型的不同而\n
+/// 不同.整个协议请求&应答的模式。
+///
+/// @author 黄丽云
+/// @version 1.0
+/// @date        2016-9-1
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#pragma once
+#pragma warning(disable : 4200) 
+#include "MessageHeadDef.h"
+#include "TreeManagerBase.h"
+#include <memory>
+
+#ifndef WIN32
+#include <mutex>
+#endif
+
+#define ACCOUNT_LENGTH_MAX 32
+#define PASSWORD_LENGTH_MAX 32
+#define FILE_NAME_LEN_MAX 255
+#define MD5_LEN_MAX 32
+#define TRANSACTION_STATUS_MSG_LEN_MAX 200   ///< 事务状态消息的最大长度
+
+/// 错误类型枚举
+/// 
+/// 五百以前的错误定位严重错误，连接将断开
+enum EXCEPTION_STATUS
+{
+	// 用户登录相关
+	ES_SUCCESS = 0,
+	ES_INVALID_ACCOUNT = 1,	///< 枚举，账号不存在
+	ES_CREATE_ACCOUNT_FAILED = 2, ///<创建账号失败
+	ES_INVALID_NAME = 3,	    ///< 枚举，无效的名称
+	ES_EXIST_NAME = 4,	        ///< 枚举，名称已经存在
+	ES_INVALID_PASSWD = 5,	    ///< 枚举，密码错误
+	ES_REPEAT_LOGIN = 6,		///< 枚举，重复登录
+	ES_TIME_OUT = 7,            ///< 枚举，超时
+	ES_NOT_LOGGED_IN = 8,       ///< 枚举，未登录
+	ES_NOT_FOUND_TRANS = 9,     ///< 枚举，没有找到指定的事务
+	ES_RETRANSFER = 10,     ///< 枚举，传输数据失败
+	ES_ALLOCATE_TRANS_UNSUCCESSFULLY = 11,     ///< 枚举，分配事务上下文失败
+	ES_OPEN_FILE_UNSUCCESSFULLY = 12,     ///< 枚举，打开文件失败
+	ES_NO_CLOUD_BOQ = 13,        ///< 没有云清单记录
+	ES_NOT_FOUND_WORK_CLIENT = 14,        ///< 没找到工作客户端
+	ES_FAILED_DEL_CLOUD_BOQ = 15,        ///< 删除云清单失败
+	ES_SERVICE_ERR = 16,         ///<服务器错误
+	ES_CREATE_ORDER_FAILED = 17,         ///<生成商品订单失败
+	ES_FUNCTION_UNABLE = 18,     ///<该功能暂不可用 
+	ES_ORDER_SERVICE_FAILED = 19, ///<订阅的服务不存在
+	ES_SEND_FAILED = 20,          ///<发送数据失败
+	ES_DATA_ERROR = 21,           ///<数据错误
+	ES_EXTRACT_DATA_FAILED = 22,  ///<提取数据失败
+	ES_TRADE_NO_EXPIRES = 23,     ///<订单已失效
+	ES_BALANCE_INSUFFICIENT = 24,     ///<余额不足
+	ES_PLEASE_SUBSCRIBE_SERVICE = 25,   ///< 请订阅服务
+	ES_UNABLE_ACCESS_SERVICE = 26,   ///< 不能使用该服务
+	ES_EXISTS_TEAM_MEMBER = 27,   ///< 已经存在该群成员
+	ES_INVALID_DST_ACCOUNT = 28,   ///< 无效目标账号
+	ES_LOCK_FILE_UNSUCCESSFULLY = 29,   ///< 加锁文件失败
+    ES_UNKNOWN_ERR,         ///< 枚举，未知的错误	
+};
+
+struct STATUS_CODE_DESC
+{
+    EXCEPTION_STATUS m_nStatusCode;
+    std::string m_strDesc;
+};
+
+/// 严重程度
+enum SEVERITY_TYPE                               
+{
+	ST_INFORMATION = 1,                       ///< 枚举， 一般消息
+	ST_WARING = 2,                                ///< 枚举， 警告消息
+	ST_CRITICAL = 3,                              ///< 枚举， 严重
+};
+
+//所有的消息类型一览表
+enum  MESSAGE_TYPE
+{
+    MT_UNKNOWN = 0,
+    MT_AES_ENCIPHER_KEY = 1,
+    MT_QUERY_ONLINE = 2,			        ///< 枚举，查询登录状态,参考:QUERY_ONLINE_RESPONSE
+    MT_LOGIN = 3,                           ///< 枚举，登录  
+    MT_LOGOUT = 4,                          ///< 枚举，注销求  
+    MT_CRAETE_ACCOUNT = 5,                  ///< 枚举，创建账号
+    MT_QUERY_PROFILE = 6,			        ///< 枚举，查询账号信息
+    MT_QUERY_FRIENDS = 7,			        ///< 枚举，查询朋友列表,采用通用应答包，状态码是朋友的个数
+    MT_KICK_OFF = 8,			            ///< 枚举，强制踢下线
+    MT_TRANSFER_STREAM = 9,	                ///< 枚举，传输数据流
+    MT_TRANSFER_STREAM_DATA = 10,	        ///< 枚举，传输数据流数据
+    MT_NOTIFY_LOGIN = 11,                   ///< 枚举，其它用户登陆通知消息	
+    MT_NOTIFY_LOGOUT = 12,                  ///< 枚举，其它用户注销通知消息
+    MT_CUSTOMER_ACTIVITY = 13,              ///< 枚举，客户行为活动信息记录
+    MT_BROADCAST_MSG = 14,                  ///< 枚举，广播消息请求
+    MT_TEXT_MSG = 15,                       ///< 枚举，一般文本消息请求
+    MT_MOVE_STREAM_OFFSERT = 16,            ///< 枚举，移动流传输偏移位置,请求消息是MOVE_STREAM_OFFSERT_REQUEST	
+    MT_STREAM_MSG = 17,                     ///< 枚举，发送数据流消息请求(Client to Client)
+    MT_HEARTBEAT = 18,                      ///< 心跳数据
+    MT_WORK_CLIENT_INFO = 19,               ///< 工作客户端信息
+    MT_ABORT_TRANSFER_STREAM = 20,          ///< 枚举，终止流传输
+    MT_SHUTDWON_SERVER = 21,                ///< 枚举，关闭服务器
+    MT_QUERY_CLOUD_BOQ = 22,                ///< 枚举，查询云清单
+    MT_DOWNLOAD_CLOUD_BOQ = 23,             ///< 枚举，下载云清单（失败DOWNLOAD_CLOUD_BOQ_RESPONSE，成功TRANSFER_STREAM_REQUEST）
+    MT_DEL_CLOUD_BOQ = 24,                  ///< 枚举，删除云计价清单
+    MT_SYN_STREAM = 25,	                    ///< 枚举，同步数据流
+    MT_CHANGE_CLIENT_STATUS = 26,	        ///< 枚举，改变客户端的状态,@see CHANGE_CLIENT_STATUS
+    MT_TRANSACTION_STATUS = 27,	            ///< 枚举，事务状态消息
+    MT_QUERY_AUTH2_DATA = 28,               ///< 枚举，请求auth2登录数据
+    MT_SIMPLE_TRANSACTION = 29,             ///< 枚举，简单的事物消息,由服务器分发给工作客户端处理,@see SIMPLE_TRANSACTION_REQUEST
+    MT_QUERY_GOODS = 30,                    ///< 查询商品
+    MT_QUERY_PRE_PAYMENT = 31,              ///< 请求预支付
+    MT_VERIFY_SERVICE = 32,                 ///< 校验服务
+    MT_ORDER_SERVICE = 33,                  ///< 订阅服务
+    MT_SCAN_ORDER_SERVICE_NOTIFY = 34,      ///< 扫码订阅服务通知
+    MT_QUERY_SERVICE = 35,                  ///< 查询服务
+    MT_QUERY_SERVICE_GOODS = 36,            ///< 查询指定服务的商品
+    MT_RECHARGE_NOTIFY = 37,                ///< 充值通知
+    MT_CALC_FUN_SERVICE_COST = 38,          ///< 计算功能性服务费用
+    MT_BALANCE_PAYMENT = 39,                ///< 余额支付 MESAGE_HEADER+json(CPrePayment)
+	MT_PAY_PER_USE_NOTIFY = 40,				///<功能服务用时付费通知
+	MT_CRAETE_TEAM = 41,                    ///< 枚举，创建组
+	MT_SEARCH_USER = 42,                  ///< 枚举，根据条件查找好友或群
+	MT_APPEND_FRIEND = 43,                  ///< 枚举，添加好友请求
+	MT_CRAETE_TEAM_MEMBER_ACCOUNT = 44,     ///< 枚举，创建群成员账号
+	MT_QUERY_TEAM_MEMBER = 45,              ///< 枚举，查询组成员
+	MT_APPEND_TEAM_MEMBER_REQUEST = 46,     ///< 枚举，添加组成员请求
+	MT_APPEND_TEAM_MEMBER_RESPONSE = 47,    ///< 枚举，添加组成员应答
+	MT_APPEND_FRIEND_RESPONSE = 48,         ///< 枚举，添加好友应答
+	MT_REMOVE_TEAM_MEMBER = 49,             ///< 枚举，删除群成员
+	MT_REMOVE_FRIEND = 50,                  ///< 枚举，删除朋友
+	MT_UPLOAD_FILE = 51,                    ///< 枚举，上传mpc文件
+	MT_DOWNLOAD_FILE = 52,                  ///< 枚举，下载mpc文件
+	MT_CAN_UPLOAD_FILE = 53,                ///< 枚举，判断是否可以提交工程文件
+    MT_MAX_MSG_COUNT,			            ///< 枚举，消息类型最大数, 该值位于MESSAGE_TYPE最后一位
+};
+
+// 客户端类型枚举定义
+enum  COST_CLIENT_TYPE
+{
+	CCT_UNKNOWN = 0,               ///< 枚举，未知	
+	CCT_SYSTEM  = 0X01,               ///< 枚举，系统公众账号(编号范围:0-10)	
+	CCT_WORK_CLIENT = 0X02,           ///< 枚举，工作客户端(编号范围:11-1000)	
+	CCT_COMMON_SERVICE = 0X04,        ///< 枚举，客服账号(编号范围:1001-2000)	
+	CCT_CUSTOMER = 0X08,              ///< 枚举，普通账号(编号范围:10001-...)	
+	CCT_PROFESSIONAL_SERVICE = 0X10,  ///< 枚举，专业客服账号(编号范围:1001-2000)	
+    CCT_PROFESSIONAL_CUSTOMER = 0X20, ///< 枚举，专业普通账号,可以编写清单(编号范围:10001-...)
+	CCT_TEAM = 0X30,                  ///< 枚举，组账号(编号范围:10001-...)
+};
+
+struct COST_CLIENT_TYPE_DESC
+{
+    COST_CLIENT_TYPE m_nType;
+    std::string m_strDesc;
+};
+
+
+// 客户端状态类型枚举定义
+enum  COST_CLIENT_STATUS
+{
+	CCS_OFF_LINE = 0,                 ///< 枚举，离线
+	CCS_ON_LINE = 0X01,               ///< 枚举，在线
+	CCS_BUSY = 0X02,                  ///< 枚举，忙碌
+	CCS_HIDE = 0X03,                  ///< 枚举，隐藏	
+};
+
+
+/// <summary>数据类型</summary>
+enum STREAM_DATA_TYPE
+{
+	SDT_UNKNOWN      = 0,   ///< 枚举，未知	
+	SDT_FRIENDS_LIST = 1,   ///< 枚举，朋友列表	
+	SDT_GENERAL_FILE = 2,   ///< 枚举，普通文件
+	SDT_AUDIO        = 3,   ///< 枚举，音频	
+	SDT_MOVIE        = 4,   ///< 枚举，视频文件
+	SDT_QUERY_MATERIAL_PRICE = 5,   ///< 枚举，查询材价信息
+    SDT_IMG_FILE = 6,           ///< 枚举，图像文件
+    SDT_UPLOAD_BOQ = 7,         ///< 上传计价清单
+    SDT_CLOUD_BOQ_SUMMARY = 8,         ///<云清单概要 
+    SDT_DOWNLOAD_CLOUD_BOQ_DATA = 9,         ///<下载云清单数据
+	SDT_VIEW_MATERIAL_PRICE = 10,   ///< 枚举，审查材价信息
+	SDT_QUERY_SINGLE_MATERIAL_PRICE = 11,   ///< 枚举，查询单个材价信息
+	SDT_SEARCH_FRIENDS_RESULT = 12,   ///< 枚举，朋友查找结果
+	SDT_TEAM_MEMBER = 13,       ///< 枚举，群成员列表
+	SDT_MPC_FILE    = 14,       ///< 枚举，工程文件
+	SDT_STREAM_DATA_TYPE_COUNT,	///< 枚举，最大的六类型数
+};
+
+/// <summary>消息格式</summary>
+enum TEXT_MSG_FORMAT_TYPE
+{
+	TMFT_UNKNOWN = 0,   ///< 枚举，未知	
+	TMFT_TEXT    = 1,      ///< 枚举，文本	
+};
+
+
+/// <summary>查询材料信息状态</summary>
+enum QUERY_MATERIAL_PRICE_STATUS
+{
+	QMPS_INIT = 0,        ///< 枚举，初始化状态	
+	QMPS_QUERY_OVER = 1,  ///< 枚举，查询结束
+	QMPS_VIEW_OVER = 2,  ///< 枚举，核对结束	 
+	QMPS_FINISH = 3,      ///< 枚举，完成
+};
+
+enum AUTH_TYPE
+{
+    AT_WECHAT = 1,     ///< 微信
+    AT_ALIPAY = 1,     ///< 支付宝 
+};
+
+
+/// <summary>简单事务类型</summary>
+enum SIMPLE_TRANSACTION_TYPE
+{
+	STT_UNKNOWN = 0,  ///< 枚举，未知
+	STT_POST_OPENING_BID_INFO  = 1,  ///< 枚举，开标信息
+	STT_QUERY_OPENING_BID_INFO = 2,  ///< 枚举，查询信息	
+	STT_QUERY_MATERIAL_PRICE   = 3,  ///< 枚举，查询单个材料价格信息	
+};
+
+
+/// <summary>服务类型</summary>
+enum SERVICE_TYPE
+{
+    STP_UNKNOWN = 0,
+    STP_RECHARGE = 0x01,            ///<充值 
+    STP_SUBSCRIPTION = 0x02,        ///<订阅服务
+    STP_PAY_PER_USE = 0x04,         ///<用时付费
+};
+
+/// <summary>服务编码</summary>
+enum SERVICE_CODE
+{
+    SC_UNKNOWN = 0,
+    SC_BASE = 1,                   ///<基础服务
+    SC_QUERY_MATERIAL_COST = 2,    ///<查询材价 
+    SC_ADJUST_OFFER_BALANCE = 3,   ///<调整报价平衡
+    SC_ADJUST_PRJ_COST = 4,        ///<调整工程造价
+    SC_FORECAST_PRJ_COST = 5,      ///<测算报价
+    SC_FILL_MATERIAL = 6,          ///<填充材料
+	SC_COORDINATION_COST = 8,      ///<协同计价
+};
+
+
+/// <summary>时长类型</summary>
+enum DURATION_TYPE
+{
+    DT_NONE = 0,
+    DT_YEAR,
+    DT_MONTH,
+    DT_DAY,
+    DT_HOUR,
+    DT_MINUTE,
+    DT_SEC
+};
+
+
+/// <summary>比较运算符号</summary>
+enum COMPARING_OPERATOR
+{	
+	TT_EQ = 1,     /* == */
+	TT_LT = 2,     /* < */
+	TT_GT = 3,     /* > */
+	TT_NGT = 4,    /* <= */
+	TT_NLT = 5,    /* >= */
+};
+
+#pragma pack(1)
+
+// -------------------------两个通用的消息定义，不携带任何数据---------------
+
+/// @brief 查询登录状态请求
+typedef struct _common_request
+{
+	MESSAGE_HEADER objMsgHeader;
+	U64                     nStatusCode;   ///< 返回响应结果状态码
+}COMMON_REQUEST;
+
+/// @brief 登录响应
+typedef struct  _common_response
+{
+	MESSAGE_HEADER objMsgHeader;
+	U64                     nStatusCode;   ///< 返回响应结果状态码
+}COMMON_RESPONSE;
+
+/// @brief 心跳报
+typedef struct _common_heartbeat
+{
+	MESSAGE_HEADER objMsgHeader;
+	U32                     nStatusCode;   ///< 返回响应结果状态码
+}COMMON_HEARTBEAT;
+
+/// <summary>转发头</summary>
+typedef struct _transpond_header
+{
+    MESSAGE_HEADER objMsgHeader;
+    U32 nSrcAccount;
+    U32 nDstAccount;
+}TRANSPOND_HEADER;
+
+
+typedef struct  _common_transpond_response
+{
+    TRANSPOND_HEADER objTranspondHeader;
+    U32                     nStatusCode;   ///< 返回响应结果状态码
+}COMMON_TRANSPOND_RESPONSE;
+
+/*-------------------------AES加密KEY消息格式定义---------------------------------------------*/
+
+/// @brief 查询登录状态响应
+/// 
+/// 传输方向：客户端-->服务器\n
+/// 响应：消息AES_ENCIPHER_KEY_REQUEST的响应消息格式是AES_ENCIPHER_KEY_RESPONSE
+///            它们是相同
+typedef struct  _aes_encipher_key
+{
+	MESSAGE_HEADER objMsgHeader;
+	char  szKeyData[48];                                  ///< 解密后的数据只有前面16个有效，剩下全是填充数据
+}AES_ENCIPHER_KEY_REQUEST, AES_ENCIPHER_KEY_RESPONSE;
+
+/*-------------------------用户登录部分的消息格式定义---------------------------------------------*/
+
+
+typedef COMMON_RESPONSE CREATE_ACCOUNT_RESPONSE;
+
+
+/// @brief 查询登录状态响应
+/// 
+/// 传输方向：客户端-->服务器
+typedef struct  _query_online_response
+{
+	MESSAGE_HEADER objMsgHeader;
+	U32  bOnline;                                  ///< 登录状态(TRUE:在线，FALSE:离线)
+	char szName[ACCOUNT_LENGTH_MAX];							   ///< 用户名称
+}QUERY_ONLINE_RESPONSE;
+
+/// @brief 登录请求
+/// 
+/// 传输方向：客户端-->服务器
+typedef struct  _login_request
+{
+	MESSAGE_HEADER objMsgHeader;
+	char szName[ACCOUNT_LENGTH_MAX];		  	       ///< 用户名称
+	char szPassword[PASSWORD_LENGTH_MAX];              ///< 密码	
+}LOGIN_REQUEST;
+
+/// @brief 登录响应
+/// 
+/// 传输方向：客户端<--服务器
+typedef struct  _login_response
+{
+    MESSAGE_HEADER objMsgHeader;
+    union
+    {
+        U32 nAccount;             ///< 账号(成功)
+        U32 nStatusCode;          ///<状态码(失败)
+    };
+    U32 nType;                     ///< 类型
+}LOGIN_RESPONSE;
+
+
+
+/// @brief 注销
+/// 
+/// 传输方向：客户端-->服务器
+
+typedef struct  _logout_request
+{
+	MESSAGE_HEADER objMsgHeader;
+	U32 nAccount;                  ///< 账号
+}LOGOUT_REQUEST;
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// 事务请求
+/// </summary>
+// --------------------------------------------------------------------------------
+typedef struct  _transfer_stream_request
+{
+    MESSAGE_HEADER objMsgHeader;
+	U16 nType;                  ///< 数据类型 @see STREAM_DATA_TYPE
+	U64 nId;                  ///< 事务id
+    U32 nSrcAccount;          ///<源账号
+    U32 nDstAccount;          ///<目的账号
+    I8 szMd5[MD5_LEN_MAX + 1];             ///< md5
+    U64 nSize;                ///< 大小
+}TRANSFER_STREAM_REQUEST;
+
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// 同步流事务请求
+/// </summary>
+// --------------------------------------------------------------------------------
+typedef struct  _syn_stream_request
+{
+	MESSAGE_HEADER objMsgHeader;
+	U16 nType;                  ///< 数据类型 @see STREAM_DATA_TYPE
+	U64 nId;                  ///< 源事务id
+	U32 nSrcAccount;           ///<源账号
+	U32 nDstAccount;           ///<目的账号
+	I8 szMd5[MD5_LEN_MAX + 1];             ///< md5
+	U64 nSize;                ///< 大小
+}SYN_STREAM_REQUEST;
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// <summary>
+/// 流应答数据包
+/// </summary>
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+typedef struct  _transfer_stream_response
+{
+	MESSAGE_HEADER objMsgHeader;
+	U64 nId;      ///< 流源ID
+	U32 nStatusCode;    ///< 返回响应结果状态码
+}TRANSFER_STREAM_RESPONSE;
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// 中止数据流传输事务
+/// </summary>
+// --------------------------------------------------------------------------------
+typedef struct  _abort_transfer_stream_request
+{
+	MESSAGE_HEADER objMsgHeader;
+	U64 nId;                  ///< 事务id
+}ABORT_TRANSFER_STREAM_REQUEST;
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// 事务实体
+/// </summary>
+// --------------------------------------------------------------------------------
+typedef struct  _transfer_stream_data_request
+{
+    MESSAGE_HEADER objMsgHeader;
+    U64 nId;                  ///< 事务id
+    U32 nSize;                ///< 大小
+    U64 nOffset;              ///< 偏移
+}TRANSFER_STREAM_DATA_REQUEST;  
+
+
+
+/// @brief 传输数据流应答数据包
+typedef struct  _transfer_stream_data_response
+{
+	MESSAGE_HEADER objMsgHeader;
+	U64 nId;            ///< 事务id
+	U64 nOffset;        ///< 下一个偏移
+	U32 nStatusCode;    ///< 返回响应结果状态码
+}TRANSFER_STREAM_DATA_RESPONSE;
+
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// 移动数据流读偏移,用于断点续传
+/// </summary>
+// --------------------------------------------------------------------------------
+typedef struct  _move_stream_offsert_request
+{
+	MESSAGE_HEADER objMsgHeader;
+	U64 nId;            ///< 事务id
+	U64 nOffset;              ///< 偏移
+}MOVE_STREAM_OFFSERT_REQUEST;
+
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// 移动数据流读偏移,用于断点续传
+/// </summary>
+// --------------------------------------------------------------------------------
+typedef struct  _move_stream_offsert_reponse
+{
+	MESSAGE_HEADER objMsgHeader;
+	U64 nId;            ///< 事务id
+	U64 nOffset;     ///< 偏移
+	U32 nStatusCode; ///< 返回响应结果状态码
+}MOVE_STREAM_OFFSERT_REPONSE;
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// 事务实体
+/// </summary>
+// --------------------------------------------------------------------------------
+typedef struct  _broadcast_request
+{
+	MESSAGE_HEADER objMsgHeader;
+	U8 nFormat;                  ///< 消息格式类型(@see TIMELY_MSG_FORMAT_TYPE)
+	U16 nSize;                   ///< 消息长度
+	// 消息数据
+}BROADCAST_REQUEST;
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// <summary>
+/// 请求传输消息
+/// </summary>
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+typedef struct  _text_msg_request
+{
+	MESSAGE_HEADER objMsgHeader;
+	U32 nSrcAccount;            ///< 源账号
+	U32 nDstAccount;            ///< 目标账号
+	U8  nType;                  ///< 类型(@see TIMELY_MSG_FORMAT_TYPE)	
+	U16 nSize;                  ///< 消息长度
+	//U8   Data[]              普通消息数据	
+}TEXT_MSG_REQUEST;
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// <summary>
+/// 传输消息应答数据包
+/// </summary>
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+typedef struct  _text_msg_response
+{
+	MESSAGE_HEADER objMsgHeader;
+	U32 nDstAccount;            ///< 源账号
+}TEXT_MSG_RESPONSE;
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// <summary>
+/// 请求传输消息,采用TRANSFER_STREAM_RESPONSE结构应答包
+/// </summary>
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+typedef struct  _stream_msg_request
+{
+	MESSAGE_HEADER objMsgHeader;	
+	U32 nSrcAccount;            ///< 源账号
+	U32 nDstAccount;            ///< 目标账号
+	U16 nType;                  ///< 流类型,@see STREAM_DATA_TYPE
+	U64 nId;                    ///< 事务id
+	I8 szMd5[MD5_LEN_MAX+1];               ///< md5
+	U64 nSize;                  ///< 大小
+	I8 szName[FILE_NAME_LEN_MAX + 1];          ///< 磁盘文件名称，内存流无效
+}STREAM_MSG_REQUEST;
+
+
+/// @brief 关闭服务器请求
+typedef struct  _shutdown_server_request
+{
+	MESSAGE_HEADER objMsgHeader;
+	U32     nPara;   ///< 参数
+}SHUTDOWN_SERVER_REQUEST;
+
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// MT_QUERY_CLOUD_BOQ
+/// 上传计价清单
+/// </summary>
+// --------------------------------------------------------------------------------
+typedef struct  _query_cloud_boq_request
+{
+    MESSAGE_HEADER objMsgHeader;
+    U32 nSrcAccount;            ///< 源账号
+
+}QUERY_CLOUD_BOQ_REQUEST;
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// MT_QUERY_CLOUD_BOQ
+/// 上传计价清单
+/// </summary>
+// --------------------------------------------------------------------------------
+typedef struct  _query_cloud_boq_response
+{
+    MESSAGE_HEADER objMsgHeader;
+    U32 nDstAccount;            ///< 目标账号
+    U32 nStatusCode;            ///< 状态码      
+
+}QUERY_CLOUD_BOQ_RESPONSE;
+
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// MT_DOWNLOAD_CLOUD_BOQ
+/// 下载计价清单
+/// </summary>
+// --------------------------------------------------------------------------------
+typedef struct  _dwonload_cloud_boq_request
+{
+    MESSAGE_HEADER objMsgHeader;
+    U32 nSrcAccount;            ///< 源账号
+    U64 nCloudBOQId;            ///< 云清单id
+}DOWNLOAD_CLOUD_BOQ_REQUEST;
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// MT_DOWNLOAD_CLOUD_BOQ
+/// 下载计价清单
+/// </summary>
+// --------------------------------------------------------------------------------
+typedef struct  _dwonload_cloud_boq_respone
+{
+    MESSAGE_HEADER objMsgHeader;
+    U32 nDstAccount;            ///< 源账号
+    U32 nStatusCode;            ///< 状态码  
+    U64 nCloudBOQId;            ///< 云清单id
+
+}DOWNLOAD_CLOUD_BOQ_RESPONSE;
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// MT_DEL_CLOUD_BOQ
+/// 删除云计价清单
+/// </summary>
+// --------------------------------------------------------------------------------
+typedef struct  _del_cloud_boq_request
+{
+    TRANSPOND_HEADER objTranspondHeader;
+    U32 nDataLen;
+    U64 pData[0];                   ///<data
+}DEL_CLOUD_BOQ_REQUEST;
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// <summary>
+/// 请求传输消息
+/// </summary>
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+typedef struct  _change_client_status
+{
+	MESSAGE_HEADER objMsgHeader;
+	U32 nAccount;            ///< 账号	
+	U32 nStatus;             ///< 新的状态,@see COST_CLIENT_STATUS
+}CHANGE_CLIENT_STATUS;
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// <summary>
+/// 请求传输消息
+/// </summary>
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+typedef struct  _transaction_status_msg
+{
+	MESSAGE_HEADER objMsgHeader;
+	U64 nId;                  ///< 事务ID      
+	I8  nSeverity;            ///< 严重程度	
+	I8  szMsg[TRANSACTION_STATUS_MSG_LEN_MAX + 1]; ///< 消息
+}TRANSACTION_STATUS_MSG;
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// QUERY_AUTH2_DATA_REQUEST 
+/// 请求auth2登录数据 MT_QUERY_AUTH2_DATA
+/// </summary>
+// --------------------------------------------------------------------------------
+typedef struct  _query_auth2_data_request
+{
+    MESSAGE_HEADER objMsgHeader;
+    U16 nType;
+}QUERY_AUTH2_DATA_REQUEST;
+
+///////////////////////////////////////////////////////////////////////////////
+/// <summary>
+/// 简单事务请求,应答采用相同的数据包
+/// </summary>
+///////////////////////////////////////////////////////////////////////////////
+typedef struct  __simple_transaction_request
+{
+	MESSAGE_HEADER objMsgHeader;
+	U32 nSrcAccount;            ///< 源账号
+	U32 nDstAccount;            ///< 目标账号(通常为0,由服务器均衡选择,也可以指定)
+	U16  nType;                  ///< 类型(@see SIMPLE_TRANSACTION_TYPE)
+	//U8   Data[]              请求数据,采用json格式
+}SIMPLE_TRANSACTION_REQUEST;
+
+///////////////////////////////////////////////////////////////////////////////
+/// <summary>
+/// MT_QUERY_GOODS 查询商品
+/// 成功应答MESSAGE_HEADER+json，失败通用应答
+/// </summary>
+///////////////////////////////////////////////////////////////////////////////
+typedef struct  _query_goods_request
+{
+    MESSAGE_HEADER objMsgHeader;
+    U64 nType;            ///< 服务类型
+}QUERY_GOODS_REQUEST;
+
+///////////////////////////////////////////////////////////////////////////////
+/// <summary>
+/// MT_QUERY_SERVICE 查询服务
+/// 成功应答MESSAGE_HEADER+json，失败通用应答
+/// </summary>
+///////////////////////////////////////////////////////////////////////////////
+typedef struct  _query_service_request
+{
+    MESSAGE_HEADER objMsgHeader;
+    U64 nType;            ///< 服务类型
+}QUERY_SERVICE_REQUEST;
+
+///////////////////////////////////////////////////////////////////////////////
+/// <summary>
+/// MT_QUERY_PRE_PAYMENT 请求预支付
+/// 成功应答MESSAGE_HEADER+json，失败通用应答
+/// </summary>
+///////////////////////////////////////////////////////////////////////////////
+typedef struct  _query_pre_payment
+{
+    MESSAGE_HEADER objMsgHeader;
+    U32 nGoodsCode;            ///< 商品编码
+}QUERY_PRE_PAYMENT;
+
+
+///////////////////////////////////////////////////////////////////////////////
+/// <summary>
+/// MT_VERIFY_SERVICE 校验服务
+/// 成功通用应答
+/// </summary>
+///////////////////////////////////////////////////////////////////////////////
+typedef struct  _verify_service
+{
+    MESSAGE_HEADER objMsgHeader;
+    U32 nCode;            ///< 服务编码
+}VERIFY_SERVICE;
+
+///////////////////////////////////////////////////////////////////////////////
+/// <summary>
+/// MT_QUERY_SERVICE_GOODS 校验服务
+/// 失败通用应答，成功 MESSAGE_HERDER+json 
+/// </summary>
+///////////////////////////////////////////////////////////////////////////////
+typedef struct  _query_service_goods
+{
+    MESSAGE_HEADER objMsgHeader;
+    U32 nCode;            ///< 服务编码
+}QUERY_SERVICE_GOODS;
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// MT_CALC_FUN_SERVICE_COST
+/// </summary>
+// --------------------------------------------------------------------------------
+typedef struct _calc_fun_service_cost
+{
+    MESSAGE_HEADER objMsgHeader;
+    I8 szData[0];
+}CALC_FUN_SERVICE_COST;
+#pragma pack()
+
+
+//*******************************************************************
+/// <summary>
+/// 基本账号信息，当用户登陆成功后用于传输朋友账号
+/// </summary>
+//*******************************************************************
+class CBaseAccountInfo :public CSerializeEntry
+{
+public:
+    CBaseAccountInfo(const char* pName="");
+    virtual ~CBaseAccountInfo();
+    CBaseAccountInfo(const CBaseAccountInfo& refBaseAccountInfo);
+    CBaseAccountInfo& operator=(const CBaseAccountInfo& refBaseAccountInfo);
+
+	ENABLE_SERIALIZE(CBaseAccountInfo)
+public:
+    virtual void Serialize(CJSONSerializer& refJsonSerializer) const override;
+
+    virtual void DeSerialize(CJSONSerializer& refJsonSerializer) override;
+
+private:
+    DECLARE_MEMBER_AND_METHOD(U32, m_nAccount, Account)      ///< 账号 
+    DECLARE_MEMBER_AND_METHOD(int, m_nType, Type)            ///< 类型 @see COST_CLIENT_TYPE
+    DECLARE_MEMBER_AND_METHOD(std::string, m_strName, Name) ///< 会员名称
+	DECLARE_MEMBER_AND_METHOD(U32, m_nCreator, Creator) ///< 组创建者或管理员
+};
+
+typedef CDynamicJsonVector<CBaseAccountInfo> ACCOUNT_INFO_ARRAY;
+typedef std::shared_ptr<ACCOUNT_INFO_ARRAY>  ACCOUNT_INFO_ARRAY_PTR;
+
+//*******************************************************************
+/// <summary>
+/// 客户信息类，用于注册和更新账号信息
+/// </summary>
+//*******************************************************************
+class CAccountInfo :public CBaseAccountInfo
+{
+public:
+	CAccountInfo(const char* pName = "", const char* pPwd = "");
+    CAccountInfo(const CAccountInfo& refCAccountInfo);
+    CAccountInfo& operator=(const CAccountInfo& refCAccountInfo);
+
+public:
+    virtual void Serialize(CJSONSerializer& refJsonSerializer) const override;
+
+    virtual void DeSerialize(CJSONSerializer& refJsonSerializer) override;
+
+public:
+    DECLARE_MEMBER_AND_METHOD(std::string, m_strPWD, PWD)    ///< 口令
+    DECLARE_MEMBER_AND_METHOD(std::string, m_strTel, Tel)    ///< 电话号码
+    DECLARE_MEMBER_AND_METHOD(std::string, m_strCompany, Company)    ///< 公司名称
+    DECLARE_MEMBER_AND_METHOD(std::string, m_strEmail, Email)    ///< 电子邮件
+    DECLARE_MEMBER_AND_METHOD(std::string, m_strWeb, Web)    ///< 主页
+    DECLARE_MEMBER_AND_METHOD(std::string, m_strAddr, Addr)    ///< 公司地址
+    DECLARE_MEMBER_AND_METHOD(std::string, m_strMemo, Memo)    ///< 备注
+    DECLARE_MEMBER_AND_METHOD(int, m_nMoney, Money)    ///< 钱(分)
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strMachineID, MachineID)    ///< 机械码
+	DECLARE_MEMBER_AND_METHOD(int, m_nIP, IP)    ///< 注册地ip地址
+    DECLARE_MEMBER_AND_METHOD(std::string, m_strUnionid, Unionid)    ///< 微信唯一标识Unionid
+    DECLARE_MEMBER_AND_METHOD(std::string, m_strNickname, Nickname)    ///< 昵称
+    DECLARE_MEMBER_AND_METHOD_V11(bool, m_bSex, Sex, true)    ///< 性别true男性
+};
+
+
+
+//*******************************************************************
+/// <summary>
+/// 基本账号信息，当用户登陆成功后用于传输朋友账号
+/// </summary>
+//*******************************************************************
+class CCustomerActivity :public CSerializeEntry
+{
+public:
+	CCustomerActivity();
+	virtual ~CCustomerActivity();
+
+	ENABLE_SERIALIZE(CCustomerActivity)
+public:
+	virtual void Serialize(CJSONSerializer& refJsonSerializer) const override;
+
+	virtual void DeSerialize(CJSONSerializer& refJsonSerializer) override;
+
+private:
+	DECLARE_MEMBER_AND_METHOD(int, m_nAccount, Account)      ///< 账号 
+	DECLARE_MEMBER_AND_METHOD(int, m_nIP, IP)            ///< ip地址
+	DECLARE_MEMBER_AND_METHOD(U64, m_nBeginTime, BeginTime)  ///< 开始时间
+	DECLARE_MEMBER_AND_METHOD(U64, m_nEndTime, EndTime)  ///< 结束时间
+	
+};
+
+
+//*******************************************************************
+/// <summary>
+/// 基本账号信息，当用户登陆成功后用于传输朋友账号
+/// </summary>
+//*******************************************************************
+class CWorkClientInfo :public CSerializeEntry
+{
+public:
+	CWorkClientInfo()
+		: m_nCPUs(0)
+		, m_nMemory(0)
+		, m_nBackup(false)
+	{
+	}
+	virtual ~CWorkClientInfo(){}
+
+	ENABLE_SERIALIZE(CWorkClientInfo)
+public:
+	virtual void Serialize(CJSONSerializer& refJsonSerializer) const override;
+
+	virtual void DeSerialize(CJSONSerializer& refJsonSerializer) override;
+
+private:
+	DECLARE_MEMBER_AND_METHOD(int, m_nCPUs, CPUs)    ///< 处理器的个数 
+	DECLARE_MEMBER_AND_METHOD(int, m_nMemory, Memory)      ///< 内存大小
+	DECLARE_MEMBER_AND_METHOD(bool, m_nBackup, Backup)      ///< 备份
+};
+
+//*******************************************************************
+/// <summary>
+/// 需要查询的材料信息
+/// </summary>
+//*******************************************************************
+class CMaterialEntery :public CSerializeEntry
+{
+public:
+	CMaterialEntery()
+		:m_nID(0)
+		, m_nPrice(0.0)
+		, m_nSimilarity(0.0)
+	{}
+	~CMaterialEntery(){}
+	ENABLE_SERIALIZE(CMaterialEntery)
+
+public:
+	virtual void Serialize(CJSONSerializer& refJsonSerializer) const override;
+
+	virtual void DeSerialize(CJSONSerializer& refJsonSerializer) override;
+
+private:
+	DECLARE_MEMBER_AND_METHOD(int, m_nID, ID);                 ///< 唯一ID
+	DECLARE_MEMBER_AND_METHOD(std::string,m_strName, Name)     ///< 名称
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strModel, Model); ///< 型号
+	DECLARE_MEMBER_AND_METHOD(std::string,m_strUnit, Unit);    ///< 单位
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strReferenceName, ReferenceName);    ///< 参考名称
+	DECLARE_MEMBER_AND_METHOD(double,m_nPrice, Price);         ///< 基准单价
+	DECLARE_MEMBER_AND_METHOD(double, m_nSimilarity, Similarity);  ///< 相似度
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strBaseName, BaseName)     ///< 参考材料名称
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strBaseModel, BaseModel); ///< 参考型号
+};
+
+typedef CDynamicJsonVector<CMaterialEntery> MATERIAL_ENTERY_ARRAY;
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// <summary>
+/// 查询材价信息
+/// </summary>
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+class CAMMPriceInfo :public CSerializeEntry
+{
+public:
+	CAMMPriceInfo()
+		:m_nAccount(0)
+		, m_arrMaterials(true)
+		, m_nExpenses(0.0)
+	{}
+	~CAMMPriceInfo() {}
+	ENABLE_SERIALIZE(CAMMPriceInfo)
+
+public:
+	size_t GetCount()
+	{
+#ifndef WIN32
+		std::unique_lock<std::mutex> objAutoLock(m_objMutex);
+#endif
+		return m_arrMaterials.size();
+	}
+	
+	// 得到材料记录
+	CMaterialEntery* GetMaterialEntery(unsigned int nIndex);
+
+	MATERIAL_ENTERY_ARRAY& GetMaterials() { return m_arrMaterials; }
+	
+public:
+	// 创建一个材料条目
+	CMaterialEntery* CreateMaterialEntery();
+
+	// 查找一个材料条目
+	CMaterialEntery* Lookup(const std::string refName, const std::string refModel, const std::string refUint);
+
+	// 清除低于阀值的价格
+	void ClearInvalidPrice(const double nPriceThrd);
+
+public:
+	virtual void Serialize(CJSONSerializer& refJsonSerializer) const override;
+
+	virtual void DeSerialize(CJSONSerializer& refJsonSerializer) override;
+
+private:
+	DECLARE_MEMBER_AND_METHOD(int, m_nAccount, Account)      ///< 账号 
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strProvince, Province);   ///< 当前选择的省ID
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strMunicipality, Municipality);   ///< 当前选择的市ID
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strCounty, County);   ///< 当前选择的县ID
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strGUID, GUID);  ///当前工程文件的唯一标示
+	DECLARE_MEMBER_AND_METHOD(double, m_nExpenses, Expenses)      ///< 需要支付的费用 
+
+	MATERIAL_ENTERY_ARRAY    m_arrMaterials;
+
+#ifndef WIN32
+	std::mutex               m_objMutex;
+#endif
+};
+
+using CAMMPriceInfoPtr = std::shared_ptr<CAMMPriceInfo>;
+
+class CCloudBOQSummary : public CSerializeEntry
+{
+public:
+    CCloudBOQSummary();
+    ENABLE_SERIALIZE(CCloudBOQSummary)
+
+public:
+    virtual void Serialize(CJSONSerializer& refJsonSerializer) const override;
+
+    virtual void DeSerialize(CJSONSerializer& refJsonSerializer) override;
+
+private:
+    DECLARE_MEMBER_AND_METHOD_V11(U64, m_nId, Id, 0)
+    DECLARE_MEMBER_AND_METHOD_V11(U64, m_nDate, Date, 0)
+    DECLARE_MEMBER_AND_METHOD(std::string, m_strName, Name)
+    DECLARE_MEMBER_AND_METHOD(std::string, m_strCode, Code)
+    DECLARE_MEMBER_AND_METHOD(std::string, m_strMemo, Memo)
+};
+
+using VEC_CLOUD_BOQ_SUMMARY = CDynamicJsonVector<CCloudBOQSummary>;
+
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// auth2登录数据
+/// </summary>
+// --------------------------------------------------------------------------------
+class CAuth2LoginData : public CSerializeEntry
+{
+public:
+    CAuth2LoginData();
+    ENABLE_SERIALIZE(CAuth2LoginData)
+
+public:
+    virtual void Serialize(CJSONSerializer& refJsonSerializer) const override;
+    virtual void DeSerialize(CJSONSerializer& refJsonSerializer) override;
+
+private:
+    DECLARE_MEMBER_AND_METHOD_V11(U16, m_nType, Type, 0)
+    DECLARE_MEMBER_AND_METHOD(std::string, m_strState, State)
+};
+
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// 开标记录信息
+/// </summary>
+// --------------------------------------------------------------------------------
+class COpeningBidInfo : public CSerializeEntry
+{
+public:
+	COpeningBidInfo();
+	ENABLE_SERIALIZE(COpeningBidInfo)
+
+public:
+	virtual void Serialize(CJSONSerializer& refJsonSerializer) const override;
+	virtual void DeSerialize(CJSONSerializer& refJsonSerializer) override;
+
+private:
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strName, Name);   ///< 工程名称
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strProvince, Province);   ///< 当前选择的省ID
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strMunicipality, Municipality);   ///< 当前选择的市ID
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strCounty, County);   ///< 当前选择的县ID
+	DECLARE_MEMBER_AND_METHOD_V11(unsigned int, m_nBuildingType, BuildingType, 0); ///< 工程类别
+	DECLARE_MEMBER_AND_METHOD_V11(double, m_nTotalCostAvgOff, TotalCostAvgOff, 0); ///< 总价平均降幅
+	DECLARE_MEMBER_AND_METHOD_V11(double, m_nTenderOfferAvgOff, TenderOfferAvgOff, 0); ///< 投标价平均降幅
+
+};
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// <summary>
+/// 查询单个材价信息参数
+/// </summary>
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+class CQueryAMMPricePara :public CSerializeEntry
+{
+public:
+	CQueryAMMPricePara()
+	{}
+	~CQueryAMMPricePara() {}
+	ENABLE_SERIALIZE(CQueryAMMPricePara)
+
+public:
+	virtual void Serialize(CJSONSerializer& refJsonSerializer) const override;
+
+	virtual void DeSerialize(CJSONSerializer& refJsonSerializer) override;
+
+private:
+	DECLARE_MEMBER_AND_METHOD_V11(unsigned int, m_nAMMMax, AMMMax,200);   ///< 需要返回记录最大限制
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strProvince, Province);   ///< 当前选择的省ID
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strMunicipality, Municipality);   ///< 当前选择的市ID
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strCounty, County);   ///< 当前选择的县ID
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strGUID, GUID);  ///当前工程文件的唯一标示
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strKeyWords, KeyWords);  ///当前工程文件的唯一标示
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strUnit, Unit);  /// 材料单位
+};
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// 订阅服务
+/// </summary>
+// --------------------------------------------------------------------------------
+class CServiceInfo : public CSerializeEntry
+{
+public:
+    ENABLE_SERIALIZE(CServiceInfo)
+
+public:
+    virtual void Serialize(CJSONSerializer& refJsonSerializer) const override;
+    virtual void DeSerialize(CJSONSerializer& refJsonSerializer) override;
+
+private:
+    DECLARE_MEMBER_AND_METHOD_V11(U32, m_nCode, Code, 0)
+    DECLARE_MEMBER_AND_METHOD(std::string, m_strName, Name)
+    DECLARE_MEMBER_AND_METHOD(std::string, m_strComment, Comment)
+};
+
+using VEC_SERVICE_INFO = CDynamicJsonVector<CServiceInfo>;
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// 开标记录信息
+/// </summary>
+// --------------------------------------------------------------------------------
+class CGoodsInfo : public CSerializeEntry
+{
+public:
+    CGoodsInfo()
+    {}
+    ~CGoodsInfo() {}
+    ENABLE_SERIALIZE(CGoodsInfo)
+
+public:
+    virtual void Serialize(CJSONSerializer& refJsonSerializer) const override;
+    virtual void DeSerialize(CJSONSerializer& refJsonSerializer) override;
+
+private:
+    DECLARE_MEMBER_AND_METHOD_V11(U32, m_nId, Id, 0)
+    DECLARE_MEMBER_AND_METHOD(std::string, m_strName, Name)
+    DECLARE_MEMBER_AND_METHOD_V11(U32, m_nMoney, Money, 0)   ///<金额（分）
+    DECLARE_MEMBER_AND_METHOD_V11(U32, m_nPayment, Payment, 0)   ///<支付金额（分）
+    DECLARE_MEMBER_AND_METHOD(std::string, m_strDescription, Description)
+    DECLARE_MEMBER_AND_METHOD_V11(U32, m_nServiceCode, ServiceCode, 0)   ///<订阅服务编码
+    DECLARE_MEMBER_AND_METHOD_V11(U32, m_nDuration, Duration, 0)   ///<时长
+    DECLARE_MEMBER_AND_METHOD_V11(U16, m_nDurationType, DurationType, 0)   ///<@see DURATION_TYPE
+    DECLARE_MEMBER_AND_METHOD_V11(U32, m_nCode, Code, 0)   ///<商品编码
+};
+
+using VEC_GOODS = CDynamicJsonVector<CGoodsInfo>;
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// 预支付信息
+/// </summary>
+// --------------------------------------------------------------------------------
+class CPrePayment : public CSerializeEntry
+{
+public:
+    ENABLE_SERIALIZE(CPrePayment)
+
+public:
+    virtual void Serialize(CJSONSerializer& refJsonSerializer) const override;
+    virtual void DeSerialize(CJSONSerializer& refJsonSerializer) override;
+
+private:
+    DECLARE_MEMBER_AND_METHOD(std::string, m_strDescribe, Describe)  ///<描述
+    DECLARE_MEMBER_AND_METHOD(std::string, m_strDetail, Detail)  ///<明细
+    DECLARE_MEMBER_AND_METHOD(std::string, m_strOutTradeNo, OutTradeNo)  ///<商品订单号
+    DECLARE_MEMBER_AND_METHOD_V11(U32, m_nTotleFee, TotleFee, 0)  ///<金额
+    DECLARE_MEMBER_AND_METHOD_V11(U32, m_nGoodsCode, GoodsCode, 0)  ///<商品id
+    DECLARE_MEMBER_AND_METHOD_V11(U32, m_nType, Type, 0)  ///<商品类型 @see SERVICE_TYPE
+};
+
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// 功能性服务
+/// </summary>
+// --------------------------------------------------------------------------------
+class CFunctionalService : public CSerializeEntry
+{
+public:
+    ENABLE_SERIALIZE(CFunctionalService)
+
+public:
+    virtual void Serialize(CJSONSerializer& refJsonSerializer) const override;
+    virtual void DeSerialize(CJSONSerializer& refJsonSerializer) override;
+
+private:
+    DECLARE_MEMBER_AND_METHOD_V11(U32, m_nServiceCode, ServiceCode, 0)  ///<服务编码
+    DECLARE_MEMBER_AND_METHOD_V11(U32, m_nCount, Count, 0)  ///<数量
+    DECLARE_MEMBER_AND_METHOD_V11(bool, m_bMustPay, MustPay, false)  ///<必须支付才能继续
+};
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// 企业员工信息
+/// </summary>
+// --------------------------------------------------------------------------------
+class CEnterpriseEmploye : public CSerializeEntry
+{
+public:
+	CEnterpriseEmploye(){}
+	ENABLE_SERIALIZE(CEnterpriseEmploye)
+
+public:
+	virtual void Serialize(CJSONSerializer& refJsonSerializer) const override;
+	virtual void DeSerialize(CJSONSerializer& refJsonSerializer) override;
+
+private:
+	DECLARE_MEMBER_AND_METHOD_V11(U32, m_nID, ID, 0)  ///< 记录id
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strName, Name)  ///<姓名
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strSpeciality, Speciality)  ///<专业
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strCategory, Category)  ///<注册类别
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strSubCategory, SubCategory)  ///<子注册类别
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strCertificateNo, CertificateNo)  ///<证书号
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strSealNo, SealNo)  ///<执业印章号
+	DECLARE_MEMBER_AND_METHOD_V11(U64, m_nValidityDate, ValidityDate,0)  ///<有效期
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strIdentityCode, IdentityCode)  ///<身份证号
+};
+
+using ENTERPRISE_EMPLOYE_ARRAY = CDynamicJsonVector<CEnterpriseEmploye>;
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// 1.2.11	企业资质等级信息
+/// </summary>
+// --------------------------------------------------------------------------------
+class CCredentialsLevel : public CSerializeEntry
+{
+public:
+	CCredentialsLevel() {}
+	ENABLE_SERIALIZE(CCredentialsLevel)
+
+public:
+	virtual void Serialize(CJSONSerializer& refJsonSerializer) const override;
+	virtual void DeSerialize(CJSONSerializer& refJsonSerializer) override;
+
+private:
+	DECLARE_MEMBER_AND_METHOD_V11(U32, m_nID, ID, 0)  ///< 记录id
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strName, Name)  ///<资质类型
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strCategory, Category)  ///<分类	
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strSubCategory, SubCategory)  ///<分类	
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strLevel, Level)  ///<资质等级
+	DECLARE_MEMBER_AND_METHOD_V11(U64, m_nIssueDate, IssueDate, 0)  ///< 发证时间
+	DECLARE_MEMBER_AND_METHOD_V11(U64, m_nExpirationDate, ExpirationDate, 0)  ///< 过期日期
+};
+
+using CREDENTIALS_LEVEL_ARRAY = CDynamicJsonVector<CCredentialsLevel>;
+// --------------------------------------------------------------------------------
+/// <summary>
+/// 企业中标业绩信息
+/// </summary>
+// --------------------------------------------------------------------------------
+class CWinningBidAchievement : public CSerializeEntry
+{
+public:
+	CWinningBidAchievement() {}
+	ENABLE_SERIALIZE(CWinningBidAchievement)
+
+public:
+	virtual void Serialize(CJSONSerializer& refJsonSerializer) const override;
+	virtual void DeSerialize(CJSONSerializer& refJsonSerializer) override;
+
+private:
+	DECLARE_MEMBER_AND_METHOD_V11(U32, m_nID, ID, 0)  ///< 记录id
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strPrjName, PrjName)  ///<项目名称
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strArchitect, Architect)  ///<建筑师
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strRegNumber, RegNumber)  ///<注册编号
+	DECLARE_MEMBER_AND_METHOD_V11(double, m_nAmount, Amount, 0)  ///< 中标金额
+	DECLARE_MEMBER_AND_METHOD_V11(U64, m_nTime, Time, 0)  ///< 中标时间
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strPrjCategory, PrjCategory)  ///<项目分类
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strConstructionScale, ConstructionScale)  ///<建设规模
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strPrjLocation, PrjLocation)  ///<项目属地
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strPrjUtility, PrjUtility)  ///<项目用途
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strBidCategory, BidCategory)  ///<招标分类
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strInfoSource, InfoSource)  ///<信息来源
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strInfoSourceURL, InfoSourceURL)  ///<信息来源URL
+
+};
+
+using WINNING_BID_ACHIEVEMENT_ARRAY = CDynamicJsonVector<CWinningBidAchievement>;
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// 企业信息
+/// </summary>
+// --------------------------------------------------------------------------------
+class CEnterpriseInfoBase : public CSerializeEntry
+{
+public:
+	CEnterpriseInfoBase(){}
+	ENABLE_SERIALIZE(CEnterpriseInfoBase)
+
+public:
+	virtual void Serialize(CJSONSerializer& refJsonSerializer) const override;
+	virtual void DeSerialize(CJSONSerializer& refJsonSerializer) override;
+
+private:
+	DECLARE_MEMBER_AND_METHOD_V11(U32, m_nID, ID, 0)  ///< 记录id
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strName, Name)  ///<企业名称
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strJuridicalPerson, JuridicalPerson)  ///<企业法人
+	DECLARE_MEMBER_AND_METHOD_V11(double, m_nRegisteredCapital, RegisteredCapital,0.0)  ///<注册资本(单位:万元)
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strStatus, Status)  ///< 企业经营状态
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strUnifiedSocialCreditCode, UnifiedSocialCreditCode)  ///<	统一社会信用代码
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strRegistrationCode, RegistrationCode)  ///<	工商注册号
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strType, Type)  ///<公司类型
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strIndustry, Industry)  ///< 行业
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strRegAuthority, RegAuthority)  ///< 登记机关
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strProvince, Province)  ///< 企业所在省
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strCounty, County)  ///< 企业所在市
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strMunicipality, Municipality)  ///< 企业所在县
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strAddress, Address)  ///< 注册地址
+	DECLARE_MEMBER_AND_METHOD_V11(U64, m_nEstablishedTime, EstablishedTime,0)  ///< 成立时间
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strContactNo, ContactNo)  ///< 联系电话
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strMemo, Memo)  ///< 备注(主要填写经营范围)
+};
+
+using ENTERPRISE_INFO_BASE_ARRAY = CDynamicJsonVector<CEnterpriseInfoBase>;
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// 完整企业信息
+/// </summary>
+// --------------------------------------------------------------------------------
+class CFullEnterpriseInfo : public CEnterpriseInfoBase
+{
+public:
+	CFullEnterpriseInfo()
+		:CEnterpriseInfoBase() 
+		, m_arrEmploye(true)
+		, m_arrCredentialsLevel(true)
+		, m_arrWinningBidAchievement(true)
+	{}
+	ENABLE_SERIALIZE(CFullEnterpriseInfo)
+
+public:
+	// 新建一个员工信息
+	CEnterpriseEmploye* CreateEmploye();
+
+	// 新建一个企业资质信息
+	CCredentialsLevel* CreateCredentialsLevel();
+
+	// 新建一个企业业绩信息
+	CWinningBidAchievement* CreateWinningBidAchievement();
+public:
+	virtual void Serialize(CJSONSerializer& refJsonSerializer) const override;
+	virtual void DeSerialize(CJSONSerializer& refJsonSerializer) override;
+
+private:
+	///< 员工列表
+	ENTERPRISE_EMPLOYE_ARRAY m_arrEmploye;                
+	///<资质登记列表
+	CREDENTIALS_LEVEL_ARRAY  m_arrCredentialsLevel;
+	///<中标业绩
+	WINNING_BID_ACHIEVEMENT_ARRAY m_arrWinningBidAchievement;
+};
+
+using FULL_ENTERPRISE_INFO_ARRAY = CDynamicJsonVector<CFullEnterpriseInfo>;
+
+
+// --------------------------------------------------------------------------------
+/// <summary>
+/// 查询企业信息参数
+/// </summary>
+// --------------------------------------------------------------------------------
+class CQueryEnterpriseArgs : public CSerializeEntry
+{
+public:
+	ENABLE_SERIALIZE(CQueryEnterpriseArgs)
+
+public:
+	virtual void Serialize(CJSONSerializer& refJsonSerializer) const override;
+	virtual void DeSerialize(CJSONSerializer& refJsonSerializer) override;
+
+private:
+	/*DECLARE_MEMBER_AND_METHOD(std::string, m_strEnterpriseName, EnterpriseName)  ///<需要查询企业名称关键字
+
+	DECLARE_MEMBER_AND_METHOD_V11(bool, m_bEnableEmploye, EnableEmploye, false)  ///<是否启用员工信息条件
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strSpeciality, Speciality)  ///<专业
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strCategory, Category)  ///<注册类别
+	DECLARE_MEMBER_AND_METHOD_V11(U32, m_nEmployeNum, EmployeNum, 0)  ///<最小人数
+
+	DECLARE_MEMBER_AND_METHOD_V11(bool, m_bEnableCredentialsLevel, EnableCredentialsLevel, false)  ///<是否启企业资质条件
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strCategory, Category)  ///<分类
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strType, Type)  ///<资质类型
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strSubType, SubType)  ///<资质子类型
+	DECLARE_MEMBER_AND_METHOD_V11(int, m_nOprator, Oprator, 0)  ///<比较运算符号,@see COMPARING_OPERATOR
+	DECLARE_MEMBER_AND_METHOD_V11(int, m_nLevel, nLevel,0)  ///<资质等级
+
+	DECLARE_MEMBER_AND_METHOD_V11(bool, m_bEnableAchievement, EnableAchievement, false)  ///<是否启用企业业绩查询
+	DECLARE_MEMBER_AND_METHOD_V11(U64, m_nTime1, Time1, 0)  ///<开始年份
+	DECLARE_MEMBER_AND_METHOD_V11(U64, m_nTime2, Time2, 0)  ///<结束年份
+	DECLARE_MEMBER_AND_METHOD_V11(double, m_nMinAmount, MinAmount, 0)  ///< 最小中标金额(单位：万元)
+	DECLARE_MEMBER_AND_METHOD_V11(double, m_nMaxAmount, MaxAmount, 0)  ///< 最大中标金额(单位：万元)
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strBidEnterpriseName, BidEnterpriseName)  ///<明细
+
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strProvince, Province)  ///< 企业所在省*/
+	
+};
+
+
+//*******************************************************************
+/// <summary>
+/// 客户信息类，用于注册和更新账号信息
+/// </summary>
+//*******************************************************************
+class CTeamInfo :public CBaseAccountInfo
+{
+public:
+	CTeamInfo(const char* pName = "");
+	CTeamInfo(const CTeamInfo& refCAccountInfo);
+	CTeamInfo& operator=(const CTeamInfo& refCAccountInfo);
+
+public:
+	virtual void Serialize(CJSONSerializer& refJsonSerializer) const override;
+
+	virtual void DeSerialize(CJSONSerializer& refJsonSerializer) override;
+
+public:
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strNickname, Nickname)    ///< 昵称
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strMemo, Memo)    ///< 备注	
+};
+
+//*******************************************************************
+/// <summary>
+/// 好友查找设置
+/// </summary>
+//*******************************************************************
+class CFriendSearchSettings :public CSerializeEntry
+{
+public:
+	CFriendSearchSettings(const unsigned int nType = 0,const char* pName = "");
+	virtual ~CFriendSearchSettings();
+	CFriendSearchSettings(const CFriendSearchSettings& refFriendSearchSettings);
+	CFriendSearchSettings& operator=(const CFriendSearchSettings& refFriendSearchSettings);
+
+
+	/// <summary>查找类型</summary>
+	enum SEARCH_TYPE
+	{
+		ST_CUSTOMER = 0,  ///< 普通用户
+		ST_TEAM     = 1,  ///< 群
+	};
+	ENABLE_SERIALIZE(CFriendSearchSettings)
+public:
+	virtual void Serialize(CJSONSerializer& refJsonSerializer) const override;
+
+	virtual void DeSerialize(CJSONSerializer& refJsonSerializer) override;
+
+private:
+	DECLARE_MEMBER_AND_METHOD(unsigned int, m_nType, Type)  ///< 类型 @see SEARCH_TYPE
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strCodeName, CodeName) ///< 需要查找的账号或名称
+};
+
+
+//*******************************************************************
+/// <summary>
+/// 增加,删除好友或群成员参数
+/// </summary>
+//*******************************************************************
+class CAppendFriendSettings :public CSerializeEntry
+{
+public:
+	CAppendFriendSettings(const unsigned int nAccount1 = 0,const unsigned int nAccount2 = 0, const char* pMemo = "");
+	virtual ~CAppendFriendSettings();
+	CAppendFriendSettings(const CAppendFriendSettings& refSrc);
+	CAppendFriendSettings& operator=(const CAppendFriendSettings& refSrc);
+	
+	ENABLE_SERIALIZE(CAppendFriendSettings)
+public:
+	virtual void Serialize(CJSONSerializer& refJsonSerializer) const override;
+
+	virtual void DeSerialize(CJSONSerializer& refJsonSerializer) override;
+
+private:
+	DECLARE_MEMBER_AND_METHOD(unsigned int, m_nAccount1, Account1)  ///< 请求账号
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strName1, Name1)    ///< 昵称
+	DECLARE_MEMBER_AND_METHOD(unsigned int, m_nAccount2, Account2)  ///< 目标账号
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strName2, Name2)    ///< 昵称
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strMemo, Memo)         ///< 备注
+	DECLARE_MEMBER_AND_METHOD(bool, m_bApproving, Approving)        ///< 是否同意
+};
+
+
+//*******************************************************************
+/// <summary>
+/// 新建群成员消息参数
+/// </summary>
+//*******************************************************************
+class CTeamMemberAccountInfo :public CAccountInfo
+{
+public:
+	CTeamMemberAccountInfo(const char* pName = "", const char* pPwd = "");
+	CTeamMemberAccountInfo(const CTeamMemberAccountInfo& refCAccountInfo);
+	CTeamMemberAccountInfo& operator=(const CTeamMemberAccountInfo& refCAccountInfo);
+
+public:
+	virtual void Serialize(CJSONSerializer& refJsonSerializer) const override;
+
+	virtual void DeSerialize(CJSONSerializer& refJsonSerializer) override;
+
+public:
+	DECLARE_MEMBER_AND_METHOD(unsigned int, m_nTeamAccount, TeamAccount)    ///< 群账号
+};
+
+//*******************************************************************
+/// <summary>
+/// 上传工程文件参数
+/// </summary>
+//*******************************************************************
+class CUploadFilePara :public CSerializeEntry
+{
+public:
+	CUploadFilePara(const U32 nTeamAccount = 0, const U32 nType = 0,const char* pGUID = "", const char* pMemo = "");
+	CUploadFilePara(const CUploadFilePara& refUploadMPCFilePara);
+	CUploadFilePara& operator=(const CUploadFilePara& refUploadMPCFilePara);
+
+public:
+	virtual void Serialize(CJSONSerializer& refJsonSerializer) const override;
+
+	virtual void DeSerialize(CJSONSerializer& refJsonSerializer) override;
+
+public:
+	DECLARE_MEMBER_AND_METHOD(U32, m_nTeamAccount, TeamAccount)    ///< 群账号
+	DECLARE_MEMBER_AND_METHOD(U32, m_nType, Type)    ///< 文件类型
+	DECLARE_MEMBER_AND_METHOD(U64, m_nID, ID)    ///< 流传输事物id
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strMD5, MD5)    ///< 昵称
+	DECLARE_MEMBER_AND_METHOD(U64, m_nSize, Size)    ///< 流传大小
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strGUID, GUID)    ///< 工程唯一识别码
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strMemo, Memo)    ///< 上传注释
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strPrjName, PrjName)    ///< 项目名称
+};
+
+//*******************************************************************
+/// <summary>
+/// 下载工程文件参数
+/// </summary>
+//*******************************************************************
+class CDownloadFilePara :public CSerializeEntry
+{
+public:
+	CDownloadFilePara(const U32 nTeamAccount = 0, const char* pGUID = "");
+	CDownloadFilePara(const CDownloadFilePara& refDownloadFilePara);
+	CDownloadFilePara& operator=(const CDownloadFilePara& refDownloadFilePara);
+
+public:
+	virtual void Serialize(CJSONSerializer& refJsonSerializer) const override;
+
+	virtual void DeSerialize(CJSONSerializer& refJsonSerializer) override;
+
+public:
+	DECLARE_MEMBER_AND_METHOD(U32, m_nTeamAccount, TeamAccount)    ///< 群账号
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strGUID, GUID)    ///< 工程唯一识别码
+};
+
+
+// 根据账号得到对应的名称
+extern std::string GetNamebyAccount(const UINT nAccount, const ACCOUNT_INFO_ARRAY_PTR arrMemberPtr);

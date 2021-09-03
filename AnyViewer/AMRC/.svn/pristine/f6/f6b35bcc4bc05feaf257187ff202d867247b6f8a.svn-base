@@ -1,0 +1,151 @@
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// @file  
+/// @brief 加密通信
+/// 
+///
+/// @author 黄丽云
+/// @version 1.0
+///    -v$VerNO$    $YEAR$ / $MONTH_02$ / $DAY_02$ $HOUR_02$ : $MINUTE$    黄历云    $VerNoBrief$
+/// @date        2019-10-8
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#pragma once
+
+#ifdef WIN32
+#include "NetServiceImpl.h"
+#else
+#include "ServiceImpl.h"
+#endif
+
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+#include <openssl/bn.h>
+#include <openssl/conf.h>
+#include <openssl/crypto.h>
+#include <openssl/dh.h>
+#ifndef OPENSSL_NO_ENGINE
+#include <openssl/engine.h>
+#endif
+#include <openssl/evp.h>
+#include <openssl/hmac.h>
+#ifndef OPENSSL_NO_OCSP
+#include <openssl/ocsp.h>
+#endif
+#include <openssl/rand.h>
+#include <openssl/rsa.h>
+#include <openssl/x509.h>
+#include <openssl/x509v3.h>
+
+
+enum E_SSL_CHANNEL_STATUS
+{
+	SSL_CHANNEL_INIT = 0,        ///< CreateSSLConnection()
+	SSL_CHANNEL_WANT_READ = 1,        ///< SslHandshake() in progress, see SSL_ERROR_WANT_READ for detail
+	SSL_CHANNEL_WANT_WRITE = 2,        ///< SslHandshake() in progress, see SSL_ERROR_WANT_WRITE for detail
+	SSL_CHANNEL_ESTABLISHED = 3,        ///< SslHanshaked() done
+	SSL_CHANNEL_SHUTING_WANT_READ = 4,        ///< SslShutDown() in progress
+	SSL_CHANNEL_SHUTING_WANT_WRITE = 5,        ///< SslShutDown() in progress
+	SSL_CHANNEL_SHUTDOWN = 6,        ///< SslShutDown() done
+};
+
+/**
+ * @brief 系统错误码定义
+ */
+enum E_ERROR_NO
+{
+	ERR_OK = 0,        ///< 正确
+	ERR_CHANNEL_EOF = 9001,     ///< 连接关闭
+	ERR_TRANSFER_FD = 9002,     ///< 传输文件描述符出错(errno为0时返回)
+	ERR_PARASE_PROTOBUF = 10000,    ///< 解析Protobuf出错
+	ERR_NO_SUCH_WORKER_INDEX = 10001,    ///< 未知的Worker进程编号
+	ERR_UNKNOWN_CMD = 10002,    ///< 未知命令字
+	ERR_NEW = 10003,    ///< new出错（无法分配堆内存）
+	ERR_REDIS_CONN_CLOSE = 10004,    ///< redis连接已关闭
+	ERR_DISCONNECT = 10005,    ///< 已存在的连接发生错误
+	ERR_NO_CALLBACK = 10006,    ///< 回调不存在或已超时
+	ERR_DATA_TRANSFER = 10007,    ///< 数据传输出错
+	ERR_REPEAT_REGISTERED = 10008,    ///< 重复注册
+	ERR_SERVERINFO = 10009,    ///< 服务器信息错误
+	ERR_SESSION = 10010,    ///< 获取会话错误
+	ERR_BODY_JSON = 10011,    ///< 消息体json解析错误
+	ERR_SERVERINFO_RECORD = 10012,    ///< 存档服务器信息错误
+	ERR_NODE_NUM = 10013,    ///< 系统节点数超过最大限制65535
+	ERR_SSL_INIT = 10014,    ///< 初始化SSL错误
+	ERR_SSL_CTX = 10015,    ///< 创建SSL上下文错误 
+	ERR_SSL_CERTIFICATE = 10016,    ///< 加载SSL证书错误
+	ERR_SSL_NEW_CONNECTION = 10017,    ///< 新建SSL连接错误
+	ERR_SSL_HANDSHAKE = 10018,    ///< 建立SSL连接错误
+	ERR_SSL_SHUTDOWN = 10019,    ///< 关闭SSL连接错误
+	ERR_FILE_NOT_EXIST = 10020,    ///< 文件不存在
+	ERR_CONNECTION = 10021,    ///< 连接错误	
+};
+
+//#define SSLv23_method           TLS_method
+//#define SSLv23_server_method    TLS_server_method
+//#define SSLv23_client_method    TLS_client_method
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// <summary>
+/// 加密通信
+/// </summary>
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+class CNetSSLDataTransfer : public CNetTCPDataTransfer
+{
+public:
+	CNetSSLDataTransfer();
+
+	/// @brief 构造函数
+	CNetSSLDataTransfer(unsigned int nIP, USHORT nPort);
+
+	virtual ~CNetSSLDataTransfer();
+public:
+	// 初始化openssl库
+	static int SSLInit();
+	
+	// 创建服务器端的会话上下文
+	static int CreateSSLServerCtx();
+
+	// 加载服务器端的证书文件
+	static int LoadSSLCertificate(const std::string& strCertFile, const std::string& strKeyFile);
+	
+	static void FreeSSLContext();
+
+	int CreateSSLClientCtx();
+	
+	int CreateSSLConnection();
+	
+	int SslHandshake();
+	
+	int SSLShutdown();
+
+public:
+	// 初始化当前传输对象
+	virtual bool Initial(bool bClient);
+
+	/// @brief 连接到指定的目标主机
+	virtual bool Connect(int nTimeout = 5);
+
+	/// @brief 发送数据， 返回实际发送大小
+	virtual int Send(const BYTE* pBuffer, int nLen);
+
+	/// @brief 接收数据， 返回实际接收大小
+	virtual int Recv(BYTE* pBuffer, int nLen);
+
+	/// @brief 关闭当前的传输对象
+	virtual void Close();
+
+	/// @brief 关闭当前的传输对象
+	virtual bool Shutdown(int how);
+
+public:
+
+
+private:   //下面的代码是禁止该类的拷贝构造函数和赋值操作
+	CNetSSLDataTransfer(const CNetSSLDataTransfer& /*rPacketIoManager*/) {}
+	CNetSSLDataTransfer& operator=(const CNetSSLDataTransfer& /*rPacketIoManager*/) { return *this; }
+
+private:
+	E_SSL_CHANNEL_STATUS     m_eSslChannelStatus;	
+	SSL*                     m_pSSLConnection;
+	static SSL_CTX*          s_pSSLContext;
+};

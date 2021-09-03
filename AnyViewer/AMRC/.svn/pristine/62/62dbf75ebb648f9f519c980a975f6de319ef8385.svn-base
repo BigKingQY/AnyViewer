@@ -1,0 +1,141 @@
+/////////////////////////////////////////////////////////////////////
+/// @file CPUUtilities.cpp
+/// @brief 得到CPU信息和计算cpu消耗类实现
+/// 
+///
+/// @author andy
+/// @version 1.0
+/// @date 2020.10.9
+/////////////////////////////////////////////////////////////////////
+
+
+#include "CPUUtilities.h"
+#include "cpuid.h"
+#include <algorithm>
+#include <chrono>
+#include <thread>
+#include <arpa/inet.h>
+
+CCPUUtilities::CCPUUtilities()
+{
+}
+
+
+CCPUUtilities::~CCPUUtilities()
+{
+}
+
+// ********************************************************************************
+/// <summary>
+/// 得到CPU的统计信息
+/// </summary>
+/// <param name="pCPUOccupy"></param>
+/// <returns></returns>
+/// <created>Andy,2020/10/9</created>
+/// <changed>Andy,2020/10/9</changed>
+// ********************************************************************************
+bool CCPUUtilities::GetCPUStat(CPU_OCCUPY& refCPUOccupy)
+{
+	bool bResult = false;
+	char szBuffer[256] = { 0 };
+	FILE *fd = fopen("/proc/stat", "r");
+
+	if (nullptr != fd)
+	{
+		fgets(szBuffer, sizeof(szBuffer), fd);
+		sscanf(szBuffer, "%s %u %u %u %u %u %u %u"
+			, refCPUOccupy.name
+			, &refCPUOccupy.user
+			, &refCPUOccupy.nice
+			, &refCPUOccupy.system
+			, &refCPUOccupy.idle
+			, &refCPUOccupy.lowait
+			, &refCPUOccupy.irq
+			, &refCPUOccupy.softirq);
+
+		fclose(fd);
+		bResult = true;
+	}
+
+	return bResult;
+}
+
+
+double CCPUUtilities::CaleCPUOccupy()
+{
+	CPU_OCCUPY objCPUStat1;
+	CPU_OCCUPY objCPUStat2;
+
+	GetCPUStat(objCPUStat1);
+	std::this_thread::sleep_for(std::chrono::milliseconds(500));
+	GetCPUStat(objCPUStat2);
+
+	unsigned long nCPUStat1, nCPUStat2;
+	double nResult = 0;
+
+	nCPUStat1 = (unsigned long)(objCPUStat1.user + objCPUStat1.nice + objCPUStat1.system + objCPUStat1.idle + objCPUStat1.lowait + objCPUStat1.irq + objCPUStat1.softirq);//第一次(用户+优先级+系统+空闲)的时间再赋给od  
+	nCPUStat2 = (unsigned long)(objCPUStat2.user + objCPUStat2.nice + objCPUStat2.system + objCPUStat2.idle + objCPUStat2.lowait + objCPUStat2.irq + objCPUStat2.softirq);//第二次(用户+优先级+系统+空闲)的时间再赋给od  
+	
+	const double nSum = nCPUStat2 - nCPUStat1;
+
+	if (nSum > 1)
+	{
+		double nIdle = objCPUStat2.idle - objCPUStat1.idle;
+
+		nResult = nIdle / nSum;
+		nIdle = objCPUStat2.user + objCPUStat2.system + objCPUStat2.nice - objCPUStat1.user - objCPUStat1.system - objCPUStat1.nice;
+		nResult = nIdle / nSum;
+	}
+
+	return nResult;
+}
+
+
+struct cpuid_result
+{
+	uint32_t eax;
+	uint32_t ebx;
+	uint32_t ecx;
+	uint32_t edx;
+};
+
+
+// ********************************************************************************
+/// <summary>
+/// 获取CPU的序列号
+/// </summary>
+/// <param name="pszID">接受序列好的缓冲区</param>
+/// <param name="nSize">缓冲区的长度</param>
+/// <returns>true:成功，false:失败</returns>
+/// <created>Andy,2021/5/18</created>
+/// <changed>Andy,2021/5/18</changed>
+// ********************************************************************************
+bool CCPUUtilities::GetCPUID(std::string & strCPUID)
+{
+	bool bResult = false;
+	unsigned int s1 = 0;
+	unsigned int s2 = 0;
+
+	
+	asm volatile
+		(
+			"movl $0x01, %%eax; \n\t"
+			"xorl %%edx, %%edx; \n\t"
+			"cpuid; \n\t"
+			"movl %%edx, %0; \n\t"
+			"movl %%eax, %1; \n\t"
+			: "=m"(s1), "=m"(s2)
+			);
+
+	strCPUID.clear();
+
+	if (s1 > 0 || s2 > 0)
+	{
+		char szCPU[32] = { 0 };
+
+		snprintf(szCPU, sizeof(szCPU), "%08X%08X", htonl(s2), htonl(s1));
+		strCPUID = szCPU;
+	}
+
+	return bResult;
+}

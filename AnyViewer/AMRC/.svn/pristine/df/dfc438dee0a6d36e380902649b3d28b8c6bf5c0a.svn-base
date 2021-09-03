@@ -1,0 +1,549 @@
+#pragma once
+
+#include "MiscellaneousFunctions.h"
+#include "JsonSerializer.h"
+#include "rapidjson/document.h"
+#include "rapidjson/prettywriter.h"
+#include "rapidjson/stringbuffer.h"
+#include "rapidjson/filewritestream.h"
+#include "rapidjson/error/error.h"
+#include <fstream>
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// <summary>
+/// 属性和值映射模板类
+/// </summary>
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+template<class T>
+class CKeyValue : public CSerializeEntry
+{
+public:
+	CKeyValue() {}
+	CKeyValue(const char* lpName, std::shared_ptr<T> objValue)
+		: m_strName(lpName)
+		, m_objValue(objValue)
+	{}
+	~CKeyValue() {}
+
+public:
+	virtual void Serialize(CJSONSerializer& refJsonSerializer) const override
+	{
+		CSerializeEntry::Serialize(refJsonSerializer);
+
+		if (nullptr != m_objValue)
+		{
+			refJsonSerializer.Serialize(m_strName.c_str(), *m_objValue);
+		}
+	}
+
+	virtual void DeSerialize(CJSONSerializer& refJsonSerializer) override
+	{
+		CSerializeEntry::DeSerialize(refJsonSerializer);
+
+		if (nullptr != m_objValue)
+		{
+			refJsonSerializer.DeSerialize(m_strName.c_str(), *m_objValue);
+		}
+	}
+private:
+	DECLARE_MEMBER_AND_METHOD(std::string, m_strName, Name);
+	DECLARE_MEMBER_AND_METHOD(std::shared_ptr<T>, m_objValue, Value);
+};
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// <summary>
+/// 
+/// </summary>
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+class CKeyValueList : public CSerializeEntry
+{
+public:
+	CKeyValueList() {}
+	~CKeyValueList() {}
+
+public:
+	template<class T>
+	std::shared_ptr<CKeyValue<T>> CreateKV(const char* lpName, std::shared_ptr<T> objValue)
+	{
+		std::shared_ptr<CKeyValue<T>> pResult = std::make_shared<CKeyValue<T>>(lpName, objValue);
+
+		m_lstKeyValue.push_back(pResult);
+		return pResult;
+	}
+
+
+	// 创建一个字段映射定义并设置其"type"属性（专用函数）
+	std::shared_ptr<CKeyValueList> CreateFieldProp(const char* lpName, const char* lpType);
+
+public:
+	virtual void Serialize(CJSONSerializer& refJsonSerializer) const override;
+
+	virtual void DeSerialize(CJSONSerializer& refJsonSerializer) override;
+public:
+	std::vector<std::shared_ptr<CSerializeEntry>>   m_lstKeyValue;
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// <summary>
+/// json包裹类
+/// </summary>
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+template<const char* lpName, class T>
+class CJsonWrap : public CSerializeEntry
+{
+public:
+	CJsonWrap()
+	{}
+	~CJsonWrap() {}
+
+	ENABLE_SERIALIZE(CJsonWrap)
+
+public:
+	T& GetMemberObj() { return  m_objMemberObj; }
+
+public:
+	virtual void Serialize(CJSONSerializer& refJsonSerializer) const override
+	{
+		CSerializeEntry::Serialize(refJsonSerializer);
+
+		refJsonSerializer.Serialize(lpName, m_objMemberObj);
+	}
+
+	virtual void DeSerialize(CJSONSerializer& refJsonSerializer) override
+	{
+		CSerializeEntry::DeSerialize(refJsonSerializer);
+
+		refJsonSerializer.DeSerialize(lpName, m_objMemberObj);
+	}
+private:
+	T                        m_objMemberObj;
+};
+
+//=============================================================================
+///@brief json操作类
+//=============================================================================
+class CJsonHelper
+{
+public:
+	CJsonHelper();
+	~CJsonHelper();
+
+public:
+
+
+public:
+
+#ifdef WIN32
+	// 得到错误信息
+	static CString GetErrMsg(const unsigned int nLanguage, const rapidjson::ParseErrorCode nErrCode);
+
+	bool Decode(rapidjson::Document& refDom, LPCTSTR lpFile);
+#endif // WIN32    
+
+public:
+
+	//--------------------------------------------------------------------------------
+	/// <summary>
+	///  保存对象为json格式
+	/// </summary>
+	/// <param name="refObject">被保存的对象</param>
+	/// <param name="refBuffer">接收数据的缓冲区</param>
+	/// <returns>true:成功,false:失败</returns>
+	/// <created>Andy,2019/9/24</created>
+	/// <changed>Andy,2019/9/24</changed>
+	//--------------------------------------------------------------------------------
+	template<class T>
+	bool WriteToJson(const T& refObject,
+		rapidjson::StringBuffer& refBuffer) const
+	{
+		bool bResult = false;
+
+		rapidjson::Document objJsonDoc(rapidjson::kObjectType);    //生成一个dom元素Document
+		CJSONSerializer objJsonSerializerHelper(objJsonDoc.GetAllocator());
+
+		refObject.Serialize(objJsonSerializerHelper);
+		objJsonDoc.AddMember("data", objJsonSerializerHelper.GetJsonValue(), objJsonDoc.GetAllocator());
+
+		rapidjson::Writer<rapidjson::StringBuffer> objWriter(refBuffer);
+		bResult = objJsonDoc.Accept(objWriter);
+
+		return bResult;
+	}
+
+	//----------------------------------------------------------------
+	// @routine WriteToJson
+	/// @brief 保存对象为json格式
+	/// 
+	/// @param 【_in】refObject-被保存的对象
+	/// @param 【_in】pUUID-数据识别码
+	/// @param 【_in】nVersion-版本
+	/// @param 【_in】pDesc-表述
+	/// @param 【_inout】refBuffer-接收数据的缓冲区
+	/// @return true:成功,false:失败
+	/// @author 黄丽云
+	/// @date 2018-9-21
+	//---------------------------------------------------------------
+	template<class T>
+	bool WriteToJson(
+		const T& refObject,
+		const char* pUUID,
+		const unsigned int nVersion,
+		const char* pDesc,
+		rapidjson::StringBuffer& refBuffer) const
+	{
+		bool bResult = false;
+
+		rapidjson::Document objJsonDoc(rapidjson::kObjectType);     //生成一个dom元素Document
+		rapidjson::Document::AllocatorType &objAllocator = objJsonDoc.GetAllocator();  //获取分配器
+
+		objJsonDoc.AddMember("uuid", rapidjson::Value().SetString(pUUID, objAllocator).Move(), objAllocator);
+		objJsonDoc.AddMember("version", rapidjson::Value(nVersion), objAllocator);
+		objJsonDoc.AddMember("description", rapidjson::Value().SetString(pDesc, objAllocator).Move(), objAllocator);
+
+		CJSONSerializer objJsonSerializerHelper(objJsonDoc.GetAllocator());
+
+		refObject.Serialize(objJsonSerializerHelper);
+		objJsonDoc.AddMember("data", objJsonSerializerHelper.GetJsonValue(), objJsonDoc.GetAllocator());
+
+		rapidjson::Writer<rapidjson::StringBuffer> objWriter(refBuffer);
+		bResult = objJsonDoc.Accept(objWriter);
+
+		return bResult;
+	}
+	//----------------------------------------------------------------
+	// @routine WriteToJson
+	/// @brief 保存对象为json格式
+	/// 
+	/// @param 【_in】refObject-被保存的对象
+	/// @param 【_in】pUUID-数据识别码
+	/// @param 【_in】nVersion-版本
+	/// @param 【_in】pDesc-表述
+	/// @param 【_inout】refBuffer-接收数据的缓冲区
+	/// @return true:成功,false:失败
+	/// @author 黄丽云
+	/// @date 2018-9-21
+	//---------------------------------------------------------------
+	template<class T>
+	bool WriteToPrettyJson(
+		T& refObject
+		, const char* pUUID
+		, const unsigned int nVersion
+		, const char* pDesc
+		, rapidjson::StringBuffer& refBuffer) const
+	{
+		bool bResult = false;
+
+		rapidjson::Document objJsonDoc(rapidjson::kObjectType);    //生成一个dom元素Document
+		rapidjson::Document::AllocatorType &objAllocator = objJsonDoc.GetAllocator(); //获取分配器
+
+		objJsonDoc.AddMember("uuid", rapidjson::Value().SetString(pUUID, objAllocator).Move(), objAllocator);
+		objJsonDoc.AddMember("version", rapidjson::Value(nVersion), objAllocator);
+		objJsonDoc.AddMember("description", rapidjson::Value().SetString(pDesc, objAllocator).Move(), objAllocator);
+
+		CJSONSerializer objJsonSerializerHelper(objJsonDoc.GetAllocator());
+
+		refObject.Serialize(objJsonSerializerHelper);
+		objJsonDoc.AddMember("data", objJsonSerializerHelper.GetJsonValue(), objJsonDoc.GetAllocator());
+
+		rapidjson::PrettyWriter<rapidjson::StringBuffer> objWriter(refBuffer);
+		bResult = objJsonDoc.Accept(objWriter);
+
+		return bResult;
+	}
+
+	//----------------------------------------------------------------
+// @routine ReadFromJson
+/// @brief 从json数据读取数组记录
+/// 
+/// @param 【_in】pJson-数据
+/// @param 【_in】nLen-数据长度
+/// @param 【_in】pUUID-数据识别码
+/// @param 【_inout】refObject-对象参考	
+/// @return true:成功,false:失败
+/// @author 黄丽云
+/// @date 2018-9-21
+//---------------------------------------------------------------
+	template<class T>
+	bool ReadFromJson(const std::string& refJsonData, T& refObject) const
+	{
+		bool bResult = false;
+		rapidjson::Document objJsonDoc;
+
+		objJsonDoc.Parse(refJsonData.c_str(), refJsonData.size());
+
+		if (!objJsonDoc.IsNull())
+		{
+			auto itr = objJsonDoc.FindMember("data");
+
+			if (objJsonDoc.MemberEnd() != itr)
+			{
+				CJSONSerializer objJsonSerializerHelper(objJsonDoc.GetAllocator());
+
+				objJsonSerializerHelper.SetJsonValue(const_cast<rapidjson::Value&>(itr->value));
+				refObject.DeSerialize(objJsonSerializerHelper);
+
+				bResult = true;
+			}
+		}
+
+		return bResult;
+	}
+
+	//----------------------------------------------------------------
+	// @routine ReadFromJson
+	/// @brief 从json数据读取数组记录
+	/// 
+	/// @param 【_in】pJson-数据
+	/// @param 【_in】nLen-数据长度
+	/// @param 【_in】pUUID-数据识别码
+	/// @param 【_inout】refObject-对象参考	
+	/// @return true:成功,false:失败
+	/// @author 黄丽云
+	/// @date 2018-9-21
+	//---------------------------------------------------------------
+	template<class T>
+	bool ReadFromJson(const char* pJson, const size_t nLen, const char* pUUID, T& refObject) const
+	{
+		bool bResult = false;
+		rapidjson::Document objJsonDoc;
+
+		objJsonDoc.Parse(pJson, nLen);
+
+		if (!objJsonDoc.IsNull())
+		{
+			std::string strClipboardUUID(pUUID);
+
+			assert(strClipboardUUID == objJsonDoc["uuid"].GetString());
+
+			if (strClipboardUUID == objJsonDoc["uuid"].GetString())
+			{
+				auto itr = objJsonDoc.FindMember("data");
+
+				if (objJsonDoc.MemberEnd() != itr)
+				{
+					CJSONSerializer objJsonSerializerHelper(objJsonDoc.GetAllocator());
+
+					objJsonSerializerHelper.SetJsonValue(const_cast<rapidjson::Value&>(itr->value));
+					refObject.DeSerialize(objJsonSerializerHelper);
+
+					bResult = true;
+				}
+			}
+		}
+
+		return bResult;
+	}
+
+	//----------------------------------------------------------------
+	// @routine Export
+	/// @brief 导出当前表中的记录
+	/// 
+	/// @param strName-文件名称
+	/// @param bAll-所有记录
+	/// @return true:成功,false:失败
+	/// @author 黄丽云
+	/// @date 2018-9-21
+	//---------------------------------------------------------------
+	template<class T>
+	bool Save(
+		const T& refObject
+		, const std::string& strName
+		, const char* pUUID
+		, const unsigned int nVersion
+		, const char* pDesc) const
+	{
+		bool bResult = false;
+		std::ofstream objFileWrited(strName);
+
+		if (objFileWrited.is_open())
+		{
+			rapidjson::StringBuffer objBuffer;
+
+			bResult = WriteToJson<T>(refObject, pUUID, nVersion, pDesc, objBuffer);
+			assert(bResult);
+#ifndef _DEBUG
+			if (bResult)
+#endif
+			{
+				auto out = objBuffer.GetString();
+
+				objFileWrited.write(out, objBuffer.GetLength());
+			}
+
+			objFileWrited.close();
+		}
+
+		return bResult;
+	}
+
+	//----------------------------------------------------------------
+	// @routine Export
+	/// @brief 从文件中导入记录
+	/// 
+	/// @param strName-文件名称
+	/// @param refItems-接受记录
+	/// @return true:成功,false:失败
+	/// @author 黄丽云
+	/// @date 2018-9-21
+	//---------------------------------------------------------------
+	template<class T>
+	bool Load(const std::string& strName, const char* pUUID, T& refObject)
+	{
+		bool bResult = false;
+		std::ifstream objFileRead(strName, std::ios::in | std::ios::out | std::ios::binary);
+
+		try
+		{
+			if (objFileRead.is_open())
+			{
+				objFileRead.seekg(0, std::ios::end);       //设置文件指针到文件流的尾部
+				std::streampos ps = objFileRead.tellg();   //读取文件指针的位置
+
+				char* lpBuffer = new char[(int)ps + 1];
+
+				if (nullptr != lpBuffer)
+				{
+					objFileRead.seekg(0, std::ios::beg);          //设置文件指针到文件流的头部
+
+					objFileRead.read(lpBuffer, ps);
+					bResult = ReadFromJson(lpBuffer, (size_t)ps, pUUID, refObject);
+
+					delete[]lpBuffer;
+				}
+
+				objFileRead.close();
+			}
+		}
+		catch (...)
+		{
+			//TRACE(_T("Fail to load the file (%s)\r\n"), static_cast<LPCSTR>(strName));
+		}
+
+		return bResult;
+	}
+
+#ifdef WIN32
+	//----------------------------------------------------------------
+// @routine SaveDataToClipboard
+/// @brief 保存数据到私有剪贴版
+/// 
+/// @param refItems-被保存的数组
+/// @param lpName-名称
+/// @return true:成功，false:失败
+/// @note 有名称表示是小数据
+/// @author 黄丽云
+/// @date 2018-9-21
+//---------------------------------------------------------------
+	template<class T>
+	bool SaveDataToClipboard(
+		T& refObject
+		, const char* pUUID
+		, const unsigned int nVersion
+		, const char* pDesc)
+	{
+		rapidjson::StringBuffer objBuffer;
+		bool bResult = WriteToJson<T>(refObject, pUUID, nVersion, pDesc, objBuffer);
+
+		if (bResult)
+		{
+			auto out = objBuffer.GetString();
+
+			if (OpenClipboard(nullptr))
+			{
+				EmptyClipboard();
+
+				HGLOBAL pClipBuffer = GlobalAlloc(GMEM_DDESHARE, objBuffer.GetLength() + 1);
+				char * pTextBuffer = (char*)GlobalLock(pClipBuffer);
+
+				strcpy(pTextBuffer, out);
+
+				GlobalUnlock(pClipBuffer);
+				SetClipboardData(CF_TEXT, pClipBuffer);
+				CloseClipboard();
+			}
+		}
+
+#ifdef _DEBUG
+		//const char szFilters[] = _T("json file(*.json)|*.json|All Files (*.*)|*.*||");
+
+		//CFileDialog dlgImport(false, _T("json"), _T("*.json"),
+		//    OFN_FILEMUSTEXIST | OFN_HIDEREADONLY, szFilters, this);
+
+		//if (dlgImport.DoModal() == IDOK)
+		//{
+		//    CString strFileName = dlgImport.GetPathName();
+		//    CFile objFileWrited;
+		//    if (objFileWrited.Open(strFileName, CFile::modeCreate | CFile::modeWrite))
+		//    {
+		//        objFileWrited.Write(out, buffer.GetLength());
+		//        objFileWrited.Close();
+		//    }
+		//}
+#endif 
+
+		return bResult;
+	}
+
+	//----------------------------------------------------------------
+	// @routine CopyDataFromClipboard
+	/// @brief 从私有剪贴版拷贝数据
+	/// 
+	/// @param lpUUID-数据识别ID
+	/// @param refItems-被保存的数组
+	/// @param nIndex-剪贴板数据
+	/// @return true:成功，false:失败
+	/// @author 黄丽云
+	/// @date 2018-9-21
+	//---------------------------------------------------------------
+	template<class T>
+	bool CopyDataFromClipboard(const char* pUUID, T& refObject)
+	{
+		std::string  strClipboardData;
+
+		//打开剪贴板
+
+		if (OpenClipboard(nullptr))
+		{
+			HANDLE hData = GetClipboardData(CF_TEXT);
+
+			strClipboardData = (char*)GlobalLock(hData);
+			GlobalUnlock(hData);
+			CloseClipboard();
+		}
+
+		bool bResult = ReadFromJson(strClipboardData.c_str(), strClipboardData.length(), pUUID, refObject);
+
+		return bResult;
+	}
+
+
+#endif
+
+	template <class T>
+	bool ExtractESJsonObjT(const std::string& refJsonData, T& refJsonObj) const
+	{
+		bool bResult = false;
+		rapidjson::Document objJsonDoc;
+		objJsonDoc.Parse(refJsonData.c_str(), refJsonData.size());
+
+		if (!objJsonDoc.IsNull())
+		{
+			CJSONSerializer objJsonSerializerHelper(objJsonDoc.GetAllocator());
+
+			objJsonSerializerHelper.SetJsonValue(*((rapidjson::Value*)&objJsonDoc));
+			refJsonObj.DeSerialize(objJsonSerializerHelper);
+
+			bResult = true;
+		}
+
+		return bResult;
+	}
+
+private:
+	CJsonHelper(const CJsonHelper&);
+	CJsonHelper& operator=(const CJsonHelper&);
+
+};

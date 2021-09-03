@@ -1,0 +1,9 @@
+#pragma once
+
+class CClientTerminationListener
+{
+public:
+  virtual void onClientTerminate() = 0;
+};
+
+

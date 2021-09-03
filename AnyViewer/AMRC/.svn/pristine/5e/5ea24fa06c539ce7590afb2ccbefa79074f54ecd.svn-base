@@ -1,0 +1,128 @@
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// @file  
+// 树形数据管理器相关基类实现
+/// 
+///
+/// 
+/// @author 黄丽云
+/// @version 1.0
+/// @date        2019-1-15
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#include "stdafx.h"
+#include "EntryUndoCmd.h"
+#include "TreeManagerBase.h"
+
+REGISTER_CLASS(CAREntryUndoCmd)
+REGISTER_CLASS(CReplaceEntryUndoCmd)
+
+/*-------------------------CAREntryUndoCmd-------------------------*/
+CAREntryUndoCmd::CAREntryUndoCmd()
+	: m_pEntryArray(nullptr)
+	, m_pEntry(nullptr)
+	, m_bAppending(true)
+{
+}
+
+CAREntryUndoCmd::~CAREntryUndoCmd()
+{
+	if (GetRelease())
+	{
+		delete m_pEntry;
+		m_pEntry = nullptr;
+	}
+}
+
+bool CAREntryUndoCmd::Execute()
+{
+	bool bResult = false;
+
+	assert(nullptr != GetEntry());
+
+	if (nullptr != GetEntry())
+	{
+		if (GetAppending())
+		{
+			bResult = m_pEntryArray->InsertAt(m_nPos, GetEntry());
+			assert(bResult);
+			m_bRelease = !bResult;			
+		}
+		else
+		{
+			m_nPos = m_pEntryArray->Find(GetEntry());
+			bResult = m_pEntryArray->RemoveItem(GetEntry());
+			assert(bResult);
+		}
+	}
+
+	return bResult;
+}
+
+bool CAREntryUndoCmd::Unexecute()
+{
+	bool bResult = false;
+
+	assert(nullptr != GetEntry());
+
+	if (nullptr != GetEntry())
+	{
+		if (GetAppending())
+		{
+			m_nPos = m_pEntryArray->Find(GetEntry());
+			bResult = m_pEntryArray->RemoveItem(GetEntry());
+			assert(bResult);
+
+		}
+		else
+		{
+			bResult = m_pEntryArray->InsertAt(m_nPos, GetEntry());
+			assert(bResult);
+			m_bRelease = !bResult;
+		}
+	}
+
+	return bResult;
+}
+
+
+/*-------------------------CAREntryUndoCmd-------------------------*/
+CReplaceEntryUndoCmd::CReplaceEntryUndoCmd()
+	: m_pEntryArray(nullptr)
+	, m_pNewEntry(nullptr)
+	, m_pReplacedEntry(nullptr)
+{
+}
+
+CReplaceEntryUndoCmd::~CReplaceEntryUndoCmd()
+{
+	delete m_pReplacedEntry;
+}
+
+bool CReplaceEntryUndoCmd::Execute()
+{
+	return Unexecute();
+}
+
+bool CReplaceEntryUndoCmd::Unexecute()
+{
+	bool bResult = false;
+
+	assert(nullptr != GetEntryArray());
+	assert(nullptr != GetNewEntry());
+	assert(nullptr != GetReplacedEntry());
+
+	if (GetEntryArray() && GetNewEntry() && GetReplacedEntry())
+	{
+		bResult = GetEntryArray()->Replace(GetReplacedEntry(), GetNewEntry(),false);
+
+		if (bResult)
+		{
+			CEntryBase * pMidItem = GetNewEntry();
+
+			SetReplacedEntry(GetNewEntry());
+			SetNewEntry(pMidItem);
+		}
+	}
+
+	return bResult;
+}
+

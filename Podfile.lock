@@ -14,21 +14,7 @@ PODS:
   - AFNetworking/Serialization (4.0.1)
   - AFNetworking/UIKit (4.0.1):
     - AFNetworking/NSURLSession
-  - boost (1.59.0):
-    - boost/graph-includes (= 1.59.0)
-    - boost/math-includes (= 1.59.0)
-    - boost/numeric-includes (= 1.59.0)
-    - boost/pointer_cast-includes (= 1.59.0)
-    - boost/preprocessor-includes (= 1.59.0)
-    - boost/shared_ptr-includes (= 1.59.0)
-    - boost/string_algorithms-includes (= 1.59.0)
-  - boost/graph-includes (1.59.0)
-  - boost/math-includes (1.59.0)
-  - boost/numeric-includes (1.59.0)
-  - boost/pointer_cast-includes (1.59.0)
-  - boost/preprocessor-includes (1.59.0)
-  - boost/shared_ptr-includes (1.59.0)
-  - boost/string_algorithms-includes (1.59.0)
+  - curly (0.8.5)
   - DZNEmptyDataSet (1.8.1)
   - GKNavigationBar (1.4.3):
     - GKNavigationBar/GestureHandle (= 1.4.3)
@@ -40,6 +26,7 @@ PODS:
   - Masonry (1.1.0)
   - MBProgressHUD (1.2.0)
   - MJRefresh (3.5.0)
+  - OpenSSL-Universal (1.1.1100)
   - rapidjson (1.1.0)
   - ReactiveObjC (3.0.0)
   - SDWebImage (5.10.4):
@@ -50,10 +37,11 @@ PODS:
   - YYKit (1.0.9):
     - YYKit/no-arc (= 1.0.9)
   - YYKit/no-arc (1.0.9)
+  - ZJCurl (1.0.0)
 
 DEPENDENCIES:
   - AFNetworking (~> 4.0.1)
-  - boost (~> 1.59.0)
+  - curly (~> 0.8.5)
   - DZNEmptyDataSet (~> 1.8.1)
   - GKNavigationBar (~> 1.4.3)
   - IQKeyboardManager (~> 6.5.6)
@@ -61,17 +49,19 @@ DEPENDENCIES:
   - Masonry (~> 1.1.0)
   - MBProgressHUD (~> 1.2.0)
   - MJRefresh (~> 3.5.0)
+  - OpenSSL-Universal (~> 1.1.1100)
   - rapidjson (~> 1.1.0)
   - ReactiveObjC (~> 3.0.0)
   - SDWebImage (~> 5.10.2)
   - TZImagePickerController (~> 3.5.2)
   - WZLBadge
   - YYKit (~> 1.0.9)
+  - ZJCurl (~> 1.0.0)
 
 SPEC REPOS:
   trunk:
     - AFNetworking
-    - boost
+    - curly
     - DZNEmptyDataSet
     - GKNavigationBar
     - IQKeyboardManager
@@ -79,16 +69,18 @@ SPEC REPOS:
     - Masonry
     - MBProgressHUD
     - MJRefresh
+    - OpenSSL-Universal
     - rapidjson
     - ReactiveObjC
     - SDWebImage
     - TZImagePickerController
     - WZLBadge
     - YYKit
+    - ZJCurl
 
 SPEC CHECKSUMS:
   AFNetworking: 7864c38297c79aaca1500c33288e429c3451fdce
-  boost: 30a15ffb6d9aa4646dd3caffc960753f4cb4ca4e
+  curly: bcc55fc6a898415ea0ebbac2a1f1a24786eec455
   DZNEmptyDataSet: 9525833b9e68ac21c30253e1d3d7076cc828eaa7
   GKNavigationBar: f94a0be7ad4c6c9a33219d471905f767f9c09a53
   IQKeyboardManager: 2a6e97afdafc7becf0cb17a9a8d795e3a980717f
@@ -96,13 +88,15 @@ SPEC CHECKSUMS:
   Masonry: 678fab65091a9290e40e2832a55e7ab731aad201
   MBProgressHUD: 3ee5efcc380f6a79a7cc9b363dd669c5e1ae7406
   MJRefresh: 6afc955813966afb08305477dd7a0d9ad5e79a16
+  OpenSSL-Universal: ebc357f1e6bc71fa463ccb2fe676756aff50e88c
   rapidjson: 926ddeea70d7a0987b6d746cd9fa51f165467cd3
   ReactiveObjC: ce79989e8684b9086b5f8d0c74bc7b81a8729c9e
   SDWebImage: c666b97e1fa9c64b4909816a903322018f0a9c84
   TZImagePickerController: 07a2f834f4908689759a7e54f74e9a018e047cb6
   WZLBadge: 9ec779dcfd94c825518b395e8315fccaabff1bfa
   YYKit: 7cda43304a8dc3696c449041e2cb3107b4e236e7
+  ZJCurl: e49491f4226f1b436179089fff6ed7efa7adba70
 
-PODFILE CHECKSUM: cbefa384e763edb6663aa5a6a29e0bbdf110ffc2
+PODFILE CHECKSUM: ce7dd44c3e43e659c3fc2f6914b78ed396077fcd
 
 COCOAPODS: 1.10.2
