@@ -392,7 +392,6 @@
 		066A17FC26D3A3FA0058085F /* Support Files */ = {
 			isa = PBXGroup;
 			children = (
-				18739B8A26DE039300098702 /* AMRC */,
 				18802C8526DCF551002B5742 /* Socket */,
 				066A187926D4DD7D0058085F /* Language */,
 				066A185C26D3A98B0058085F /* Model */,
@@ -697,13 +696,6 @@
 				1823C34A26E0BC1B00B0FBDD /* RCServerProxy.mm */,
 			);
 			path = RCServerProxy;
-			sourceTree = "<group>";
-		};
-		18739B8A26DE039300098702 /* AMRC */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = AMRC;
 			sourceTree = "<group>";
 		};
 		1873CF2726E1C7DC00598361 /* DataPacket */ = {

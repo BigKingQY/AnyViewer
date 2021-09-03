@@ -1,7 +1,0 @@
-#pragma once
-
-class CConfigReloadListener
-{
-public:
-  virtual void onConfigReload() = 0;
-};

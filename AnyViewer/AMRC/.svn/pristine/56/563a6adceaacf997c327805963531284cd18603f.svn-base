@@ -1,9 +1,0 @@
-#pragma once
-
-
-class CRestartListener
-{
-public:
-	virtual void OnRestart(const unsigned int nCookie) = 0;
-};
-

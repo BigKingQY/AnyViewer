@@ -1,8 +1,0 @@
-#pragma once
-
-class CRFBKeySymListener
-{
-public:
-  virtual void OnRFBKeySymEvent(unsigned int rfbKeySym, bool down) = 0;
-};
-
