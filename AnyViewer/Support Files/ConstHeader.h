@@ -37,6 +37,9 @@
 
 #define kAppVersion [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"]
 
+#define kServiceName @"com.aomei.anyviewer.service"
+#define kAccountName @"com.aomei.anyviewer.account"
+
 //网络变化的监听通知
 static NSString *kAFNetworkReachabilityNotification = @"kAFNetworkReachabilityNotification";
 

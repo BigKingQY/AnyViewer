@@ -13,6 +13,7 @@
 #include "SDPMessageBus.h"
 #include "GlobeFunction.h"
 #include "Typedef.h"
+#include "Log.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -263,8 +264,7 @@ bool CRCSvrProxy::OnReceivedPacketEventHandle(
 bool CRCSvrProxy::OnEventHandle(
     PTR_NET_ENDPOINT_INTERFACE /*pEndpoint*/
     , SEVERITY_LEVEL /*nSeverity*/
-    , SERVICE_EVENT nEvent
-    , char * /*lpTips*/)
+    , SERVICE_EVENT nEvent)
 {
     switch (nEvent)
     {
@@ -279,7 +279,9 @@ bool CRCSvrProxy::OnEventHandle(
         if (m_objSendingLastTime.elapsed() >= HEART_TIMEOUT)
         {
             //TRACE("send heart packet\n");
+            LOG_DEBUG("send heart packet");
             SendCommonRequest(RCP::MT_HEARTBEAT);
+            
         }
     }
     break;

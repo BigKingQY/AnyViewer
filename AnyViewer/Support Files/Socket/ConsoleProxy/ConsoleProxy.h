@@ -100,7 +100,7 @@ protected:
     virtual bool OnPreSendPacketEventHandle(PTR_NET_ENDPOINT_INTERFACE pEndpoint, CNetPacket* pPacket);
     virtual bool OnProReceivedPacketEventHandle(PTR_NET_ENDPOINT_INTERFACE pNetEndpointInterface, CNetPacket* pNetPacket);
     virtual bool OnReceivedPacketEventHandle(PTR_NET_ENDPOINT_INTERFACE pEndpoint, CNetPacket* pPacket);
-    virtual bool OnEventHandle(PTR_NET_ENDPOINT_INTERFACE pEndpoint, SEVERITY_LEVEL nSeverity, SERVICE_EVENT nEvent, const char * lpTips);
+    virtual bool OnEventHandle(PTR_NET_ENDPOINT_INTERFACE pEndpoint, SEVERITY_LEVEL nSeverity, SERVICE_EVENT nEvent);
     //virtual bool OnReconnectEventHandle(PTR_NET_ENDPOINT_INTERFACE pEndpoint);
     //virtual bool OnCloseEventHandle(PTR_NET_ENDPOINT_INTERFACE);
 

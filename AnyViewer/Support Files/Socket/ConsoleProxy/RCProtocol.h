@@ -110,7 +110,7 @@ namespace RCP
     /// ±æµÿœ˚œ¢¿‡–Õ£¨”√”⁄±æµÿøÕªß∂À∫Õ±æµÿ∑˛ŒÒ÷Æº‰µƒÕ®–≈
     /// </summary>
     // --------------------------------------------------------------------------------
-    enum LOCAL_MESSAGE_TYPE
+    enum ASSIST_MESSAGE_TYPE
     {
         LMT_START_CLIENT = 2001,                    ///< ∆Ù∂ØøÕªß∂À
         LMT_REGIST_CLIENT = 2002,                   ///< øÕªß∂À◊¢≤·œ˚œ¢
@@ -122,6 +122,22 @@ namespace RCP
         LMT_QUERY_SESSION_STATE = 2008,             ///< ≤È—Øµ±«∞ª·ª∞◊¥Ã¨µΩøÕªß∂À(øÕªß∂À->±æµÿ∑˛ŒÒ∆˜)
         LMT_RELOAD_PRJ_SETTINGS = 2009,             ///< ÷ÿ–¬º”‘ÿπ§≥Ã…Ë÷√
         LMT_DELAYED_START_CLIENT = 2010,            ///< —” ±∆Ù∂ØøÕªß∂À
+    };
+
+    // --------------------------------------------------------------------------------
+/// <summary>
+/// øÿ÷∆Ã®œ˚œ¢¿‡–Õ£¨”√”⁄øÕªß∂À∫ÕAV∫À–ƒƒ£øÈ÷±Ω”µƒÕ®–≈
+/// </summary>
+// --------------------------------------------------------------------------------
+    enum CONSOLE_MESSAGE_TYPE
+    {
+        CMT_DEVICE_STATUS = 3001,                    ///< √∂æŸ≥£¡ø£¨AV∫À–ƒƒ£øÈ”Îøÿ÷∆∑˛ŒÒ∆˜µƒ¡¨Ω”◊¥Ã¨(AV∫À–ƒƒ£øÈ->øÿ÷∆øÕªß∂À)
+        CMT_QUERY_VNC_CONVERSATION_REQUEST = 3002,   ///< √∂æŸ≥£¡ø£¨—È÷§÷∏∂®µƒªÔ∞ÈID «∑Ò”––ß(øÿ÷∆øÕªß∂À->AV∫À–ƒƒ£øÈ)
+        CMT_SHOW_CLIENT_REQUEST = 3003,              ///< √∂æŸ≥£¡ø£¨œ‘ æøÕªß∂À«Î«Û
+        CMT_SHOW_TRAY_POPMENU_REQUEST = 3004,        ///< √∂æŸ≥£¡ø£¨œ‘ æÕ–≈Ã≤Àµ•«Î«Û
+        CMT_CLOSE_AVCORE_REQUEST = 3005,             ///< √∂æŸ≥£¡ø£¨πÿ±’ƒ⁄∫À«Î«Û
+        CMT_RECONVERT_CONNECTION_STATUS_REQUEST = 3006,     ///< √∂æŸ≥£¡ø£¨ª÷∏¥¡¨Ω”◊¥Ã¨«Î«Û
+        CMT_LANGUAGE_CHANGED_REQUEST = 3007,     ///< √∂æŸ≥£¡ø£¨ª÷∏¥¡¨Ω”◊¥Ã¨«Î«Û
     };
 
     /// <summary>‘∂≥Ãøÿ÷∆øÕªß∂À¿‡–Õ√∂æŸ∂®“Â</summary>
@@ -182,6 +198,41 @@ namespace RCP
         PT_UNKNOWN = 0,     ///< √∂æŸ≥£¡ø,Œ¥÷™
         PT_TMP_PWD = 1,     ///< √∂æŸ≥£¡ø,¡Ÿ ±µƒ
         PT_FIX_PWD = 2,     ///< √∂æŸ≥£¡ø,πÃ∂®µƒ√‹¬Î
+    };
+
+    /// <summary>–£—Èƒø±ÍIDΩ·π˚¿‡–Õ√∂æŸ</summary>
+    enum VERIFIY_PARTNER_ID_RET
+    {
+        VPIR_VALID = 0,               ///< √∂æŸ≥£¡ø,ƒø±ÍID
+        VPIR_INVALID_LEN = 1,         ///< √∂æŸ≥£¡ø,Œﬁ–ß≥§∂»
+        VPIR_SAME_AS_LOCAL_ID = 2,    ///< √∂æŸ≥£¡ø,∫Õ±æµÿµƒIDœ‡Õ¨
+        VPIR_EXISTS_CONNECTION = 3,   ///< √∂æŸ≥£¡ø,¡¨Ω”“—æ≠¥Ê‘⁄
+        VPIR_EXISTS_NEW_CONNECTION = 4,   ///< √∂æŸ≥£¡ø,–¬¡¨Ω”“—æ≠¥Ê‘⁄(ªπ√ª”–∑¢ÀÕπ˝ ˝æ›∞¸)
+    };
+
+    /// <summary>¡¨Ω”◊¥Ã¨¿‡–Õ</summary>
+    enum CONNECTION_STATUS
+    {
+        CS_CONNECTING = 1,    ///< √∂æŸ≥£¡ø,’˝‘⁄¡¨Ω”
+        CS_CONNECTED = 2,     ///< √∂æŸ≥£¡ø,“—æ≠¡¨Ω”
+        CS_VERIFY = 3,        ///< √∂æŸ≥£¡ø,’˝‘⁄–£—È
+    };
+
+    /// <summary>œ‘ æ¥∞ø⁄ƒ£ Ω</summary>
+    enum SHOW_WIN_MODE
+    {
+        SWM_SHOW = 1,        ///< √∂æŸ≥£¡ø,œ‘ æ
+        SWM_HIDE = 2,        ///< √∂æŸ≥£¡ø,“˛≤ÿ
+        SWM_AUTO = 3,        ///< √∂æŸ≥£¡ø,◊‘∂Ø(ΩªÃÊœ‘ æ)
+    };
+
+    /// <summary>…Ë±∏¿‡–Õ</summary>
+    enum RC_DEVICE_TYPE
+    {
+        RDT_UNKNOWN = 0,        ///< 枚举常量,未知
+        RDT_PC = 1,             ///< 枚举常量,PC
+        RDT_MOBILE_IOS = 2,     ///< 枚举常量,苹果手机
+        RDT_MOBILE_ANDRIOD = 3, ///< 枚举常量,鞍座手机
     };
 
     // ±ÿ–Î”√œ¬√Ê’‚÷÷∂‘∆Î∑Ω Ω£¨≤ªƒ‹”√#pragma pack(1)
@@ -365,8 +416,8 @@ namespace RCP
         virtual void DeSerialize(CJSONSerializer& refJsonSerializer) override;
 
     private:
-        DECLARE_MEMBER_AND_METHOD(std::string, m_strIPs, IPs)              ///< ipµÿ÷∑£¨∂‡∏ˆµÿ÷∑”√∑÷∫≈∑÷∏Ó
-        DECLARE_MEMBER_AND_METHOD(std::string, m_strIPMasks, IPMasks)      ///< ipµÿ÷∑∂‘”¶µƒ—⁄¬Î£¨∂‡∏ˆ—⁄¬Î”√∑÷∫≈∑÷∏Ó
+//        DECLARE_MEMBER_AND_METHOD(std::string, m_strIPs, IPs)              ///< ipµÿ÷∑£¨∂‡∏ˆµÿ÷∑”√∑÷∫≈∑÷∏Ó
+//        DECLARE_MEMBER_AND_METHOD(std::string, m_strIPMasks, IPMasks)      ///< ipµÿ÷∑∂‘”¶µƒ—⁄¬Î£¨∂‡∏ˆ—⁄¬Î”√∑÷∫≈∑÷∏Ó
         DECLARE_MEMBER_AND_METHOD(std::string, m_strMachineCode, MachineCode) ///< ª˙–µ¬Î
         DECLARE_MEMBER_AND_METHOD(std::string, m_strNickName,NickName) ///< √˚≥∆
         DECLARE_MEMBER_AND_METHOD_V11(U64, m_nMac, Mac, 0)                 ///< Õ¯ø®ŒÔ¿Ìµÿ÷∑
@@ -376,10 +427,11 @@ namespace RCP
         DECLARE_MEMBER_AND_METHOD(std::string, m_strPwd, Pwd); ///< πÃ∂®ø⁄¡Ó£¨”√ªß…Ë÷√
         DECLARE_MEMBER_AND_METHOD(std::string, m_strTmpPwd, TmpPwd); ///< ¡Ÿ ±ø⁄¡Ó£¨≤ª–Ë“™±£¥Ê
         DECLARE_MEMBER_AND_METHOD_V11(U64, m_nDeviceID, DeviceID,0); ///< ¥”∑˛ŒÒ∆˜ªÒ»°µƒ…Ë±∏ID£¨≤ª–Ë“™±£¥Ê
-        DECLARE_MEMBER_AND_METHOD(std::string, m_strRouteIPs, RouteIPs)  ///< ¬∑”…ipµÿ÷∑£¨∂‡∏ˆµÿ÷∑”√∑÷∫≈∑÷∏Ó
+//        DECLARE_MEMBER_AND_METHOD(std::string, m_strRouteIPs, RouteIPs)  ///< ¬∑”…ipµÿ÷∑£¨∂‡∏ˆµÿ÷∑”√∑÷∫≈∑÷∏Ó
         DECLARE_MEMBER_AND_METHOD_V11(unsigned int, m_nProtocolVer, ProtocolVer, 0); ///< øÕªß∂À÷ß≥÷µƒ–≠“È∞Ê±æ
         DECLARE_MEMBER_AND_METHOD_V11(double, m_nAppVer, AppVer, 1); ///< ”¶”√≥Ã–Ú∞Ê±æ–≈œ¢
         DECLARE_MEMBER_AND_METHOD(std::string, m_strRegion, Region);               ///< øÕªß∂ÀÀ˘‘⁄µƒ«¯”Ú
+        DECLARE_MEMBER_AND_METHOD_V11(unsigned int, m_nDeviceType, DeviceType, RDT_PC); ///< …Ë±∏¿‡–Õ
     };
 
     // --------------------------------------------------------------------------------
@@ -525,6 +577,42 @@ namespace RCP
 
     extern std::string GetStatusCodeDesc(EXCEPTION_STATUS nStatusCode);
     using CRelayTaskSharedArray = CSharedDynamicJsonVector<CNewRelayTaskRequest>;
+
+
+    // --------------------------------------------------------------------------------
+/// <summary>
+/// …Ë÷√◊¥Ã¨–≈œ¢£¨”…AV∫À–ƒƒ£øÈ∑¢Õ˘øÕªß∂À
+/// </summary>
+// --------------------------------------------------------------------------------
+    class CDeviceStatusInfo :public CSerializeEntry
+    {
+    public:
+        CDeviceStatusInfo(const unsigned int nConnectionStatus = 0,const unsigned int nRegistedStatus = 0, const char* lpDeviceID = "")
+            : m_nConnectionStatus(nConnectionStatus)
+            , m_nRegistedStatus(nRegistedStatus)
+            , m_strDeviceID(lpDeviceID)
+        {
+        }
+        ~CDeviceStatusInfo() {}
+
+        ENABLE_SERIALIZE(CDeviceStatusInfo)
+
+    public:
+        virtual void Serialize(CJSONSerializer& refJsonSerializer) const override;
+
+        virtual void DeSerialize(CJSONSerializer& refJsonSerializer) override;
+
+    private:
+        ///<  µ±«∞”Îøÿ÷∆∑˛ŒÒ∆˜µƒ¡¨Ω”◊¥Ã¨
+        DECLARE_MEMBER_AND_METHOD_V11(unsigned int, m_nConnectionStatus, ConnectionStatus, CS_CONNECTING);
+
+        ///<  µ±«∞øÕªßµƒ◊¢≤·◊¥Ã¨
+        DECLARE_MEMBER_AND_METHOD_V11(unsigned int, m_nRegistedStatus, RegistedStatus, ES_UNKNOWN_ERR);
+
+        ///< ¥”∑˛ŒÒ∆˜ªÒ»°µƒ…Ë±∏ID
+        DECLARE_MEMBER_AND_METHOD(std::string, m_strDeviceID, DeviceID);
+    };
+
 }
 
 #endif

@@ -359,6 +359,7 @@ private:
 
     ///< ”¶”√≥Ã–Ú∞Ê±æ–≈œ¢
     DECLARE_MEMBER_AND_METHOD_V11(int, m_nVersion, Version, 0);
+
 };
 
 using CPrjSettingsPtr = std::shared_ptr<CPrjSettings>;

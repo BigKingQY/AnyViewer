@@ -20,6 +20,9 @@ using namespace std;
 typedef pair<LOCAL_MESSAGE_BUS_MSG, unsigned int>   MSG_PAIR;
 #endif
 
+
+typedef void(*RegistCallback)(string *deviceId, int result);
+
 class CNetTransactionEngine
 {
 
@@ -41,7 +44,7 @@ public:
     ///开始连接控制服务器
     bool StartConnect();
     
-    
+        
     //========== 必须要调用的方法 ==========
     ///初始化日志文件
     void InitLogWithPath(const char *path);
@@ -49,15 +52,16 @@ public:
     ///设置查询IP地址文件的下载路径
     void SetIPRegionPath(const char *path);
     
+    ///设置设备唯一ID
+    void SetDeviceId(const char *deviceId);
+    
+    ///设置APP版本号
+    void SetAppVersion(double appVersion);
+    
     //==========      END      ==========
     
 private:
-    
-    vector<MSG_PAIR> m_MsgIDs;
-    
-    ///连接代理对象
-    CRCSvrProxyPtr m_pRCSvrProxy;
-    
+        
     ///消息注册到消息总线
     void RegisterMessageBus();
     
@@ -73,11 +77,28 @@ private:
     ///消息反注册
     bool UnRegist(const unsigned int msgId);
     
-    string GetIPRegion();
+    ///注册成功后的回复
+    void OnRegistResponse(CDataPacket* pDataPacket);
     
-    std::string m_IPRegionPath;
+    
+    //成员变量列表
+    //区域文件路径，暂时没用了
+    string m_IPRegionPath;
+    //设备唯一标识，当做机器码使用
+    string m_DeviceUUID;
+    //系统APP版本号
+    double m_AppVersion;
+    
+    //用于存储注册的消息ID和类型
+    vector<MSG_PAIR> m_MsgIDs;
+    
+    ///连接代理对象
+    CRCSvrProxyPtr m_pRCSvrProxy;
     
 };
+
+
+
 
 #endif
 

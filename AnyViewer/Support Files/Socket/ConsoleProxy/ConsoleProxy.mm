@@ -516,8 +516,7 @@ bool CConsoleProxy::OnReceivedPacketEventHandle(
 bool CConsoleProxy::OnEventHandle(
     PTR_NET_ENDPOINT_INTERFACE /*pEndpoint*/
     , SEVERITY_LEVEL /*nSeverity*/
-    , SERVICE_EVENT nEvent
-    , const char * /*lpTips*/)
+    , SERVICE_EVENT nEvent)
 {
     char szBuffer[20] = { 0 };
 
@@ -526,7 +525,6 @@ bool CConsoleProxy::OnEventHandle(
     case SE_CONNECTED:
     {
 //        LOG_DEBUG("Connect the console server(%s:%d) successfully!", FormatHostIPAddressAnsi(GetIP(), szBuffer), GetPort());
-//        printf("Connect the console server(%s:%d) successfully!", FormatHostIPAddressAnsi(GetIP(), szBuffer), GetPort());
         m_nConversationStatus = (RPS_ESTABLISHMENT);
     }
     break;
@@ -545,7 +543,6 @@ bool CConsoleProxy::OnEventHandle(
     {
         m_nConversationStatus = RPS_CLOSE;
 //        LOG_ERROR("Try to re-connect the console server(%s:%d)...", FormatHostIPAddressAnsi(GetIP(), szBuffer), GetPort());
-//        printf("Try to re-connect the console server(%s:%d)...", FormatHostIPAddressAnsi(GetIP(), szBuffer), GetPort());
     }
     break;
     }

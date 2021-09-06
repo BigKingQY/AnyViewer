@@ -12,6 +12,9 @@
 #include "Log.h"
 #include "HttpFileDownloader.h"
 #include "FuncHeader.h"
+#import "BKIPRegionTool.h"
+#include "RCProtocol.h"
+#include "LocalMessageBus.h"
 
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -19,220 +22,92 @@
 #include <stdio.h>
 #include <cstdio>
 #include <boost/format.hpp>
+#include <utility>
 
-
-string CNetTransactionEngine::GetIPRegion() {
-    
-    string region;
-    
-    
-    
-//    [data writeToFile:[NSString stringWithCString:m_IPRegionPath.c_str() encoding:NSUTF8StringEncoding] atomically:YES];
-    
-    
-//    [NetworkRequest GET:@"https://ip138.com/iplookup.asp?ip=%1%&action=2" paramters:nil success:^(id  _Nullable responseObject) {
-//
-//        NSLog(@"%@", responseObject);
-//
-//    } failred:^(NSError * _Nullable error) {
-//
-//        NSLog(@"%@", error.localizedDescription);
-//    }];
-    
-    
-    return region;
-    
-}
+//deviceID 长度
+#define DEVICE_ID_LEN 32
 
 
 void CNetTransactionEngine::QueryIPRegion(CDataPacket *packet)
 {
     
-    CPrjSettings* pPrjSettings = GetPrjSettings();
-    
-    if (pPrjSettings->GetRegion().size() > 0)
-    {
-        return;
-    }
-    
     const COMMON_REQUEST* pRequestPacket = (const COMMON_REQUEST*)packet->GetHeaderPtr();
-    
-    CHttpFileDownloader objDowndloader(true);
-    std::string strUrl;
     char szBuffer[20] = { 0 };
-//    const std::string strTmpIPRegion("TmpIPRegion.htm");
+    NSString *ipAddr = [[NSString alloc] initWithCString:FormatHostIPAddressAnsi(int(ntohq(pRequestPacket->nStatusCode)), szBuffer) encoding:NSUTF8StringEncoding];
     
-    const std::string strTmpIPRegion = m_IPRegionPath;
-    
-    boost::format fmt("https://ip138.com/iplookup.asp?ip=%1%&action=2");
-    fmt %FormatHostIPAddressAnsi(int(ntohq(pRequestPacket->nStatusCode)), szBuffer);
-    //https://ip138.com/iplookup.asp?ip=118.113.100.39&action=2
-    strUrl = fmt.str();
-    
-//    strUrl.Format("https://ip138.com/iplookup.asp?ip=%s&action=2"
-//                  , FormatHostIPAddressAnsi(int(NTOHQ(pRequestPacket->nStatusCode)), szBuffer));
-    
-    bool bSuccess = objDowndloader.Downdload(strUrl.c_str(), strTmpIPRegion);
-    
-    if (bSuccess)
-    {
-        std::ifstream objFileRead(strTmpIPRegion, std::ios::in | std::ios::out | std::ios::binary);
+    //当获取到的IP与之前的不一样或者从来没有获取过的，需要重新获取区域
+    [BKIPRegionTool.shared getRegionWithPublicIP:ipAddr complete:^(NSString * _Nonnull region) {
         
-        try
-        {
-            if (objFileRead.is_open())
-            {
-                objFileRead.seekg(0, std::ios::end);       //设置文件指针到文件流的尾部
-                std::streampos ps = objFileRead.tellg();   //读取文件指针的位置
-                
-                char* lpBuffer = new char[(int)ps + 1];
-                
-                if (nullptr != lpBuffer)
-                {
-                    objFileRead.seekg(0, std::ios::beg);          //设置文件指针到文件流的头部
-                    objFileRead.read(lpBuffer, ps);
-                    
-                    const std::string astrBody = (std::string(lpBuffer)); /* CLYCodeCvt::UTF8ToANSI*///(std::string(lpBuffer));
-                    std::string astrCountry;
-                    std::string strTag(R"("ct":")");
-                    
-                    auto nPos1 = astrBody.find(strTag);
-                    
-                    if (nPos1 != astrBody.npos)
-                    {
-                        const auto nPos2 = astrBody.find("\"", nPos1 + strTag.size());
-                        
-                        if (nPos2 > nPos1)
-                        {
-                            astrCountry = astrBody.substr(nPos1 + strTag.size(), nPos2 - nPos1 - strTag.size());
-                        }
-                    }
-                    
-                    strTag = R"("ASN归属地":")";
-                    
-                    nPos1 = astrBody.find(strTag);
-                    
-                    if (nPos1 != astrBody.npos)
-                    {
-                        const auto nPos2 = astrBody.find("\"", nPos1 + strTag.size());
-                        
-                        if (nPos2 > nPos1)
-                        {
-                            std::string strRegion = astrCountry;
-                            
-                            strRegion += astrBody.substr(nPos1 + strTag.size(), nPos2 - nPos1 - strTag.size());
-                            strRegion.erase(std::remove(strRegion.begin(), strRegion.end(), ' '), strRegion.end());
-                            
-                            pPrjSettings->SetRegion(strRegion);
-                            LOG_DEBUG("%s", strRegion.c_str());
-                        }
-                    }
-                    
-                    delete[]lpBuffer;
-                }
-                
-                objFileRead.close();
-            }
-        }
-        catch (...)
-        {
-            //TRACE(_T("Fail to load the file (%s)\r\n"), static_cast<LPCSTR>(strName));
+        if (region.length > 0) {
+            CPrjSettings* pPrjSettings = GetPrjSettings();
+            pPrjSettings->SetRegion(string(region.UTF8String));
         }
         
-        //删除下载的文件
-        remove(m_IPRegionPath.c_str());
-    }
+        //获取到IP区域后再进行注册
+        Regist();
+        
+    }];
+}
+
+void CNetTransactionEngine::SetDeviceId(const char *deviceId)
+{
+    
+    m_DeviceUUID = deviceId;
+}
+
+void CNetTransactionEngine::SetAppVersion(double appVersion)
+{
+    m_AppVersion = appVersion;
 }
 
 void CNetTransactionEngine::Regist()
 {
-//    CRCClientInfo objRCClientInfo;
-//    MAC arrMac[10];
-//    UINT nBufSize = sizeof(arrMac);
-//    std::shared_ptr<IHardwareInfo> pHardwareInfo = CreateHardwareInfoObject();
-//
-//    objRCClientInfo.SetMachineCode(pHardwareInfo->GetMachineCode());
-//
-//    bool bResult = pHardwareInfo->GetRealMac(arrMac, nBufSize);
-//
-//    assert(bResult);
-//
-//    if (bResult)
-//    {
-//        U64 nMac = 0;
-//
-//        memcpy((char*)&nMac, arrMac[0].Mac, MAC_LENGTH_MAX);
-//        objRCClientInfo.SetMac(nMac);
-//
-//        // 获取本地所有的IP地址
-//        std::string strIPs;
-//        std::string strMasks;
-//        std::vector<string> lstIPs;
-//        std::vector<string> lstMask;
-//
-//        DWORD arrLocalHostIPAddr[10] = { 0 };
-//        const size_t nIPs = GetLocalIPMask(lstIPs, lstMask, true);
-//
-//        for (size_t i = 0; i < nIPs; i++)
-//        {
-//            if (strIPs.size() > 0)
-//            {
-//                strIPs += ";";
-//                strIPs += lstIPs[i];
-//
-//                strMasks += ";";
-//                strMasks += lstMask[i];
-//            }
-//            else
-//            {
-//                strIPs = lstIPs[i];
-//                strMasks = lstMask[i];
-//            }
-//        }
-//
-//        objRCClientInfo.SetIPs(strIPs);
-//        objRCClientInfo.SetIPMasks(strMasks);
-//
-//        unsigned int nAuthMethodMask = 0;
-//        CPrjSettings* pPrjSettings = GetPrjSettings();
-//
-//        CHECK_POINTER(pPrjSettings);
-//
-//        if (pPrjSettings->GetEnableCtrl())
-//        {
-//            nAuthMethodMask = RCP::CRCClientInfo::AT_MANUAL;
-//        }
-//
-//        if (pPrjSettings->GetEnableTmpPwd())
-//        {
-//            nAuthMethodMask |= RCP::CRCClientInfo::AT_TMP_PWD;
-//        }
-//
-//        if (pPrjSettings->GetEnableFixPwd())
-//        {
-//            nAuthMethodMask |= RCP::CRCClientInfo::AT_FIX_PWD;
-//        }
-//
-//        objRCClientInfo.SetAuthMethodMask(nAuthMethodMask);
-//        objRCClientInfo.SetPwd(pPrjSettings->GetPwd());
-//        objRCClientInfo.SetTmpPwd(pPrjSettings->GetTmpPwd());
-//        objRCClientInfo.SetDeviceID(std::atoll(pPrjSettings->GetDeviceID().c_str()));
-//        objRCClientInfo.SetRouteIPs(pPrjSettings->GetRouteIPsAsString());
-//        objRCClientInfo.SetProtocolVer(RCP::PV_FIRST);
-//        objRCClientInfo.SetRFBPort1(U16(pPrjSettings->GetRFBPort()));
-//        objRCClientInfo.SetRFBPort2(U16(pPrjSettings->GetRFBPort()));
-//        objRCClientInfo.SetNickName(pPrjSettings->GetNickName());
-////        objRCClientInfo.SetAppVer(GetVersionAsNum());
-//        objRCClientInfo.SetRegion(pPrjSettings->GetRegion());
-//
-//        bResult = m_pRCSvrProxy->Regist(objRCClientInfo);
-//
-//        LOG_DEBUG("%s", (bResult ? ("Send regist request successfully!") : ("Fail to send regist request!")));
-//    }
-//    else
-//    {
-//        LOG_DEBUG("Fail to get mac address!");
-//    }
+    RCP::CRCClientInfo objRCClientInfo;
+    
+    unsigned int nAuthMethodMask = 0;
+    CPrjSettings* pPrjSettings = GetPrjSettings();
+    
+    CHECK_POINTER(pPrjSettings);
+    
+    //手动认证，不需要密码
+    if (pPrjSettings->GetEnableCtrl())
+    {
+        nAuthMethodMask = RCP::CRCClientInfo::AT_MANUAL;
+    }
+    
+    //临时密码认证
+    if (pPrjSettings->GetEnableTmpPwd())
+    {
+        nAuthMethodMask |= RCP::CRCClientInfo::AT_TMP_PWD;
+    }
+    
+    //密码认证
+    if (pPrjSettings->GetEnableFixPwd())
+    {
+        nAuthMethodMask |= RCP::CRCClientInfo::AT_FIX_PWD;
+    }
+    
+    objRCClientInfo.SetMachineCode(m_DeviceUUID);
+    objRCClientInfo.SetAuthMethodMask(RCP::CRCClientInfo::AT_MANUAL);
+    objRCClientInfo.SetPwd(pPrjSettings->GetPwd());
+    objRCClientInfo.SetTmpPwd(pPrjSettings->GetTmpPwd());
+    objRCClientInfo.SetProtocolVer(RCP::PV_FIRST);
+    objRCClientInfo.SetRFBPort1(U16(pPrjSettings->GetRFBPort()));
+    objRCClientInfo.SetRFBPort2(U16(pPrjSettings->GetRFBPort()));
+    objRCClientInfo.SetNickName(pPrjSettings->GetNickName());
+    objRCClientInfo.SetAppVer(m_AppVersion);
+    objRCClientInfo.SetRegion(pPrjSettings->GetRegion());
+    objRCClientInfo.SetDeviceType(RCP::RDT_MOBILE_IOS);
+
+    bool bResult = m_pRCSvrProxy->Regist(objRCClientInfo);
+    
+    if (bResult) {
+        LOG_DEBUG("Regist successful~");
+    }else
+    {
+        LOG_ERROR("Regist failred~");
+    }
+
 }
 
 bool CNetTransactionEngine::UnRegist(const unsigned int msgId)
@@ -260,6 +135,54 @@ bool CNetTransactionEngine::UnRegist(const unsigned int msgId)
 }
 
 
+void CNetTransactionEngine::OnRegistResponse(CDataPacket* pDataPacket)
+{
+    COMMON_RESPONSE* pRequest = (COMMON_RESPONSE*)pDataPacket->GetHeaderPtr();
+
+    if ((pDataPacket->GetPacketFlag() & OR_SUCCESS) == OR_SUCCESS)
+    {
+        string strDeviceID;
+        const U64 nDeviceID = ntohq(pRequest->nStatusCode);
+        
+        CMessageBus& refMessageBus = GetLocalMessageBus();
+        
+        //发送一个自定义的消息到本地的消息总线
+        refMessageBus.SendReq<void, const uint64_t>(DEVICE_REGIST, std::forward <const uint64_t>(nDeviceID));
+                
+        CPrjSettings* pPrjSettings = GetPrjSettings();
+        pPrjSettings->SetDeviceID(to_string(nDeviceID));
+
+        LOG_ERROR("OnRegistResponse: OR_SUCCESS");
+        
+//        strDeviceID.Format(_T("%I64u"), nDeviceID);
+        
+//        if (strDeviceID.GetLength() == int(DEVICE_ID_LEN))
+//        {
+//            CPrjSettings* pPrjSettings = GetPrjSettings();
+//
+//            CHECK_POINTER(pPrjSettings);
+//            pPrjSettings->SetDeviceID((LPCSTR)CT2A(strDeviceID));
+//            LOG_ERROR("Local Device ID = %I64u", nDeviceID);
+//            SetRegistedStatus(RCP::ES_SUCCESS);
+//        }
+//        else
+//        {
+//            // 如果返回了错误的注册码，重新注册一下
+//            // 这是一个补救的方法，关键还是要找到原因
+//            Regist();
+//            SetRegistedStatus(RCP::ES_INVALID_ACCOUNT);
+//        }
+    }
+    else
+    {
+//        SetRegistedStatus((unsigned int)NTOHQ(pRequest->nStatusCode));
+        LOG_ERROR("OnRegistResponse: OR_FAILURE");
+    }
+
+}
+
+
+
 void CNetTransactionEngine::OnReceivedRCPacket(CDataPacket *pPacket)
 {
     LOG_DEBUG("Received a packet~");
@@ -272,12 +195,10 @@ void CNetTransactionEngine::OnReceivedRCPacket(CDataPacket *pPacket)
             
         case RCP::MT_PUBLIC_IP_REQUEST:
             QueryIPRegion(pPacket);
-            Regist();
             break;
             
         case RCP::MT_REGIST_CLIENT:
-//            SetConnectionStatus(CS_CONNECTED);
-//            OnRegistResponse(pPacket);
+            OnRegistResponse(pPacket);
             break;
             
         default:
@@ -308,7 +229,7 @@ void CNetTransactionEngine::InitLogWithPath(const char *path)
     
     CLoggerHelper::Instance()->Open(path);
     
-#ifdef _DEBUG
+#ifdef DEBUG
     CLoggerHelper::Instance()->SetLevel(CLogger::LEVEL_ALL);
 #else
     CLoggerHelper::Instance()->SetLevel((CLogger::LEVEL_TYPE)pPrjSettings->GetLogLevel());
@@ -363,7 +284,7 @@ bool CNetTransactionEngine::StartConnect()
                 if (ret)
                 {
                     RegisterMessageBus();
-                    LOG_ERROR("Connect successful!");
+                    LOG_DEBUG("Connect successful!");
                 }else
                 {
                     LOG_ERROR("Connect failred!");

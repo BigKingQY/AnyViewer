@@ -92,7 +92,7 @@ public:
 
     /// @brief 通用的事件
     virtual bool OnEventHandle(PTR_NET_ENDPOINT_INTERFACE, SEVERITY_LEVEL /*nSeverity*/, SERVICE_EVENT /*nEvent*/) { return true; }
-
+    
     /// @brief 会话对象关闭事件
     virtual bool OnCloseEventHandle(PTR_NET_ENDPOINT_INTERFACE) { return true; }
 };

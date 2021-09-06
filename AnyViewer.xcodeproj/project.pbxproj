@@ -13,7 +13,7 @@
 		066A172726D39FED0058085F /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 066A172626D39FED0058085F /* main.m */; };
 		066A173126D3A0AE0058085F /* AMTabBarViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 066A173026D3A0AE0058085F /* AMTabBarViewController.m */; };
 		066A173826D3A12C0058085F /* AMDeviceViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 066A173726D3A12C0058085F /* AMDeviceViewController.m */; };
-		066A173B26D3A14B0058085F /* AMConnectViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 066A173A26D3A14B0058085F /* AMConnectViewController.m */; };
+		066A173B26D3A14B0058085F /* AMConnectViewController.mm in Sources */ = {isa = PBXBuildFile; fileRef = 066A173A26D3A14B0058085F /* AMConnectViewController.mm */; };
 		066A173E26D3A1560058085F /* AMSettingViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 066A173D26D3A1560058085F /* AMSettingViewController.m */; };
 		066A183D26D3A3FA0058085F /* UIImageView+BKAdd.m in Sources */ = {isa = PBXBuildFile; fileRef = 066A180226D3A3FA0058085F /* UIImageView+BKAdd.m */; };
 		066A183E26D3A3FA0058085F /* UIView+ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 066A180326D3A3FA0058085F /* UIView+ViewController.m */; };
@@ -67,6 +67,9 @@
 		1823C34B26E0BC1B00B0FBDD /* RCServerProxy.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1823C34A26E0BC1B00B0FBDD /* RCServerProxy.mm */; };
 		1823C35126E0CFB800B0FBDD /* CPrjSettings.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1823C35026E0CFB800B0FBDD /* CPrjSettings.mm */; };
 		1823C35426E0D61000B0FBDD /* CJsonHelper.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1823C35326E0D61000B0FBDD /* CJsonHelper.mm */; };
+		185C7DEA26E5A1BE008F4E4C /* BKIPRegionTool.m in Sources */ = {isa = PBXBuildFile; fileRef = 185C7DE926E5A1BE008F4E4C /* BKIPRegionTool.m */; };
+		185C7DEC26E5AE8C008F4E4C /* AdSupport.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 185C7DEB26E5AE8C008F4E4C /* AdSupport.framework */; };
+		185C7DF026E5F538008F4E4C /* LocalMessageBus.mm in Sources */ = {isa = PBXBuildFile; fileRef = 185C7DEF26E5F538008F4E4C /* LocalMessageBus.mm */; };
 		1873CF2326E1B60000598361 /* GlobeFunction.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1873CF2226E1B60000598361 /* GlobeFunction.mm */; };
 		1873CF2626E1C44400598361 /* HttpFileDownloader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1873CF2426E1C44400598361 /* HttpFileDownloader.cpp */; };
 		1873CF2E26E1F48700598361 /* CAIMTime.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1873CF2D26E1F48700598361 /* CAIMTime.mm */; };
@@ -95,8 +98,8 @@
 		066A173026D3A0AE0058085F /* AMTabBarViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AMTabBarViewController.m; sourceTree = "<group>"; };
 		066A173626D3A12C0058085F /* AMDeviceViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AMDeviceViewController.h; sourceTree = "<group>"; };
 		066A173726D3A12C0058085F /* AMDeviceViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AMDeviceViewController.m; sourceTree = "<group>"; };
-		066A173926D3A14B0058085F /* AMConnectViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AMConnectViewController.h; sourceTree = "<group>"; };
-		066A173A26D3A14B0058085F /* AMConnectViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AMConnectViewController.m; sourceTree = "<group>"; };
+		066A173926D3A14B0058085F /* AMConnectViewController.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = AMConnectViewController.h; sourceTree = "<group>"; };
+		066A173A26D3A14B0058085F /* AMConnectViewController.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = AMConnectViewController.mm; sourceTree = "<group>"; };
 		066A173C26D3A1560058085F /* AMSettingViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AMSettingViewController.h; sourceTree = "<group>"; };
 		066A173D26D3A1560058085F /* AMSettingViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AMSettingViewController.m; sourceTree = "<group>"; };
 		066A17FE26D3A3FA0058085F /* UIFont+BKAdd.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "UIFont+BKAdd.h"; sourceTree = "<group>"; };
@@ -218,12 +221,12 @@
 		1823C33626E0B0AD00B0FBDD /* ConsoleProxy.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = ConsoleProxy.mm; sourceTree = "<group>"; };
 		1823C33726E0B0AD00B0FBDD /* SDPFactory.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SDPFactory.h; sourceTree = "<group>"; };
 		1823C33826E0B0AD00B0FBDD /* LYCodeCvt.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LYCodeCvt.h; sourceTree = "<group>"; };
-		1823C33926E0B0AD00B0FBDD /* ConsoleProxy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ConsoleProxy.h; sourceTree = "<group>"; };
+		1823C33926E0B0AD00B0FBDD /* ConsoleProxy.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; path = ConsoleProxy.h; sourceTree = "<group>"; };
 		1823C33A26E0B0AE00B0FBDD /* MessageBusManager.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = MessageBusManager.mm; sourceTree = "<group>"; };
 		1823C33B26E0B0AE00B0FBDD /* LYCodeCvt.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = LYCodeCvt.mm; sourceTree = "<group>"; };
 		1823C33C26E0B0AE00B0FBDD /* RCProtocol.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = RCProtocol.mm; sourceTree = "<group>"; };
 		1823C33D26E0B0AE00B0FBDD /* JsonSerializer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = JsonSerializer.h; sourceTree = "<group>"; };
-		1823C33E26E0B0AE00B0FBDD /* SDPFunctionTraits.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SDPFunctionTraits.h; sourceTree = "<group>"; };
+		1823C33E26E0B0AE00B0FBDD /* SDPFunctionTraits.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; path = SDPFunctionTraits.h; sourceTree = "<group>"; };
 		1823C33F26E0B0AE00B0FBDD /* MessageBusManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MessageBusManager.h; sourceTree = "<group>"; };
 		1823C34026E0B0AE00B0FBDD /* SDPSingleton.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SDPSingleton.h; sourceTree = "<group>"; };
 		1823C34126E0B0AE00B0FBDD /* SDPMessageBus.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SDPMessageBus.h; sourceTree = "<group>"; };
@@ -233,6 +236,12 @@
 		1823C35026E0CFB800B0FBDD /* CPrjSettings.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = CPrjSettings.mm; path = "../New Group/CPrjSettings.mm"; sourceTree = "<group>"; };
 		1823C35226E0D61000B0FBDD /* CJsonHelper.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = CJsonHelper.h; sourceTree = "<group>"; };
 		1823C35326E0D61000B0FBDD /* CJsonHelper.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = CJsonHelper.mm; sourceTree = "<group>"; };
+		185C7DE826E5A1BE008F4E4C /* BKIPRegionTool.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BKIPRegionTool.h; sourceTree = "<group>"; };
+		185C7DE926E5A1BE008F4E4C /* BKIPRegionTool.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BKIPRegionTool.m; sourceTree = "<group>"; };
+		185C7DEB26E5AE8C008F4E4C /* AdSupport.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AdSupport.framework; path = System/Library/Frameworks/AdSupport.framework; sourceTree = SDKROOT; };
+		185C7DED26E5B2DC008F4E4C /* AnyViewer.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AnyViewer.entitlements; sourceTree = "<group>"; };
+		185C7DEE26E5F538008F4E4C /* LocalMessageBus.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = LocalMessageBus.h; sourceTree = "<group>"; };
+		185C7DEF26E5F538008F4E4C /* LocalMessageBus.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = LocalMessageBus.mm; sourceTree = "<group>"; };
 		1873CF2126E1B60000598361 /* GlobeFunction.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = GlobeFunction.h; sourceTree = "<group>"; };
 		1873CF2226E1B60000598361 /* GlobeFunction.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = GlobeFunction.mm; sourceTree = "<group>"; };
 		1873CF2426E1C44400598361 /* HttpFileDownloader.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = HttpFileDownloader.cpp; sourceTree = "<group>"; };
@@ -288,6 +297,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				185C7DEC26E5AE8C008F4E4C /* AdSupport.framework in Frameworks */,
 				B77A38CCB1E25CE910A34D64 /* Pods_AnyViewer.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -316,6 +326,7 @@
 		066A171326D39FE90058085F /* AnyViewer */ = {
 			isa = PBXGroup;
 			children = (
+				185C7DED26E5B2DC008F4E4C /* AnyViewer.entitlements */,
 				066A172E26D3A0830058085F /* Login */,
 				066A172D26D3A07B0058085F /* Root */,
 				066A17FC26D3A3FA0058085F /* Support Files */,
@@ -503,6 +514,8 @@
 				06D2AE9926D60FF10092B089 /* BKFingerWaveView.m */,
 				1873CF4A26E225D900598361 /* NetworkRequest.h */,
 				1873CF4B26E225D900598361 /* NetworkRequest.m */,
+				185C7DE826E5A1BE008F4E4C /* BKIPRegionTool.h */,
+				185C7DE926E5A1BE008F4E4C /* BKIPRegionTool.m */,
 			);
 			path = Tools;
 			sourceTree = "<group>";
@@ -511,7 +524,7 @@
 			isa = PBXGroup;
 			children = (
 				066A173926D3A14B0058085F /* AMConnectViewController.h */,
-				066A173A26D3A14B0058085F /* AMConnectViewController.m */,
+				066A173A26D3A14B0058085F /* AMConnectViewController.mm */,
 			);
 			path = Controller;
 			sourceTree = "<group>";
@@ -769,6 +782,8 @@
 				18802C8626DCF582002B5742 /* AMSocketHeader.h */,
 				1878E13726DF175A00E514EA /* CNetTransactionEngine.h */,
 				1878E13826DF175A00E514EA /* CNetTransactionEngine.mm */,
+				185C7DEE26E5F538008F4E4C /* LocalMessageBus.h */,
+				185C7DEF26E5F538008F4E4C /* LocalMessageBus.mm */,
 				1873CF2B26E1C8B300598361 /* Request */,
 				1873CF2A26E1C86800598361 /* Settings */,
 				1873CF2926E1C85100598361 /* Encode */,
@@ -789,6 +804,7 @@
 		5A54F60C1753795720D82170 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				185C7DEB26E5AE8C008F4E4C /* AdSupport.framework */,
 				1873CF3626E219FA00598361 /* libboost_atomic.a */,
 				1873CF3B26E219FB00598361 /* libboost_chrono.a */,
 				1873CF3726E219FA00598361 /* libboost_date_time.a */,
@@ -939,6 +955,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				185C7DF026E5F538008F4E4C /* LocalMessageBus.mm in Sources */,
 				1823C34226E0B0AE00B0FBDD /* ConsoleProxy.mm in Sources */,
 				066A184126D3A3FA0058085F /* UIView+Frame.m in Sources */,
 				066A183F26D3A3FA0058085F /* UIScrollView+BKAdd.m in Sources */,
@@ -960,7 +977,7 @@
 				066A184F26D3A3FA0058085F /* BaseViewController.m in Sources */,
 				066A188C26D5D8970058085F /* AMDeviceListTableViewCell.m in Sources */,
 				066A184026D3A3FA0058085F /* NSObject+BKAdd.m in Sources */,
-				066A173B26D3A14B0058085F /* AMConnectViewController.m in Sources */,
+				066A173B26D3A14B0058085F /* AMConnectViewController.mm in Sources */,
 				1878E15626DF84F200E514EA /* Log.mm in Sources */,
 				1823C35426E0D61000B0FBDD /* CJsonHelper.mm in Sources */,
 				066A184E26D3A3FA0058085F /* BaseEmptyDelegator.m in Sources */,
@@ -977,6 +994,7 @@
 				066A185726D3A3FA0058085F /* BaseLabel.m in Sources */,
 				06D2AE9A26D60FF10092B089 /* BKFingerWaveView.m in Sources */,
 				066A184B26D3A3FA0058085F /* BasePageViewController.m in Sources */,
+				185C7DEA26E5A1BE008F4E4C /* BKIPRegionTool.m in Sources */,
 				06D2AE9426D5E3FE0092B089 /* AMDeviceControlView.m in Sources */,
 				1878E13D26DF2AF400E514EA /* CDataPacket.mm in Sources */,
 				066A171626D39FE90058085F /* AppDelegate.m in Sources */,
@@ -1159,6 +1177,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CODE_SIGN_ENTITLEMENTS = AnyViewer/AnyViewer.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 292V2CN6SF;
 				ENABLE_BITCODE = NO;
@@ -1298,6 +1317,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CODE_SIGN_ENTITLEMENTS = AnyViewer/AnyViewer.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 292V2CN6SF;
 				ENABLE_BITCODE = NO;

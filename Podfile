@@ -18,6 +18,7 @@ target 'AnyViewer' do
   pod 'JXCategoryView', '~>1.5.7'
   pod 'WZLBadge'
   pod 'GKNavigationBar', '~> 1.4.3'
+  pod 'SAMKeychain'
   
   #C语言的库
   pod 'rapidjson', '~> 1.1.0'

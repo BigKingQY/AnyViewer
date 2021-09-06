@@ -29,6 +29,7 @@ PODS:
   - OpenSSL-Universal (1.1.1100)
   - rapidjson (1.1.0)
   - ReactiveObjC (3.0.0)
+  - SAMKeychain (1.5.3)
   - SDWebImage (5.10.4):
     - SDWebImage/Core (= 5.10.4)
   - SDWebImage/Core (5.10.4)
@@ -52,6 +53,7 @@ DEPENDENCIES:
   - OpenSSL-Universal (~> 1.1.1100)
   - rapidjson (~> 1.1.0)
   - ReactiveObjC (~> 3.0.0)
+  - SAMKeychain
   - SDWebImage (~> 5.10.2)
   - TZImagePickerController (~> 3.5.2)
   - WZLBadge
@@ -72,6 +74,7 @@ SPEC REPOS:
     - OpenSSL-Universal
     - rapidjson
     - ReactiveObjC
+    - SAMKeychain
     - SDWebImage
     - TZImagePickerController
     - WZLBadge
@@ -91,12 +94,13 @@ SPEC CHECKSUMS:
   OpenSSL-Universal: ebc357f1e6bc71fa463ccb2fe676756aff50e88c
   rapidjson: 926ddeea70d7a0987b6d746cd9fa51f165467cd3
   ReactiveObjC: ce79989e8684b9086b5f8d0c74bc7b81a8729c9e
+  SAMKeychain: 483e1c9f32984d50ca961e26818a534283b4cd5c
   SDWebImage: c666b97e1fa9c64b4909816a903322018f0a9c84
   TZImagePickerController: 07a2f834f4908689759a7e54f74e9a018e047cb6
   WZLBadge: 9ec779dcfd94c825518b395e8315fccaabff1bfa
   YYKit: 7cda43304a8dc3696c449041e2cb3107b4e236e7
   ZJCurl: e49491f4226f1b436179089fff6ed7efa7adba70
 
-PODFILE CHECKSUM: ce7dd44c3e43e659c3fc2f6914b78ed396077fcd
+PODFILE CHECKSUM: 09c50e4d3b9d68d7ad4479d17b10d935eeedea87
 
 COCOAPODS: 1.10.2

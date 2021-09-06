@@ -11,6 +11,9 @@
 #import <AFNetworking.h>
 #import <IQKeyboardManager.h>
 #include "CNetTransactionEngine.h"
+#import <AdSupport/AdSupport.h>
+#import <SAMKeychain.h>
+#import "LocalMessageBus.h"
 
 @interface AppDelegate ()
 
@@ -65,21 +68,48 @@
 
 - (void)configSocketConnect {
     
-    
-    NSError *error;
-    NSString *html = [NSString stringWithContentsOfURL:[NSURL URLWithString:@"https://ip138.com/iplookup.asp?ip=118.113.100.39&action=2"] encoding:NSUnicodeStringEncoding error:&error];
-    
-    NSData *data = [NSData dataWithContentsOfURL:[NSURL URLWithString:@"https://ip138.com/iplookup.asp?ip=118.113.100.39&action=2"]];
-    
-
     //初始化日志
     CNetTransactionEngine::Instance()->InitLogWithPath(kLogPath);
 
     //初始化IP查询文件下载路径
     CNetTransactionEngine::Instance()->SetIPRegionPath(kIPRegionPath);
     
+    //初始化APP版本
+    CNetTransactionEngine::Instance()->SetAppVersion([kAppVersion doubleValue]);
+    
+    //设置设备唯一ID
+    CNetTransactionEngine::Instance()->SetDeviceId([self getDeviceUUID].UTF8String);
+    
+    LocalMessageBusManager::Instance()->RegistMessageBus();
+    
     //连接控制服务器
     CNetTransactionEngine::Instance()->StartConnect();
+    
+    [self getDeviceUUID];
+    
+}
+
+
+- (NSString *)getDeviceUUID {
+        
+    //从keychain中获取设备ID
+    NSString *deviceId = [SAMKeychain passwordForService:kServiceName account:kAccountName];
+    
+    if (!deviceId || deviceId.length == 0) {
+        //生成唯一的标识符，并存储到Keychain中
+        NSString *uuid = (NSString*)CFBridgingRelease(CFUUIDCreateString(kCFAllocatorDefault, CFUUIDCreate(kCFAllocatorDefault)));
+        //去掉中横线
+        uuid = [uuid stringByReplacingOccurrencesOfString:@"-" withString:@""];
+        //将生成的ID保存到keychain中
+        [SAMKeychain setPassword:uuid forService:kServiceName account:kAccountName];
+        
+        //赋值
+        deviceId = uuid;
+    }
+    
+    NSLog(@"设备ID：%@", deviceId);
+    
+    return deviceId;
 }
 
 @end

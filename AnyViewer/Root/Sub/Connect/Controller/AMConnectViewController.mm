@@ -9,7 +9,10 @@
 #import "AMRemoteDeviceInputView.h"
 #import "AMSafeCodeAlertViewController.h"
 #import "AMDeviceControlViewController.h"
+#include "LocalMessageBus.h"
+#include <string>
 
+using namespace std;
 
 @interface AMConnectViewController ()
 
@@ -24,6 +27,9 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+    
+    
+    RegisterMessageBus();
     
     [self addNotification];
     [self configUISet];
@@ -117,7 +123,39 @@
 
 //MARK: NotificationCenter - 通知中心
 
-- (void)addNotification {}
+
+
+void OnRegistResponse(const uint64_t devieId)
+{
+    printf("%llu", devieId);
+}
+
+void RegisterMessageBus()
+{
+//    CMessageBus& refMessageBus = GetLocalMessageBus();
+//
+//
+//    unsigned int msgId = refMessageBus.Register(DEVICE_REGIST, OnRegistResponse);
+    
+    
+
+}
+
+- (void)addNotification {
+    
+    
+    
+    
+//    LocalMessageBus& refMessageBus = GetLocalMessageBus();
+//    unsigned int msgId = refMessageBus.Register(LMBS_RECEIVED_RC_PACKET,
+//                                                [this](CDataPacket* pPacket)
+//                                                {  OnReceivedRCPacket(pPacket); });
+    
+}
+
+
+
+
 
 //MARK: Setter
 

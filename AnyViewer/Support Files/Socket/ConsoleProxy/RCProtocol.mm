@@ -17,6 +17,7 @@ namespace RCP
         REGISTER_CLASS(CAuthenticationRequest)
         REGISTER_CLASS(CReadyConnRequest)
         REGISTER_CLASS(CNewRelayTaskRequest)
+        REGISTER_CLASS(CDeviceStatusInfo)
 
         const STATUS_CODE_DESC StatusCodeDescItem[] =
     {
@@ -130,42 +131,44 @@ namespace RCP
     {
         CSerializeEntry::Serialize(refJsonSerializer);
 
-        refJsonSerializer.Serialize("m11", m_strIPs);
-        refJsonSerializer.Serialize("m12", m_strIPMasks);
+//        refJsonSerializer.Serialize("m11", m_strIPs);
+//        refJsonSerializer.Serialize("m12", m_strIPMasks);
         refJsonSerializer.Serialize("m13", m_strMachineCode);
         refJsonSerializer.Serialize("m14", m_nMac);
         refJsonSerializer.Serialize("m15", m_nAuthMethodMask);
         refJsonSerializer.Serialize("m16", m_strPwd);
         refJsonSerializer.Serialize("m17", m_strTmpPwd);
         refJsonSerializer.Serialize("m18", m_nDeviceID);
-        refJsonSerializer.Serialize("m19", m_strRouteIPs);
+//        refJsonSerializer.Serialize("m19", m_strRouteIPs);
         refJsonSerializer.Serialize("m20", m_nProtocolVer);
         refJsonSerializer.Serialize("m21", m_nRFBPort1);
         refJsonSerializer.Serialize("m22", m_nRFBPort2);
         refJsonSerializer.Serialize("m23", m_strNickName);
         refJsonSerializer.Serialize("m24", m_nAppVer);
         refJsonSerializer.Serialize("m25", m_strRegion);
+        refJsonSerializer.Serialize("m26", m_nDeviceType);
     }
 
     void CRCClientInfo::DeSerialize(CJSONSerializer& refJsonSerializer)
     {
         CSerializeEntry::DeSerialize(refJsonSerializer);
 
-        refJsonSerializer.DeSerialize("m11", m_strIPs);
-        refJsonSerializer.DeSerialize("m12", m_strIPMasks);
+//        refJsonSerializer.DeSerialize("m11", m_strIPs);
+//        refJsonSerializer.DeSerialize("m12", m_strIPMasks);
         refJsonSerializer.DeSerialize("m13", m_strMachineCode);
         refJsonSerializer.DeSerialize("m14", m_nMac);
         refJsonSerializer.DeSerialize("m15", m_nAuthMethodMask);
         refJsonSerializer.DeSerialize("m16", m_strPwd);
         refJsonSerializer.DeSerialize("m17", m_strTmpPwd);
         refJsonSerializer.DeSerialize("m18", m_nDeviceID);
-        refJsonSerializer.DeSerialize("m19", m_strRouteIPs);
+//        refJsonSerializer.DeSerialize("m19", m_strRouteIPs);
         refJsonSerializer.DeSerialize("m20", m_nProtocolVer);
         refJsonSerializer.DeSerialize("m21", m_nRFBPort1);
         refJsonSerializer.DeSerialize("m22", m_nRFBPort2);
         refJsonSerializer.DeSerialize("m23", m_strNickName);
         refJsonSerializer.DeSerialize("m24", m_nAppVer);
         refJsonSerializer.DeSerialize("m25", m_strRegion);
+        refJsonSerializer.DeSerialize("m26", m_nDeviceType);
     }
 
     /*--------------------------------CConnectionRequest----------------------------------------*/
@@ -258,5 +261,23 @@ namespace RCP
         refJsonSerializer.DeSerialize("m13", m_nDstID);
         refJsonSerializer.DeSerialize("m14", m_nRelaySvrID);
     }
-}
 
+    /*--------------------------------CDeviceStatusInfo----------------------------------------*/
+    void CDeviceStatusInfo::Serialize(CJSONSerializer& refJsonSerializer) const
+    {
+        CSerializeEntry::Serialize(refJsonSerializer);
+
+        refJsonSerializer.Serialize("m11", m_nConnectionStatus);
+        refJsonSerializer.Serialize("m12", m_nRegistedStatus);
+        refJsonSerializer.Serialize("m13", m_strDeviceID);
+    }
+
+    void CDeviceStatusInfo::DeSerialize(CJSONSerializer& refJsonSerializer)
+    {
+        CSerializeEntry::DeSerialize(refJsonSerializer);
+
+        refJsonSerializer.DeSerialize("m11", m_nConnectionStatus);
+        refJsonSerializer.DeSerialize("m12", m_nRegistedStatus);
+        refJsonSerializer.DeSerialize("m13", m_strDeviceID);
+    }
+}

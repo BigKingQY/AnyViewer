@@ -234,7 +234,7 @@ public:
 
     virtual bool OnCloseEventHandle(PTR_NET_ENDPOINT_INTERFACE pConversationClosed)
     {
-//        assert(pConversationClosed);
+        assert(pConversationClosed);
 //        if (nullptr != pConversationClosed)
 //        {
 //            CNetIPDataTransferPtr pNetDataTransfer = pConversationClosed->GetTransfer();
@@ -263,23 +263,23 @@ public:
 protected:
     virtual void ConnectTimeout(int nFd, unsigned int nIp, unsigned int nPort)
     {
-//        auto it = m_mapAliveEndpoints.find(nFd);
-//
-//        if (m_mapAliveEndpoints.end() != it)
-//        {
-//            PTR_ENDPOINT ptrEndpoint = it->second;
-//
-//            if (ptrEndpoint)
-//            {
-//                CNetIPDataTransferPtr pNetDataTransfer = ptrEndpoint->GetTransfer();
-//
-//                if (nIp == pNetDataTransfer->GetIP() && nPort == pNetDataTransfer->GetPort())
-//                {
-//                    OnCloseEventHandle(ptrEndpoint);
-////                    LOG_DEBUG("client fd[%d] timeout, it,s will be closed!", nFd);
-//                }
-//            }
-//        }
+        auto it = m_mapAliveEndpoints.find(nFd);
+
+        if (m_mapAliveEndpoints.end() != it)
+        {
+            PTR_ENDPOINT ptrEndpoint = it->second;
+
+            if (ptrEndpoint)
+            {
+                CNetIPDataTransferPtr pNetDataTransfer = ptrEndpoint->GetTransfer();
+
+                if (nIp == pNetDataTransfer->GetIP() && nPort == pNetDataTransfer->GetPort())
+                {
+                    OnCloseEventHandle(ptrEndpoint);
+//                    LOG_DEBUG("client fd[%d] timeout, it,s will be closed!", nFd);
+                }
+            }
+        }
     }
 
 private:
@@ -309,65 +309,6 @@ private:
 
         return nResult;
     }
-
-
-private:
-    //--------------------------------------------------------------------------------------------------------------------
-    //函数名称： CNetServiceImpl::OnNewConnectionRequest
-    /// @brief  捕捉客户端的连接请求
-    ///
-    /// @param  nSocketFD ->socket标识
-    /// @param  objPeerAdd ->socket标识
-    /// @author 黄丽云
-    //--------------------------------------------------------------------------------------------------------------------
-//    void OnNewConnectionRequest(int nSocketFD, struct sockaddr_in& objPeerAdd)
-//    {
-//        PTR_ENDPOINT pEndpoint = CreateEndpoint();
-//        if (pEndpoint != nullptr)
-//        {
-//            pEndpoint->Initial(nSocketFD);
-//            pEndpoint->SetClient(false);
-//            //pEndpoint->SetStatus(RS_ESTABLISH);
-//
-//            CTimerPtr pTimer = pEndpoint->GetTimer();
-//            unsigned int nIp = NTOHL(objPeerAdd.sin_addr.s_addr);
-//            U16 nPort = NTOHS(objPeerAdd.sin_port);
-//
-//            pTimer->Initialize(
-//                std::bind(&CNetServiceImpl<EndpointT>::ConnectTimeout, this, nSocketFD, nIp, nPort)
-//                , m_nKeepAliveTimeout * 1000
-//                , CTimer::TT_ONCE);
-//
-//            m_pTimerWhell->CreateTimer(pTimer);
-//
-//            CNetIPDataTransferPtr pNetDataTransfer = pEndpoint->GetTransfer();
-//
-//            if (pNetDataTransfer)
-//            {
-//                pNetDataTransfer->SetIP(nIp);
-//                pNetDataTransfer->SetPort(nPort);
-//            }
-//
-//            {
-//                std::lock_guard<std::recursive_mutex> objAutoLock(m_objEndpointMutex);
-//                m_mapAliveEndpoints[nSocketFD] = pEndpoint;
-//                LOG_DEBUG("new connect(%s:%d) fd=%d current aliveEndpoints=%d"
-//                    , inet_ntoa(objPeerAdd.sin_addr)
-//                    , nPort
-//                    , nSocketFD
-//                    , m_mapAliveEndpoints.size());
-//            }
-//
-//            const int  nSockBufSize = 64*1024;
-//
-//            setsockopt(nSocketFD, SOL_SOCKET, SO_SNDBUF,(char *)&nSockBufSize, sizeof(nSockBufSize));
-//            SetNoblockSocket(nSocketFD);
-//            EpollAddFD(nSocketFD, EPOLLIN | EPOLLPRI | EPOLLET | EPOLLERR | EPOLLONESHOT);
-//            OnNewConversationEventHandle(pEndpoint);
-//        }
-//    }
-
-
 
 
 
@@ -637,6 +578,8 @@ public:
     {
         return m_objEndpoint->Send(pPacket);
     }
+    
+    virtual bool OnEventHandle(PTR_NET_ENDPOINT_INTERFACE pEndpoint, SEVERITY_LEVEL nSeverity, SERVICE_EVENT nEvent) override { return true; }
 
 public:
     //--------------------------------------------------------------------------------------------------------------------
