@@ -28,42 +28,42 @@ namespace RCP
 #define FILE_NAME_LEN_MAX 255
 #define TRANSACTION_STATUS_MSG_LEN_MAX 200   ///<  ¬ŒÒ◊¥Ã¨œ˚œ¢µƒ◊Ó¥Û≥§∂»
 
-    /// ¥ÌŒÛ¿‡–Õ√∂æŸ
+/// 错误类型枚举
     ///
-    /// ŒÂ∞Ÿ“‘«∞µƒ¥ÌŒÛ∂®Œª—œ÷ÿ¥ÌŒÛ£¨¡¨Ω”Ω´∂œø™
+    /// 五百以前的错误定位严重错误，连接将断开
     enum EXCEPTION_STATUS
     {
-        // ”√ªßµ«¬ºœ‡πÿ
+        // 用户登录相关
         ES_SUCCESS = 0,
-        ES_INVALID_ACCOUNT = 1,     ///< √∂æŸ£¨’À∫≈≤ª¥Ê‘⁄
-        ES_CREATE_ACCOUNT_FAILED = 2,  ///<¥¥Ω®’À∫≈ ß∞‹
-        ES_INVALID_NAME = 3,         ///< √∂æŸ£¨Œﬁ–ßµƒ√˚≥∆
-        ES_EXIST_NAME = 4,             ///< √∂æŸ£¨√˚≥∆“—æ≠¥Ê‘⁄
-        ES_INVALID_PASSWD = 5,         ///< √∂æŸ£¨√‹¬Î¥ÌŒÛ
-        ES_REPEAT_LOGIN = 6,         ///< √∂æŸ£¨÷ÿ∏¥µ«¬º
-        ES_TIME_OUT = 7,             ///< √∂æŸ£¨≥¨ ±
-        ES_NOT_LOGGED_IN = 8,        ///< √∂æŸ£¨Œ¥µ«¬º
-        ES_OPEN_FILE_UNSUCCESSFULLY = 12,      ///< √∂æŸ£¨¥Úø™Œƒº˛ ß∞‹
-        ES_SERVICE_ERR = 13,          ///<∑˛ŒÒ∆˜¥ÌŒÛ
-        ES_INVALID_SN = 14,           ///<Œﬁ–ßº§ªÓ¬Î
-        ES_REACH_AUTHORIZATION_LIMIT = 15,          ///<  ⁄»® ˝“—æ≠¬˙,Œﬁ∑®‘⁄º§ªÓ
+        ES_INVALID_ACCOUNT = 1,     ///< 枚举，账号不存在
+        ES_CREATE_ACCOUNT_FAILED = 2,  ///<创建账号失败
+        ES_INVALID_NAME = 3,         ///< 枚举，无效的名称
+        ES_EXIST_NAME = 4,             ///< 枚举，名称已经存在
+        ES_INVALID_PASSWD = 5,         ///< 枚举，密码错误
+        ES_REPEAT_LOGIN = 6,         ///< 枚举，重复登录
+        ES_TIME_OUT = 7,             ///< 枚举，超时
+        ES_NOT_LOGGED_IN = 8,        ///< 枚举，未登录
+        ES_OPEN_FILE_UNSUCCESSFULLY = 12,      ///< 枚举，打开文件失败
+        ES_SERVICE_ERR = 13,          ///<服务器错误
+        ES_INVALID_SN = 14,           ///<无效激活码
+        ES_REACH_AUTHORIZATION_LIMIT = 15,          ///< 授权数已经满,无法在激活
         ES_SEND_FAILED = 16,
-        ES_DB_ERROR = 17,        ///< √∂æŸ£¨ ˝æ›ø‚¥ÌŒÛ
-        ES_CREATE_CUSTORM_UNSUCCESSFULLY = 23,  ///< √∂æŸ£¨¥¥Ω®øÕªß∂À–≈œ¢ ß∞‹
-        ES_NOT_FOUND_CUSTORM = 24,              ///< √∂æŸ£¨√ª”–’“µΩøÕªß–≈œ¢
-        ES_CUSTORM_OFFLINE = 25,                ///< √∂æŸ£¨øÕªß≤ª‘⁄œﬂ
-        ES_PROHIBITION_CONTROL = 26,            ///< √∂æŸ£¨…Ë±∏Ω˚÷π±ªøÿ÷∆
-        ES_NEED_PWD_AUTH = 27,                  ///< √∂æŸ£¨–Ë“™√‹¬Î»œ÷§
-        ES_SELECT_AUTH_METHOD = 28,             ///< √∂æŸ£¨—°‘Ò»œ÷§∑Ω Ω
-        ES_REJECT_CTRL_REQUEST = 29,            ///< √∂æŸ£¨æ‹æ¯øÿ÷∆«Î«Û
-        ES_SRC_DEVICE_FROZEN = 30,              ///< √∂æŸ£¨‘¥…Ë±∏±ª∂≥Ω·
-        ES_DST_DEVICE_FROZEN = 31,              ///< √∂æŸ£¨ƒø±Í…Ë±∏±ª∂≥Ω·
-        ES_READY_CONN_UNSUCCESSFULLY = 32,      ///< √∂æŸ£¨◊º±∏¡¨Ω” ß∞‹
-        ES_INVALID_CTRL_SESSION_CONTEXT = 33,   ///< √∂æŸ£¨Œﬁ–ßµƒøÿ÷∆ª·ª∞…œœ¬Œƒ
-        ES_INVALID_RELAING_SERVER = 34,         ///< √∂æŸ£¨’“≤ªµΩ”––ßµƒ÷–◊™∑˛ŒÒ∆˜
-        ES_SEND_READY_CONN_REQUEST_UNSUCCESSFULLY = 35,        ///< √∂æŸ£¨∑¢ÀÕ◊º±∏¡¨Ω”«Î«ÛµΩ±ªøÿ÷∆∂À ß∞‹
-        ES_TOO_LOW_APP_VERISON = 36,            ///< √∂æŸ£¨Ã´µÕµƒAPP∞Ê±æ«Î…˝º∂
-        ES_UNKNOWN_ERR,                         ///< √∂æŸ£¨Œ¥÷™µƒ¥ÌŒÛ
+        ES_DB_ERROR = 17,        ///< 枚举，数据库错误
+        ES_CREATE_CUSTORM_UNSUCCESSFULLY = 23,  ///< 枚举，创建客户端信息失败
+        ES_NOT_FOUND_CUSTORM = 24,              ///< 枚举，没有找到客户信息
+        ES_CUSTORM_OFFLINE = 25,                ///< 枚举，客户不在线
+        ES_PROHIBITION_CONTROL = 26,            ///< 枚举，设备禁止被控制
+        ES_NEED_PWD_AUTH = 27,                  ///< 枚举，需要密码认证
+        ES_SELECT_AUTH_METHOD = 28,             ///< 枚举，选择认证方式
+        ES_REJECT_CTRL_REQUEST = 29,            ///< 枚举，拒绝控制请求
+        ES_SRC_DEVICE_FROZEN = 30,              ///< 枚举，源设备被冻结
+        ES_DST_DEVICE_FROZEN = 31,              ///< 枚举，目标设备被冻结
+        ES_READY_CONN_UNSUCCESSFULLY = 32,      ///< 枚举，准备连接失败
+        ES_INVALID_CTRL_SESSION_CONTEXT = 33,   ///< 枚举，无效的控制会话上下文
+        ES_INVALID_RELAING_SERVER = 34,         ///< 枚举，找不到有效的中转服务器
+        ES_SEND_READY_CONN_REQUEST_UNSUCCESSFULLY = 35,        ///< 枚举，发送准备连接请求到被控制端失败
+        ES_TOO_LOW_APP_VERISON = 36,            ///< 枚举，太低的APP版本请升级
+        ES_UNKNOWN_ERR,                         ///< 枚举，未知的错误
     };
 
     struct STATUS_CODE_DESC

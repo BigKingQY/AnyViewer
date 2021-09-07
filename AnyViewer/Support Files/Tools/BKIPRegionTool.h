@@ -15,9 +15,12 @@ typedef void(^CompleteBlock)(NSString *region);
 
 + (BKIPRegionTool *)shared;
 
+- (instancetype)init NS_UNAVAILABLE;
+
++ (instancetype)new NS_UNAVAILABLE;
 
 /// 根据IP获取区域
-/// @param ip IP
+/// @param publicIP IP
 /// @param complete 完成后的回调，返回区域内容
 - (void)getRegionWithPublicIP:(NSString *)publicIP complete:(CompleteBlock)complete;
 

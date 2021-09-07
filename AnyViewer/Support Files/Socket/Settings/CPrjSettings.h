@@ -150,19 +150,19 @@ public:
     std::string GetLanguageTag();
 public:
     //< ‘ˆº”¿˙ ∑ªÔ∞Èº«¬º
-//    void AppendHistoryPartner(CHistoryPartnerPtr pHistoryPartner);
+    void AppendHistoryPartner(CHistoryPartnerPtr pHistoryPartner);
 
     // ≤È’“¿˙ ∑ªÔ∞È
-//    CHistoryPartnerPtr LookupHistoryPartner(const std::string& refDeviceID) const;
+    CHistoryPartnerPtr LookupHistoryPartner(const std::string& refDeviceID) const;
 
     // µ√µΩ¿˙ ∑ªÔ∞È¡–±Ì
-//    const CHistoryPartnerArray& GetHistoryPartner() const;
+    const CHistoryPartnerArray& GetHistoryPartner() const;
 
     // «Â≥˝À˘”–µƒ¿˙ ∑ª·ª∞º«¬º
-//    void ClearAllHistoryPartner();
+    void ClearAllHistoryPartner();
 
     // «Â≥˝À˘”–µƒ¿˙ ∑ª·ª∞º«¬ºµƒ∞≤»´¬Î
-//    void ClearAllHistoryPartnerSecCode();
+    void ClearAllHistoryPartnerSecCode();
 public:
     // –£—È√‹¬Î «∑Ò∫œ∑®
 //    VALID_PWD_RET VerifyPwd(const std::string& refPwd) const;
@@ -320,7 +320,7 @@ private:
     DECLARE_MEMBER_AND_METHOD_V11(unsigned int, m_nScreenCapPort, ScreenCapPort, 30197);
 
     ///< ¿˙ ∑ªÔ∞Èº«¬º¡–±Ì
-//    CHistoryPartnerArray        m_arrHistoryPartners;
+    CHistoryPartnerArray        m_arrHistoryPartners;
 
     ///< ≥Ã–Ú…˝º∂–≈œ¢Œƒº˛µƒURLµÿ÷∑
     DECLARE_MEMBER_AND_GET_METHOD_V11(std::string, m_strUpdateFileUrl, UpdateFileUrl, "http://www2.aomeisoftware.com/download/rc/rcupgrade.ini");

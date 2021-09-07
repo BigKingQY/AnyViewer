@@ -20,6 +20,7 @@
 }
 
 + (void)showSuccess:(NSString *)text onView:(UIView *)view {
+    
     MBProgressHUD *hud = [self createMBProgressHUDviewWithMessage:text onView:view];
     if (!hud) {
         return;
@@ -35,6 +36,7 @@
 }
 
 + (void)showMessage:(NSString *)text onView:(UIView *)view {
+
     MBProgressHUD *hud = [self createMBProgressHUDviewWithMessage:text onView:view];
     if (!hud) {
         return;
@@ -47,10 +49,12 @@
 }
 
 + (void)hideForView:(UIView *)view {
+    
     MBProgressHUD *viewHUD = [MBProgressHUD HUDForView:view];
     if (viewHUD) {
         [viewHUD hideAnimated:YES];
     }
+    
 }
 
 + (void)showLoadingOnWindow:(NSString *)text {
@@ -66,15 +70,19 @@
 }
 
 + (void)hideForWindow {
+ 
     MBProgressHUD *windowHUD = [MBProgressHUD HUDForView:UIApplication.sharedApplication.keyWindow];
     if (windowHUD) {
         [windowHUD hideAnimated:YES];
     }
+
 }
 
 + (void)hideForViewAndWindow {
+ 
     [self hideForView:[self rootView]];
     [self hideForWindow];
+
 }
 
 + (UIView *)rootView {
@@ -90,6 +98,8 @@
     }
     
     MBProgressHUD *hud = [MBProgressHUD HUDForView:view];
+    
+    hud = [MBProgressHUD HUDForView:view];
     if (!hud) {
         hud = [MBProgressHUD showHUDAddedTo:view animated:YES];
     }
@@ -104,7 +114,7 @@
     hud.removeFromSuperViewOnHide = YES;
     hud.customView.hidden = NO;
     hud.contentColor = UIColor.whiteColor;
-    
+        
     return hud;
 }
 

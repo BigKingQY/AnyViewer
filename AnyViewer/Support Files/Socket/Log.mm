@@ -226,7 +226,7 @@ size_t CLogger::Logv(const LEVEL_TYPE nLevel, const char *fmt, va_list ap)
 
     std::string strLogMsg;
 
-    CAIMTime::GetCurTime("%Y-%m-%d %H:%M", strLogMsg);
+    CAIMTime::GetCurTime("%Y-%m-%d %H:%M:%S", strLogMsg);
     strLogMsg += " ";
     strLogMsg += GetLevelName(nLevel);
 

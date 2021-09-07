@@ -28,18 +28,23 @@
 #define DEVICE_ID_LEN 32
 
 
+/// 查询公网IP的所属区域
+/// @param packet 数据包
 void CNetTransactionEngine::QueryIPRegion(CDataPacket *packet)
 {
-    
+    //获取公网IP
     const COMMON_REQUEST* pRequestPacket = (const COMMON_REQUEST*)packet->GetHeaderPtr();
     char szBuffer[20] = { 0 };
     NSString *ipAddr = [[NSString alloc] initWithCString:FormatHostIPAddressAnsi(int(ntohq(pRequestPacket->nStatusCode)), szBuffer) encoding:NSUTF8StringEncoding];
     
     //当获取到的IP与之前的不一样或者从来没有获取过的，需要重新获取区域
-    [BKIPRegionTool.shared getRegionWithPublicIP:ipAddr complete:^(NSString * _Nonnull region) {
+    [BKIPRegionTool.shared getRegionWithPublicIP:ipAddr complete:^(NSString * _Nonnull region)
+     {
         
-        if (region.length > 0) {
+        if (region.length > 0)
+        {
             CPrjSettings* pPrjSettings = GetPrjSettings();
+            
             pPrjSettings->SetRegion(string(region.UTF8String));
         }
         
@@ -49,21 +54,11 @@ void CNetTransactionEngine::QueryIPRegion(CDataPacket *packet)
     }];
 }
 
-void CNetTransactionEngine::SetDeviceId(const char *deviceId)
-{
-    
-    m_DeviceUUID = deviceId;
-}
 
-void CNetTransactionEngine::SetAppVersion(double appVersion)
-{
-    m_AppVersion = appVersion;
-}
-
+/// 设备注册
 void CNetTransactionEngine::Regist()
 {
     RCP::CRCClientInfo objRCClientInfo;
-    
     unsigned int nAuthMethodMask = 0;
     CPrjSettings* pPrjSettings = GetPrjSettings();
     
@@ -101,21 +96,28 @@ void CNetTransactionEngine::Regist()
 
     bool bResult = m_pRCSvrProxy->Regist(objRCClientInfo);
     
-    if (bResult) {
+    if (bResult)
+    {
         LOG_DEBUG("Regist successful~");
-    }else
+    }
+    else
     {
         LOG_ERROR("Regist failred~");
     }
 
 }
 
+
+/// 消息反注册
+/// @param msgId 消息ID
 bool CNetTransactionEngine::UnRegist(const unsigned int msgId)
 {
     
-    for (int i = 0; i < m_MsgIDs.size(); i++) {
+    for (int i = 0; i < m_MsgIDs.size(); i++)
+    {
         
-        if (msgId == m_MsgIDs[i].second) {
+        if (msgId == m_MsgIDs[i].second)
+        {
             
             CMessageBus& refMessageBus = GetMessageBus();
             
@@ -135,6 +137,9 @@ bool CNetTransactionEngine::UnRegist(const unsigned int msgId)
 }
 
 
+
+/// 注册后的回复
+/// @param pDataPacket 数据包
 void CNetTransactionEngine::OnRegistResponse(CDataPacket* pDataPacket)
 {
     COMMON_RESPONSE* pRequest = (COMMON_RESPONSE*)pDataPacket->GetHeaderPtr();
@@ -147,7 +152,7 @@ void CNetTransactionEngine::OnRegistResponse(CDataPacket* pDataPacket)
         CMessageBus& refMessageBus = GetLocalMessageBus();
         
         //发送一个自定义的消息到本地的消息总线
-        refMessageBus.SendReq<void, const uint64_t>(DEVICE_REGIST, std::forward <const uint64_t>(nDeviceID));
+        refMessageBus.SendReq<void, const uint64_t>(MSG_DEVICE_REGIST, std::forward <const uint64_t>(nDeviceID));
                 
         CPrjSettings* pPrjSettings = GetPrjSettings();
         pPrjSettings->SetDeviceID(to_string(nDeviceID));
@@ -182,7 +187,115 @@ void CNetTransactionEngine::OnRegistResponse(CDataPacket* pDataPacket)
 }
 
 
+// ********************************************************************************
+/// <summary>
+/// 发送请求试图与被控制者建立连接
+/// </summary>
+/// <param name="nAuthMothed"></param>
+/// <returns></returns>
+/// <created>Andy,2020/10/26</created>
+/// <changed>Andy,2020/10/26</changed>
+// ********************************************************************************
+bool CNetTransactionEngine::ConnectControlled(const U64 deviceId)
+{
+    CPrjSettings* pPrjSettings = GetPrjSettings();
+//    CEditUI* pEditUI = static_cast<CEditUI*>(m_objPaintManager.FindControl(ID_PARTNER_ID_EDIT));
+//
+//    CHECK_POINTER_EX(pEditUI, false);
+    CHECK_POINTER_EX(pPrjSettings, false);
 
+//    const std::string strDstDeviceID(CT2A(pEditUI->GetText()));
+    const RCP::CConnectionRequest objConnRequest(
+        pPrjSettings->GetNickName().c_str()
+        , std::atoll(pPrjSettings->GetDeviceID().c_str())
+        , std::atoll(to_string(deviceId).c_str())
+        , RCP::AM_AUTO);
+
+    return m_pRCSvrProxy->ConnectRemoteClient(objConnRequest);
+}
+
+
+// ********************************************************************************
+/// <summary>
+/// 处理服务器转发来的手动应答注册应答
+/// 该函数中不能使用ShowMsgBox，它可能会阻塞线程 ，如果用户没有及时确定就会导致通信终端
+/// 因为无法发送心跳数据包
+/// </summary>
+/// <param name="pDataPacket"></param>
+/// <created>Andy,2021/3/9</created>
+/// <changed>Andy,2021/3/9</changed>
+// ********************************************************************************
+void CNetTransactionEngine::OnConnectResponse(CDataPacket* pDataPacket)
+{
+//    bool bEnableConnectButton = false;
+    RCP::COMMON_RESPONSE_EX* pRequest = (RCP::COMMON_RESPONSE_EX*)pDataPacket->GetHeaderPtr();
+    const int nStatusCode1 = NTOHL(pRequest->nStatusCode1);
+    const int nStatusCode2 = NTOHL(pRequest->nStatusCode2);
+    
+    CMessageBus& refMessageBus = GetLocalMessageBus();
+    
+    //发送一个自定义的消息到本地的消息总线
+    refMessageBus.SendReq<void, const int, const int>(MSG_CONNECT_RESPONSE, std::forward <const int>(nStatusCode1), std::forward <const int>(nStatusCode2));
+}
+
+
+void CNetTransactionEngine::SendAuthenticationRequest(const U64 deviceId, const char *secCode)
+{
+    CPrjSettings* pPrjSettings = GetPrjSettings();
+    
+    CHECK_POINTER(pPrjSettings);
+    
+    //将设备ID转换成string
+    string m_strDstDeviceID = to_string(deviceId);
+    
+    //初始化请求
+    RCP::CAuthenticationRequest objRequest = RCP::CAuthenticationRequest(deviceId, secCode);
+    U32 nStatusCode1 = 0;
+    U32 nStatusCode2 = 0;
+    
+    //发送一个同步请求，并记录目标设备ID到本地
+    const bool bResult = m_pRCSvrProxy->SyncAuthenticate(objRequest, nStatusCode1, nStatusCode2);
+    CHistoryPartnerPtr pHistoryPartner = pPrjSettings->LookupHistoryPartner(m_strDstDeviceID);
+    
+    
+    if (bResult)
+    {
+        if (pPrjSettings->GetSaveSecCode())
+        {
+            if (nullptr == pHistoryPartner)
+            {
+                pHistoryPartner = std::make_shared<CHistoryPartner>(m_strDstDeviceID);
+                pPrjSettings->AppendHistoryPartner(pHistoryPartner);
+            }
+            
+            if (nullptr != pHistoryPartner)
+            {
+                pHistoryPartner->SetPwd(std::string(secCode));
+            }
+            
+        }
+    }
+    else
+    {
+        if (nullptr != pHistoryPartner)
+        {
+            pHistoryPartner->SetPwd("");
+        }
+        
+        
+        CMessageBus& refMessageBus = GetLocalMessageBus();
+        
+        //发送一个自定义的消息到本地的消息总线
+        refMessageBus.SendReq<void, const int, const int>(MSG_CONNECT_RESPONSE, std::forward <const int>(nStatusCode1), std::forward <const int>(nStatusCode2));
+
+    }
+    
+}
+
+
+
+/// 收到数据包后自动调用
+/// @param pPacket 数据包
 void CNetTransactionEngine::OnReceivedRCPacket(CDataPacket *pPacket)
 {
     LOG_DEBUG("Received a packet~");
@@ -201,12 +314,22 @@ void CNetTransactionEngine::OnReceivedRCPacket(CDataPacket *pPacket)
             OnRegistResponse(pPacket);
             break;
             
+        case RCP::MT_CONNECT:
+            OnConnectResponse(pPacket);
+            break;
+        case RCP::MT_AUTHENTICATE:
+            //收到同步认证请求的回复，同步不需要处理，异步才需要
+            LOG_DEBUG("Recive Authenticate packet");
+            break;
+            
         default:
             break;
             
     }
 }
 
+
+/// 注册消息到消息总线
 void CNetTransactionEngine::RegisterMessageBus()
 {
     CMessageBus& refMessageBus = GetMessageBus();
@@ -220,7 +343,9 @@ void CNetTransactionEngine::RegisterMessageBus()
 
 
 
-void CNetTransactionEngine::InitLogWithPath(const char *path)
+/// 初始化日志的存储路径
+/// @param path 路径
+void CNetTransactionEngine::InitLogFilePath(const char *path)
 {
     // 打开日志文件
     LOG_DEBUG("日志存储路径：%s", path);
@@ -237,17 +362,16 @@ void CNetTransactionEngine::InitLogWithPath(const char *path)
 }
 
 
-void CNetTransactionEngine::SetIPRegionPath(const char *path)
+void CNetTransactionEngine::InitSettingFilePath(const char *path)
 {
-    if (nullptr == path) {
-        LOG_ERROR("File path is error, check it");
-        return;
-    }
-        
-    m_IPRegionPath = string(path);
+    SetPrjSettingPath(string(path));
+    
+    CPrjSettings* pPrjSettings = GetPrjSettings();
+    
+    pPrjSettings->Load(m_PrjSettingPath);
 }
 
-
+/// 开始连接控制服务器
 bool CNetTransactionEngine::StartConnect()
 {
     
@@ -307,3 +431,9 @@ bool CNetTransactionEngine::StartConnect()
 
 
 
+
+/// 通过模板实现单例
+CNetTransactionEngine* GetTransactionInstance()
+{
+    return CGlobleSingleton<CNetTransactionEngine>::Instance();
+}

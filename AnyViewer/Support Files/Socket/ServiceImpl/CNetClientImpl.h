@@ -579,7 +579,7 @@ public:
         return m_objEndpoint->Send(pPacket);
     }
     
-    virtual bool OnEventHandle(PTR_NET_ENDPOINT_INTERFACE pEndpoint, SEVERITY_LEVEL nSeverity, SERVICE_EVENT nEvent) override { return true; }
+    virtual bool OnEventHandle(PTR_NET_ENDPOINT_INTERFACE pEndpoint, SEVERITY_LEVEL nSeverity, SERVICE_EVENT nEvent) override { return true; };
 
 public:
     //--------------------------------------------------------------------------------------------------------------------

@@ -68,22 +68,23 @@
 
 - (void)configSocketConnect {
     
-    //初始化日志
-    CNetTransactionEngine::Instance()->InitLogWithPath(kLogPath);
-
-    //初始化IP查询文件下载路径
-    CNetTransactionEngine::Instance()->SetIPRegionPath(kIPRegionPath);
+    //初始化日志的存储路径
+    GetTransactionInstance()->InitLogFilePath(kLogPath);
+    
+    //初始化设置的存储路径
+    GetTransactionInstance()->InitSettingFilePath(kPrjSettingPath);
     
     //初始化APP版本
-    CNetTransactionEngine::Instance()->SetAppVersion([kAppVersion doubleValue]);
+    GetTransactionInstance()->SetAppVersion([kAppVersion doubleValue]);
     
     //设置设备唯一ID
-    CNetTransactionEngine::Instance()->SetDeviceId([self getDeviceUUID].UTF8String);
+    GetTransactionInstance()->SetDeviceUUID([self getDeviceUUID].UTF8String);
     
-    LocalMessageBusManager::Instance()->RegistMessageBus();
+    //调用消息注册函数，用来和OC数据交互
+    GetLocalMessageBusInstance()->RegistMessageBus();
     
     //连接控制服务器
-    CNetTransactionEngine::Instance()->StartConnect();
+    GetTransactionInstance()->StartConnect();
     
     [self getDeviceUUID];
     

@@ -487,6 +487,7 @@ public:
                                 || NEDPR_JUST_A_PACKET == nExtractPacketResult)
                             {
                                 m_pNetEndpointEventSink->OnReceivedPacketEventHandle(shared_from_this(), (CNetPacket*)m_ptrPacket.get());
+                                ActivateWaitingTask((CNetPacket*)m_ptrPacket.get());
                                 m_ptrPacket->ResetContent();
                             }
                         } while (NEDPR_MORE_PACKETS == nExtractPacketResult);

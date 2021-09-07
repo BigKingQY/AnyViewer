@@ -413,16 +413,16 @@ std::string CPrjSettings::GetLanguageTag()
 /// <created>Andy,2021/2/3</created>
 /// <changed>Andy,2021/2/3</changed>
 // ********************************************************************************
-//void CPrjSettings::AppendHistoryPartner(CHistoryPartnerPtr pHistoryPartner)
-//{
-//    CHECK_POINTER(pHistoryPartner);
-//
-//    {
-//        std::lock_guard<std::recursive_mutex> objLocker(m_objMutex);
-//
-//        m_arrHistoryPartners.push_back(pHistoryPartner);
-//    }
-//}
+void CPrjSettings::AppendHistoryPartner(CHistoryPartnerPtr pHistoryPartner)
+{
+    CHECK_POINTER(pHistoryPartner);
+
+    {
+        std::lock_guard<std::recursive_mutex> objLocker(m_objMutex);
+
+        m_arrHistoryPartners.push_back(pHistoryPartner);
+    }
+}
 
 // ********************************************************************************
 /// <summary>
@@ -433,22 +433,22 @@ std::string CPrjSettings::GetLanguageTag()
 /// <created>Andy,2021/2/3</created>
 /// <changed>Andy,2021/2/3</changed>
 // ********************************************************************************
-//CHistoryPartnerPtr CPrjSettings::LookupHistoryPartner(const std::string& refDeviceID) const
-//{
-//    std::lock_guard<std::recursive_mutex> objLocker(m_objMutex);
-//    CHistoryPartnerPtr pResult = nullptr;
-//
-//    for (auto pPartner : m_arrHistoryPartners)
-//    {
-//        if (pPartner->GetDeviceID() == refDeviceID)
-//        {
-//            pResult = pPartner;
-//            break;
-//        }
-//    }
-//
-//    return pResult;
-//}
+CHistoryPartnerPtr CPrjSettings::LookupHistoryPartner(const std::string& refDeviceID) const
+{
+    std::lock_guard<std::recursive_mutex> objLocker(m_objMutex);
+    CHistoryPartnerPtr pResult = nullptr;
+
+    for (auto pPartner : m_arrHistoryPartners)
+    {
+        if (pPartner->GetDeviceID() == refDeviceID)
+        {
+            pResult = pPartner;
+            break;
+        }
+    }
+
+    return pResult;
+}
 
 // ********************************************************************************
 /// <summary>
@@ -458,12 +458,12 @@ std::string CPrjSettings::GetLanguageTag()
 /// <created>Andy,2021/2/3</created>
 /// <changed>Andy,2021/2/3</changed>
 // ********************************************************************************
-//const CHistoryPartnerArray& CPrjSettings::GetHistoryPartner() const
-//{
-//    std::lock_guard<std::recursive_mutex> objLocker(m_objMutex);
-//
-//    return m_arrHistoryPartners;
-//}
+const CHistoryPartnerArray& CPrjSettings::GetHistoryPartner() const
+{
+    std::lock_guard<std::recursive_mutex> objLocker(m_objMutex);
+
+    return m_arrHistoryPartners;
+}
 
 // ********************************************************************************
 /// <summary>
@@ -472,12 +472,12 @@ std::string CPrjSettings::GetLanguageTag()
 /// <created>Andy,2021/2/3</created>
 /// <changed>Andy,2021/2/3</changed>
 // ********************************************************************************
-//void CPrjSettings::ClearAllHistoryPartner()
-//{
-//    std::lock_guard<std::recursive_mutex> objLocker(m_objMutex);
-//
-//    m_arrHistoryPartners.clear();
-//}
+void CPrjSettings::ClearAllHistoryPartner()
+{
+    std::lock_guard<std::recursive_mutex> objLocker(m_objMutex);
+
+    m_arrHistoryPartners.clear();
+}
 
 // ********************************************************************************
 /// <summary>
@@ -486,15 +486,15 @@ std::string CPrjSettings::GetLanguageTag()
 /// <created>Andy,2021/7/21</created>
 /// <changed>Andy,2021/7/21</changed>
 // ********************************************************************************
-//void CPrjSettings::ClearAllHistoryPartnerSecCode()
-//{
-//    std::lock_guard<std::recursive_mutex> objLocker(m_objMutex);
-//
-//    for (auto pPartner : m_arrHistoryPartners)
-//    {
-//        pPartner->SetPwd("");
-//    }
-//}
+void CPrjSettings::ClearAllHistoryPartnerSecCode()
+{
+    std::lock_guard<std::recursive_mutex> objLocker(m_objMutex);
+
+    for (auto pPartner : m_arrHistoryPartners)
+    {
+        pPartner->SetPwd("");
+    }
+}
 
 // ********************************************************************************
 /// <summary>
@@ -656,7 +656,7 @@ void CPrjSettings::Serialize(CJSONSerializer& refJsonSerializer) const
     refJsonSerializer.Serialize("m15", m_arrRouteIPs);
     refJsonSerializer.Serialize("m16", m_nConsolePort);
     refJsonSerializer.Serialize("m17", m_nScreenCapPort);
-//    refJsonSerializer.Serialize("m18", m_arrHistoryPartners);
+    refJsonSerializer.Serialize("m18", m_arrHistoryPartners);
 
 
     refJsonSerializer.Serialize("m23", m_nPollingInterval);
@@ -701,9 +701,9 @@ void CPrjSettings::DeSerialize(CJSONSerializer & refJsonSerializer)
     refJsonSerializer.DeSerialize("m16", m_nConsolePort);
     refJsonSerializer.DeSerialize("m17", m_nScreenCapPort);
 
-    //refJsonSerializer.DeSerialize("m14", m_bAnalyzedNetEnv);
+    refJsonSerializer.DeSerialize("m14", m_bAnalyzedNetEnv);
     refJsonSerializer.DeSerialize("m15", m_arrRouteIPs);
-//    refJsonSerializer.DeSerialize("m18", m_arrHistoryPartners);
+    refJsonSerializer.DeSerialize("m18", m_arrHistoryPartners);
 
     refJsonSerializer.DeSerialize("m23", m_nPollingInterval);
     refJsonSerializer.DeSerialize("m24", m_strUpdateFileUrl);
@@ -790,7 +790,7 @@ void CPrjSettings::DefaultSettings()
     m_strTmpPwd.clear();
     //m_bEnableFixPwd = false;
     m_strPwd.clear();
-    //m_strNickName = "";
+    m_strNickName = "";
     m_nImageQuality = IQT_IMAGE_QUALITY_PRIORITY;
     m_bAutoStart = true;
     //m_nLanguage = LT_ENGLISH;    ///<
@@ -833,7 +833,7 @@ void CPrjSettings::Reconver(CPrjSettings& refSrc)
     m_nPollingInterval = refSrc.m_nPollingInterval;
     m_bGrabTransparentWindowsFlag = refSrc.m_bGrabTransparentWindowsFlag;
     m_bMirrorDriverAllowed = refSrc.m_bMirrorDriverAllowed;
-    //m_bD3DAllowed = refSrc.m_bD3DAllowed;
+    m_bD3DAllowed = refSrc.m_bD3DAllowed;
     m_bBlockRemoteInput = refSrc.m_bBlockRemoteInput;
     m_nDisconnectAction = refSrc.m_nDisconnectAction;
     m_bAlwaysShared = refSrc.m_bAlwaysShared;
@@ -841,7 +841,7 @@ void CPrjSettings::Reconver(CPrjSettings& refSrc)
     m_bDisconnectClients = refSrc.m_bDisconnectClients;
     m_bCtrlAltDelEnabled = refSrc.m_bCtrlAltDelEnabled;
 
-//    refSrc.m_arrHistoryPartners.MoveTo(m_arrHistoryPartners);
+    refSrc.m_arrHistoryPartners.MoveTo(m_arrHistoryPartners);
 
     m_bShared = refSrc.m_bShared;
     m_nFirstTimeUse = refSrc.m_nFirstTimeUse;

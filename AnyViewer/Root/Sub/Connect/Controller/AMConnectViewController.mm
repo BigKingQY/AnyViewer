@@ -7,17 +7,22 @@
 
 #import "AMConnectViewController.h"
 #import "AMRemoteDeviceInputView.h"
-#import "AMSafeCodeAlertViewController.h"
+#import "AMSafeCodeAlertView.h"
 #import "AMDeviceControlViewController.h"
+#import "BKMessageManager.h"
+
 #include "LocalMessageBus.h"
+#include "CNetTransactionEngine.h"
 #include <string>
 
 using namespace std;
 
-@interface AMConnectViewController ()
+@interface AMConnectViewController () <BKMessageManagerDelegate>
 
 @property (nonatomic, strong) UILabel *titleLabel;
 @property (nonatomic, strong) AMRemoteDeviceInputView *deviceView;
+@property (nonatomic, strong) AMSafeCodeAlertView *codeView;
+
 
 @end
 
@@ -28,10 +33,7 @@ using namespace std;
 - (void)viewDidLoad {
     [super viewDidLoad];
     
-    
-    RegisterMessageBus();
-    
-    [self addNotification];
+    [self addDelegate];
     [self configUISet];
     [self loadData];
     [self addActions];
@@ -65,54 +67,142 @@ using namespace std;
 
 //MARK: Delegate && DataSource - 代理
 
+//BKMessageManagerDelegate
+
+/// 注册后的回复，返回自己的设备ID
+/// @param deviceId 设备ID
+- (void)onRegistResponse:(const u_int64_t)deviceId {
+    NSLog(@"我的设备ID：%llu", deviceId);
+}
+
+
+/// 发送连接请求后的回调，返回两个状态码
+/// @param status 状态码
+/// @param otherStatus 其他状态码，可能没有
+- (void)onConnectResponse:(const int)status otherStatus:(const int)otherStatus {
+    
+    run_main_queue(^{
+       
+        switch (status)
+        {
+                
+            case ES_SELECT_AUTH_METHOD: //选择认证方式
+                
+                break;
+                
+            case ES_NEED_PWD_AUTH:  //需要密码认证
+                [self showPasswordAlert];
+                break;
+                
+            case ES_NOT_FOUND_CUSTORM:  //没有找到客户信息
+            case ES_CUSTORM_OFFLINE:    //客户不在线
+                
+                [MBProgressHUD showMessage:@"当前用户不存在或未在线" onView:self.view];
+                break;
+                
+            case ES_PROHIBITION_CONTROL:    //设备禁止被控制
+                
+                [MBProgressHUD showMessage:@"目标设备禁止被控制，暂时无法连接" onView:self.view];
+                break;
+                
+            case ES_REJECT_CTRL_REQUEST:    //拒绝控制请求
+                
+                [MBProgressHUD showMessage:@"对方拒绝了你的请求" onView:self.view];
+                break;
+                
+            case ES_SRC_DEVICE_FROZEN:  //源设备被冻结
+                
+                [MBProgressHUD showMessage:@"当前设备已被冻结，暂时无法使用" onView:self.view];
+                break;
+                
+            case ES_DST_DEVICE_FROZEN:  //目标设备被冻结
+                
+                [MBProgressHUD showMessage:@"目标设备已被冻结，暂时无法使用" onView:self.view];
+                break;
+                
+            case ES_SUCCESS:    //连接成功
+                
+                
+                [self handleConnectSuccess];
+                break;
+                
+            default:    //其他错误处理
+                
+                [MBProgressHUD showMessage:@"连接失败，请稍后再试" onView:self.view];
+                break;
+        }
+        
+    });
+        
+}
+
+- (void)handleConnectSuccess {
+    
+    [MBProgressHUD showSuccess:@"连接成功" onView:self.view];
+    
+    [self.codeView hide];
+}
+
+- (void)showPasswordAlert {
+        
+    run_main_queue(^{
+        
+        [MBProgressHUD hideForView:self.view];
+        
+        //弹出需要输入的安全码弹框
+        [self.codeView showViewWithDeviceId:self.deviceView.deviceId nickName:@"KYO"];
+        
+        
+    });
+    
+    //测试账号：941309969， 123qwe
+}
+
+
+//跳转控制页面
+- (void)showControlViewController {
+    
+    AMDeviceControlViewController *controller = [AMDeviceControlViewController new];
+    [self.navigationController pushViewController:controller animated:YES];
+}
+
+
 //MARK: EventResponse - 事件处理
 
 - (void)addActions {
     
+    //连接按钮点击事件
     [[self.deviceView.connButton rac_signalForControlEvents:UIControlEventTouchUpInside] subscribeNext:^(__kindof UIControl * _Nullable x) {
-       
-        
-        
-        
-        
-//        m_pVNCTCPServer = std::make_shared<CVNCDataTCPServer>(this, INADDR_ANY, USHORT(pPrjSettings->GetRFBPort()));
-//
-//        if (nullptr != m_pVNCTCPServer)
-//        {
-//            bool bResult = m_pVNCTCPServer->Initial();
-//
-//            if (bResult)
-//            {
-//                bResult = m_pVNCTCPServer->Start();
-//            }
-//
-//            LOG_INFO("Start VNC TCP data server (port:%d) %s!", pPrjSettings->GetRFBPort() + 1, bResult ? "successfully" : "unsuccessfully");
-//        }
-//
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        return;
+               
+
         if (self.deviceView.deviceId.length == 0) {
             [MBProgressHUD showMessage:@"请输入连接码" onView:self.view];
             return;
         }
         
-        //弹出需要输入的安全码弹框
-        AMSafeCodeAlertViewController *controller = [AMSafeCodeAlertViewController new];
-        [self bk_customFadedPresentViewController:controller cornerRadius:20 animated:YES autoDismiss:NO];
-        controller.callback = ^(NSString * _Nonnull safeCode) {
-            AMDeviceControlViewController *controller = [AMDeviceControlViewController new];
-            [self.navigationController pushViewController:controller animated:YES];
-        };
+        [MBProgressHUD showLoading:@"正在连接..." onView:self.view];
+        
+        U64 deviceId = [[self.deviceView.deviceId stringByReplacingOccurrencesOfString:@" " withString:@""] unsignedLongLongValue];
+        
+        GetTransactionInstance()->ConnectControlled(deviceId);
+
+    }];
+    
+    
+    //输入安全码确定点击事件
+    [[self.codeView.doneButton rac_signalForControlEvents:UIControlEventTouchUpInside] subscribeNext:^(__kindof UIControl * _Nullable x) {
+                    
+        const U64 deviceId = [[self.deviceView.deviceId stringByReplacingOccurrencesOfString:@" " withString:@""] unsignedLongLongValue];
+        
+        NSString *code = self.codeView.textField.text;
+        
+        if (code.length == 0) {
+            [MBProgressHUD showMessage:@"请输入安全码" onView:self.view];
+            return;
+        }
+        
+        GetTransactionInstance()->SendAuthenticationRequest(deviceId, code.UTF8String);
+        
     }];
     
 }
@@ -124,33 +214,9 @@ using namespace std;
 //MARK: NotificationCenter - 通知中心
 
 
-
-void OnRegistResponse(const uint64_t devieId)
-{
-    printf("%llu", devieId);
-}
-
-void RegisterMessageBus()
-{
-//    CMessageBus& refMessageBus = GetLocalMessageBus();
-//
-//
-//    unsigned int msgId = refMessageBus.Register(DEVICE_REGIST, OnRegistResponse);
+- (void)addDelegate {
     
-    
-
-}
-
-- (void)addNotification {
-    
-    
-    
-    
-//    LocalMessageBus& refMessageBus = GetLocalMessageBus();
-//    unsigned int msgId = refMessageBus.Register(LMBS_RECEIVED_RC_PACKET,
-//                                                [this](CDataPacket* pPacket)
-//                                                {  OnReceivedRCPacket(pPacket); });
-    
+    BKMessageManager.shared.delegate = self;
 }
 
 
@@ -176,6 +242,13 @@ void RegisterMessageBus()
         _deviceView = [AMRemoteDeviceInputView new];
     }
     return _deviceView;
+}
+
+- (AMSafeCodeAlertView *)codeView {
+    if (!_codeView) {
+        _codeView = [[AMSafeCodeAlertView alloc] initWithFrame:CGRectMake(0, 0, kScreenWidth, kScreenHeight)];
+    }
+    return _codeView;
 }
 
 @end
