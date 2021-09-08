@@ -23,8 +23,8 @@ target 'AnyViewer' do
   #C语言的库
   pod 'rapidjson', '~> 1.1.0'
   pod 'OpenSSL-Universal', '~> 1.1.1100'
-  pod 'curly', '~> 0.8.5'
-  pod 'ZJCurl', '~> 1.0.0'
+#  pod 'curly', '~> 0.8.5'
+#  pod 'ZJCurl', '~> 1.0.0'
   
   # Pods for AnyViewer
 

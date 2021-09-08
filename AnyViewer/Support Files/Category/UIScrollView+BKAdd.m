@@ -16,22 +16,24 @@
 
 - (void)addHeaderWithTarget:(id)target action:(SEL)action{
     
-    MJRefreshGifHeader *header = [MJRefreshGifHeader headerWithRefreshingTarget:target refreshingAction:action];
+    MJRefreshNormalHeader *header = [MJRefreshNormalHeader headerWithRefreshingTarget:target refreshingAction:action];
     
-    NSMutableArray<UIImage *> *images = [NSMutableArray array];
-    for (int i = 0; i < 259; i++) {
-        UIImage *image = [UIImage imageNamed:[NSString stringWithFormat:@"%03d", i]];
-        [images addObject:image];
-    }
-    [header setImages:images.copy duration:1 forState:MJRefreshStateRefreshing];
-    [header setImages:@[images.firstObject] forState:MJRefreshStateIdle];
-    
-    header.gifView.mj_w = 75;
-    header.gifView.mj_h = 42;
-    [header layoutIfNeeded];
-    
-    header.gifView.contentMode = UIViewContentModeScaleAspectFit;
-    
+//    MJRefreshGifHeader *header = [MJRefreshGifHeader headerWithRefreshingTarget:target refreshingAction:action];
+//
+//    NSMutableArray<UIImage *> *images = [NSMutableArray array];
+//    for (int i = 0; i < 259; i++) {
+//        UIImage *image = [UIImage imageNamed:[NSString stringWithFormat:@"%03d", i]];
+//        [images addObject:image];
+//    }
+//    [header setImages:images.copy duration:1 forState:MJRefreshStateRefreshing];
+//    [header setImages:@[images.firstObject] forState:MJRefreshStateIdle];
+//
+//    header.gifView.mj_w = 75;
+//    header.gifView.mj_h = 42;
+//    [header layoutIfNeeded];
+//
+//    header.gifView.contentMode = UIViewContentModeScaleAspectFit;
+
     [header setTitle:@"" forState:MJRefreshStateIdle];
     [header setTitle:@"" forState:MJRefreshStatePulling];
     [header setTitle:@"" forState:MJRefreshStateRefreshing];

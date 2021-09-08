@@ -1,0 +1,271 @@
+/* 
+ Localizable.strings
+  AnyViewer
+
+  Created by BigKing on 2021/8/24.
+  
+*/
+
+
+//[StringTable]
+"IDS_NOT_FOUND_CUSTORM" = "您輸入的 ID 不存在。";
+"IDS_PROHIBITION_CONTROL" = "此裝置無法訪問。";
+"IDS_REQUST_TRL_TIPS" = "請求控制您的裝置。";
+"IDS_REJECT_CONTROL" = "您的控制請求被拒絕。";
+"IDS_INCORRECT_SECURITY_CODE" = "安全碼不正確，請重新輸入。";
+"IDS_SAME_AS_LOCAL_ID_TIPS" = "請不要輸入此裝置的 ID。";
+"IDS_CONNECT_TIME_OUT" = "連線超時！";
+"IDS_UNKNOWN_ERROR" = "未知錯誤！";
+"IDS_SRC_DEVICE_FORZEN_TIPS_MIN" = "多次失敗登入！請在 %d 分鐘後再試一次。";
+"IDS_SRC_DEVICE_FORZEN_TIPS_SEC" = "多次失敗的登入！請 %d 秒後重試。";
+"IDS_DST_DEVICE_FORZEN_TIPS_MIN" = "請求太多！請在 %d 分鐘後再試一次。";
+"IDS_DST_DEVICE_FORZEN_TIPS_SEC" = "請求太多！請 %d 秒後重試。";
+"IDS_SERVER_ERROR" = "伺服器錯誤";
+"IDS_SERVER_MSG" = "伺服器消息";
+"IDS_READY_CONN_UNSUCCESSFULLY" = "接受者準備連線時出錯！";
+"IDS_INVALID_CTRL_SESSION_CONTEXT" = "您的會話已過期。請重新連線！";
+"IDS_ERROR" = "錯誤";
+"IDS_NOT_FOUND_VNC_PROXY" = "找不到 VNC 代理！";
+"IDS_INVALID_RELAING_SERVER" = "未找到中繼伺服器！";
+"IDS_SEND_READY_CONN_REQUEST_UNSUCCESSFULLY" = "準備發送控制請求失敗！";
+"IDS_ESTABLISH_VNC_CONNECTION_UNSUCCESSFULLY" = "無法建立新的VNC連線！";
+"IDS_CLEAR_ALL" = "全部清除";
+"IDS_CRASH_RPT" = "崩潰報告";
+"IDS_CRASH_RPT_TIPS" = "程式遇到嚴重問題，需要關閉。您要向我們發送崩潰報告嗎？";
+"IDS_INVALID_NETWORK" = "無法連線到伺服器。請檢查您的網路。";
+"IDS_TIPE" = "提示";
+"IDS_SUBMIT_FREEDBACK_TIPS" = "已提交反饋！";
+"IDS_CUR_VER" = "當前版本:%d.%d.%d";
+"IDS_LATEST_VERSION" = "最新版本:%d.%d.%d";
+"IDS_CUR_VER1" = "當前版本:%d.%d.%d";
+"IDS_DOWNDLOAD_INSTALL_PKG_TIPS" = "正在下載 V%d.%d.%d. 請稍候……（%d%%）";
+"IDS_INVALID_EMAIL_ADDR" = "無效的電子郵件地址！";
+"IDS_TOO_LARGER_ATTACHMENT" = "附件不得超過 %d MB";
+"IDS_INFO" = "提示";
+"IDS_FEEDBACK" = "反饋";
+"IDS_SUBMIT_FREEDBACK_UNSUCCESSFULLY_TIPS" = "反饋提交失敗！請檢查您的網路。";
+"IDS_REJECT_CONTROL_BY_TIMEOUT" = "您的請求未得到答复。請稍後再試！";
+"IDS_ABNORMAL_RCSERVER_CONNECTION" = "未連線";
+"IDS_VERIFYING_TIPS" = "正在連線...";
+"IDS_END_VNC_TIPS" = "結束了遠端連接。";
+"IDS_ABNORMAL1_END_VNC_TIPS" = "無響應，遠端連接已斷開。";
+"IDS_ABNORMAL2_END_VNC_TIPS" = "無法連接到控制伺服器，遠端連接已斷開。";
+"IDS_TOO_LOW_APP_VER" = "當前版本太低，請升級。";
+"IDS_INTPUTING_IDEAS_TIPS" = "輸入您的問題或建議...";
+"IDS_UPDATE" = "更新";
+"IDS_TERMINATING_APP_TIPS" = "是否需要關閉當前程式以進行應用程式安裝？您要立即關閉嗎？";
+"IDS_DOWNLOAD" = "下載";
+"IDS_TERMINATING_SESSION_TIPS" = "此項作業需要結束遠端連線，是否繼續？";
+"IDS_DOWNLOAD_UNSUCCESSFULLY_TIPS" = "下載失敗。請檢查您的網路，然後重試或手動下載。";
+"IDS_EMPTY_PWD" = "安全碼不能為空！";
+"IDS_TOO_SHORT_PWD" = "安全碼太短！";
+"IDS_TOO_SIMPLE_PWD" = "安全碼太簡單了！";
+"IDS_WARNING" = "警告";
+"IDS_INVALID_SECURITY_CODE" = "無效的安全碼。請重新輸入！";
+"IDS_CONNECTING_RCSERVER" = "正在連線";
+"IDS_CONNECTE_RCSERVER_SUCCESSFULLY" = "準備連線";
+"IDS_INVALID_PARTNER_ID" = "輸入正確的ID";
+"IDS_REQUEST_CONTROL" = "請求控制";
+"IDS_CUSTORM_OFFLINE" = "接受者處於脫機狀態或ID不存在。";
+"IDS_REBOOT_FOR_LANGUAGE_CHANGED" = "需要重新啟動軟體才能使語言切換生效。是否要立即重新啟動？";
+"IDS_WINDOW_MODE" = "窗口模式";
+"IDS_FULL_SCREEN_MODE" = "全熒幕模式";
+"IDS_CONNECTED_CONTROLLED_SUCCESSFULLY" = "連線成功";
+"IDS_INVALID_PWD" = "安全碼有錯誤，請重新輸入:";
+"IDS_ORIGINAL_RESOLUTION" = "原始";
+"IDS_AUTO_IMG_SIZE" = "自適應";
+"IDS_SHOW_TOOLBAR" = "顯示工具欄";
+"IDS_HIDE_TOOLBAR" = "隱藏工具欄";
+"IDS_LOW_VERSION_TIPS" = "接收者版本過低，更新到最新版後才能使用此功能。";
+//[About]
+"Title" = "關於";
+"AppTitle" = "AnyViewer";
+"Edition" = "Standard";
+"Version" = "V 1.1.0";
+"Copyright" = "Copyright © 2021 AnyViewer. 版權所有";
+//[ControlledToolbar]
+"ControllerNameLable" = "名稱";
+"ControllerIDLable" = "ID";
+"EnableCtrlBtn" = "允許/拒絕鼠標和鍵盤控制";
+"StopBtn" = "停止連接";
+//[CopiedTips]
+"Title" = "已複製";
+//[CrashRptDlg]
+"Title" = "崩潰報告";
+"MsgBody" = "程式遇到了嚴重問題，需要關閉。 點選確定按鈕向我們發送錯誤日誌。";
+"CancelButton" = "取消";
+"OkButton" = "確定";
+//[DesktopCtrlMenu]
+"DesktopMenuBtn" = "作業";
+"RefreshMenuBtn" = "重新加載";
+"FullScreenBtn" = "全熒幕";
+"StopBtn" = "停止連線";
+"OrgImgSizeMenuBtn" = "原始";
+"AutoImgSizeMenuBtn" = "自適應";
+"ResolutionMenuBtn" = "分辨率";
+"ImgQualityMenuBtn" = "圖像質量";
+"MinMenuBtn" = "最小化窗口";
+//[DesktopSubmenu]
+"CtrlAltDeleteMenuBtn" = "Ctrl + Alt + Delete";
+"LockMenuBtn" = "鎖定";
+"LogOffMenuBtn" = "註銷";
+"RestartMenuBtn" = "重啟";
+"ShutDownMenuBtn" = "關閉";
+"ComputerMenuBtn" = "此電腦";
+"TaskManagerMenuBtn" = "任務管理器";
+"CMDMenuBtn" = "CMD";
+//[DesktopView]
+"WndTitle" = "AnyViewer";
+"unknown8" = "即將顯示遠端桌面";
+"unknown17" = "即將顯示遠端桌面";
+"unknown26" = "即將顯示遠端桌面";
+"unknown35" = "即將顯示遠端桌面";
+"unknown44" = "即將顯示遠端桌面";
+"unknown53" = "即將顯示遠端桌面";
+"unknown62" = "即將顯示遠端桌面";
+"unknown71" = "即將顯示遠端桌面";
+"unknown9" = "即將顯示遠端桌面";
+//[DownloadInstallPkg]
+"ProcessTipes" = "下載";
+//[FeedBack]
+"Title" = "反饋";
+"Static1" = "您想告訴我們.....";
+"OperationProblemsRadio" = "使用遇到問題";
+"ConnectionIssueRadio" = "連線失敗或連線緩慢";
+"LanguageDescIssueRadio" = "語言或描述錯誤";
+"OtherProblemsRadio" = "其他錯誤";
+"IdeasRadio" = "發送建議或鼓勵給我們";
+"IdeasEdit" = "請具體描述您的問題或建議";
+"FileLable" = "檔案";
+"Attachmentbutton" = "附件";
+"EmailEdit" = "電子郵件";
+"NameEdit" = "名稱";
+"OkBtn" = "提交";
+//[HandleConnRequest]
+"WndTitle" = "AnyViewer";
+"ControllerNameLable" = "控制器";
+"ControllerIDLable" = "（0984196）";
+"MsgLable" = "請求控制您的裝置。";
+"OkBtn" = "允許";
+"CancelBtn" = "拒絕";
+//[InputSecCodeWnd]
+"Title" = "請求控制";
+"message" = "請輸入安全碼：";
+"Of Btn" = "確認";
+"msg" = "Please enter security code:";
+"OkBtn" = "Ok";
+//[MainFram]
+"WndTitle" = "AnyViewer";
+"AcceptCtrlLable" = "接受控制";
+"LocalDevIDLable" = "裝置 ID：";
+"LocalDevIDTipeBtn" = "當裝置需要接受遠端控制時，向您的伙伴發送裝置 ID。";
+"DeviceIDLable" = "123456789";
+"CopyDeviceIDBtn" = "複製";
+"TmpSecCodeTitleLable" = "臨時安全碼：";
+"RefreshTmpSecCodeBtn" = "更改";
+"CopyTmpSecCodeBtn" = "複製";
+"SettingsBtn" = "設定";
+"RemotePCLable" = "請求控制";
+"PartnerIDLable" = "合作夥伴 ID：";
+"ParterIDTipsBtn" = "輸入接受者的 ID 來控制它。";
+"PartnerIDDropdown" = "連線記錄";
+"ConnectButton" = "連線";
+"ConnectionStatusLable" = "準備連線";
+//[MainPopupmenu]
+"SettingsMenuBtn" = "設定";
+"UpdateMenuBtn" = "更新";
+"FeedbackMenuBtn" = "反饋";
+"AboutMenuBtn" = "關於";
+"ExitMenuBtn" = "退出";
+"HelpMenuItem" = "幫助";
+"HelpCenter" = "幫助中心";
+"InvitePartnersMenuBtn" = "邀請夥伴";
+//[MsgBox]
+"Title" = "請求控制";
+"MsgBody" = "接受者處於脫機狀態或 ID 不存在。";
+"CancelButton" = "取消";
+"OkButton" = "確定";
+//[SelectAuthMothedDlg]
+"Title" = "請求控制";
+"Lable1" = "選擇控制合作夥伴裝置的方式：";
+"ManualAuthRadio" = "向您的伙伴發送控制請求";
+"PwdAuthRadio" = "輸入安全碼";
+"TipsBtn" = "當您具有接受者的安全碼（臨時安全碼）時，請選擇該選項。";
+"OkBtn" = "確定";
+//[Settings]
+"WinTitleLable" = "設定";
+"RecipientOption" = "接受者";
+"ControllerOption" = "控制者";
+"BasicOption" = "基本";
+"BarTitleLable" = "接受遠端控制";
+"EnableCtrlCheck" = "允許接受遠端控制";
+"EnableCtrlCheckTips" = "允許從其他裝置接收控制請求，並且該請求需要由我本人手動確認。";
+"EnableTmpPwdCheck" = "允許臨時安全碼";
+"EnableTmpPwdCheckTips" = "允許通過輸入臨時安全碼來控制此裝置。您可以將臨時安全碼發送給您的合作夥伴以獲取遠端支援。每次重新啟動軟體時，臨時安全碼都會更改。";
+"EnableFixPwdCheck" = "設定我的安全碼";
+"EnableFixPwdCheckTips" = "允許通過輸入安全碼隨時控制我的裝置。請妥善保管您的安全碼，不要將其透露給他人。如果意外洩漏，請及時進行更換。";
+"SecurityCodeStatic" = "安全碼：";
+"RemoteCtrlLable" = "遠端控制";
+"DisplayNameLable" = "裝置名稱";
+"DisplayNameTips" = "當您的伴侶接收到您的遠端控制任務時，將顯示該名稱。";
+"ImgQualityLable" = "圖像質量";
+"HighImageQualityItem" = "高圖像質量（預設）";
+"LowImageQualityItem" = "圖像質量低";
+"HideDesktopWallPaperCheck" = "隱藏桌面牆紙";
+"HideDeskWallpageTips" = "在遠端控制期間，隱藏桌面牆紙以使顯示更平滑。";
+"BasicSettingsLable" = "基本設定";
+"AutoStartCheck" = "在開機時運行";
+"LanguageLable" = "語言";
+"EnglishItem" = "English";
+"GermanItem" = "Deutsch";
+"FrenchItem" = "Français";
+"ItalianItem" = "Italiano";
+"SpanishItem" = "Español";
+"JapaneseItem" = "日本語";
+"ChineseItem" = "中文（简体）";
+"ChineseTWItem" = "中文（繁體）";
+"ThemeLable" = "主題：";
+"FollowSystemItem" = "跟隨系統";
+"LightModeItem" = "明亮模式";
+"DarkModeItem" = "黑暗模式";
+"ResetButton" = "全部重設";
+"OkButton" = "確定";
+"SaveSecCodeCheck" = "記住安全碼";
+"SaveSecCodeTips" = "記住已輸入的安全碼，方便下次自動連接。";
+//[UninstallFeedback]
+"Title" = "AnyViewer解除安裝嚮導";
+"BarTitle1" = "很抱歉看到你離開。";
+"Static1" = "您遇到任何問題嗎？";
+"TechnicalSupportBtn" = "技術支援";
+"BarTitle2" = "*卸載原因";
+"SlectionTipsLable" = "（至少選擇一個項目）";
+"ComplicatedUseRadio" = "使用起來太複雜了";
+"SlowSpeedRadio" = "連線速度太慢";
+"UnableConnectionRadio" = "無法建立連線";
+"UnpleasantUnterfaceRadio" = "界面設計不夠美觀";
+"ChosenAnotherProductRadio" = "我選擇了其他產品";
+"OtherReasonsRadio" = "其他原因（請描述...）";
+"IdeasEdit" = "請描述您的問題或建議...";
+"EmailEdit" = "電子郵件";
+"NameEdit" = "名稱";
+"CancelBtn" = "取消";
+"OkBtn" = "卸載";
+//[Update]
+"WinTitle" = "更新";
+"CheckingStatusLable" = "正在檢查最新版本...";
+"AppTitle" = "AnyViewer";
+"CurVerLable1" = "當前版本 1.1";
+"LatestVersion" = "最新版本：1.0";
+"IgnoretheversionButton" = "忽略此版本";
+"UpdateButton" = "更新";
+"AppTile1" = "AnyViewer";
+"CurVerLable" = "當前版本 1.1";
+"CurVerTipsLable" = "當前版本是最新的。";
+"OkButton" = "確定";
+//[BubbleMsgBox]
+"MsgLabel" = "Test";
+//[PictureQuality]
+"HighPictureQualityMenuBtn" = "高圖像質量";
+"LowPictureQualityMenuBtn" = "低圖像質量";
+"HideWallPageMenuBtn" = "隱藏桌面牆紙";
+//

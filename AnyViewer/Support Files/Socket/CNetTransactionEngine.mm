@@ -10,7 +10,6 @@
 #include "GlobeFunction.h"
 #include "MessageBusManager.h"
 #include "Log.h"
-#include "HttpFileDownloader.h"
 #include "FuncHeader.h"
 #import "BKIPRegionTool.h"
 #include "RCProtocol.h"
@@ -286,7 +285,7 @@ void CNetTransactionEngine::SendAuthenticationRequest(const U64 deviceId, const 
         CMessageBus& refMessageBus = GetLocalMessageBus();
         
         //发送一个自定义的消息到本地的消息总线
-        refMessageBus.SendReq<void, const int, const int>(MSG_CONNECT_RESPONSE, std::forward <const int>(nStatusCode1), std::forward <const int>(nStatusCode2));
+        refMessageBus.SendReq<void, const int, const int>(MSG_AUTHENTICAT_RESPONSE, std::forward <const int>(nStatusCode1), std::forward <const int>(nStatusCode2));
 
     }
     

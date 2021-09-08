@@ -14,7 +14,6 @@ PODS:
   - AFNetworking/Serialization (4.0.1)
   - AFNetworking/UIKit (4.0.1):
     - AFNetworking/NSURLSession
-  - curly (0.8.5)
   - DZNEmptyDataSet (1.8.1)
   - GKNavigationBar (1.4.3):
     - GKNavigationBar/GestureHandle (= 1.4.3)
@@ -38,11 +37,9 @@ PODS:
   - YYKit (1.0.9):
     - YYKit/no-arc (= 1.0.9)
   - YYKit/no-arc (1.0.9)
-  - ZJCurl (1.0.0)
 
 DEPENDENCIES:
   - AFNetworking (~> 4.0.1)
-  - curly (~> 0.8.5)
   - DZNEmptyDataSet (~> 1.8.1)
   - GKNavigationBar (~> 1.4.3)
   - IQKeyboardManager (~> 6.5.6)
@@ -58,12 +55,10 @@ DEPENDENCIES:
   - TZImagePickerController (~> 3.5.2)
   - WZLBadge
   - YYKit (~> 1.0.9)
-  - ZJCurl (~> 1.0.0)
 
 SPEC REPOS:
   trunk:
     - AFNetworking
-    - curly
     - DZNEmptyDataSet
     - GKNavigationBar
     - IQKeyboardManager
@@ -79,11 +74,9 @@ SPEC REPOS:
     - TZImagePickerController
     - WZLBadge
     - YYKit
-    - ZJCurl
 
 SPEC CHECKSUMS:
   AFNetworking: 7864c38297c79aaca1500c33288e429c3451fdce
-  curly: bcc55fc6a898415ea0ebbac2a1f1a24786eec455
   DZNEmptyDataSet: 9525833b9e68ac21c30253e1d3d7076cc828eaa7
   GKNavigationBar: f94a0be7ad4c6c9a33219d471905f767f9c09a53
   IQKeyboardManager: 2a6e97afdafc7becf0cb17a9a8d795e3a980717f
@@ -99,8 +92,7 @@ SPEC CHECKSUMS:
   TZImagePickerController: 07a2f834f4908689759a7e54f74e9a018e047cb6
   WZLBadge: 9ec779dcfd94c825518b395e8315fccaabff1bfa
   YYKit: 7cda43304a8dc3696c449041e2cb3107b4e236e7
-  ZJCurl: e49491f4226f1b436179089fff6ed7efa7adba70
 
-PODFILE CHECKSUM: 09c50e4d3b9d68d7ad4479d17b10d935eeedea87
+PODFILE CHECKSUM: eceaa1b3a87c63202e2bc781e009ecf3b0742e11
 
 COCOAPODS: 1.10.2

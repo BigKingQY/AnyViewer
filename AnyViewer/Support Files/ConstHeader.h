@@ -12,10 +12,11 @@
 #define ConstHeader_h
 
 //字体、图片、颜色设置
-#define BKFont(font)        [UIFont systemFontOfSize:font]
-#define BKImage(image)      [UIImage imageNamed:image]
-#define BKColor(rgb)        [UIColor colorWithRGB:rgb]
-#define BKAColor(rgb, a)    [UIColor colorWithRGB:rgb alpha:a]
+#define BKFont(font)            [UIFont systemFontOfSize:font]
+#define BKImage(image)          [UIImage imageNamed:image]
+#define BKColor(rgb)            [UIColor colorWithRGB:rgb]
+#define BKAColor(rgb, a)        [UIColor colorWithRGB:rgb alpha:a]
+#define BKLocalizedString(s)    NSLocalizedString(s, nil)
 
 // 判断是否为iPhone X 系列
 #define KIS_IPHONEX          NSObject.isIphoneX
@@ -39,6 +40,8 @@
 
 #define kServiceName @"com.aomei.anyviewer.service"
 #define kAccountName @"com.aomei.anyviewer.account"
+
+#define kKeyWindow UIApplication.sharedApplication.delegate.window
 
 //网络变化的监听通知
 static NSString *kAFNetworkReachabilityNotification = @"kAFNetworkReachabilityNotification";

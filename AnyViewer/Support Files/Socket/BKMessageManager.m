@@ -20,4 +20,12 @@ static BKMessageManager *_manager;
     return _manager;
 }
 
+- (void)setDeletegateForTarget:(id)target {
+    if (self->_delegate) {
+        self->_delegate = nil;
+    }
+    
+    self->_delegate = target;
+}
+
 @end

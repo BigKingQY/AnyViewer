@@ -6,7 +6,6 @@
 //
 
 #import "BaseTableViewCell.h"
-#import "AMDevice.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -14,7 +13,7 @@ UIKIT_EXTERN NSString *const kAMDeviceListTableViewCellId;
 
 @interface AMDeviceListTableViewCell : BaseTableViewCell
 
-@property (nonatomic, strong) AMDevice *device;
+@property (nonatomic, strong) BKUser *user;
 
 @end
 

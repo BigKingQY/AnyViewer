@@ -49,9 +49,11 @@
         [_bgView addSubview:_textField];
         
         _connButton = [BaseButton new];
-        [_connButton setTitle:@"连接" forState:UIControlStateNormal];
+        [_connButton setTitle:BKLocalizedString(@"ConnectButton") forState:UIControlStateNormal];
         _connButton.titleLabel.font = BKFont(16);
-        _connButton.backgroundColor = BKColor(0x0085ff);
+        [_connButton setBackgroundImage:[UIImage imageWithColor:BKColor(0x0085ff)] forState:UIControlStateNormal];
+        [_connButton setBackgroundImage:[UIImage imageWithColor:BKColor(0x666666)] forState:UIControlStateDisabled];
+
         _connButton.bk_cornerRadius = 8;
         [_bgView addSubview:_connButton];
         
@@ -73,6 +75,8 @@
 
 - (void)addAction {
     
+    RAC(self.connButton, enabled) =  [self.textField.rac_textSignal merge:RACObserve(self.textField, text)];
+
     [self.textField.rac_textSignal subscribeNext:^(NSString * _Nullable x) {
         
         [self formatDeviceId:x];

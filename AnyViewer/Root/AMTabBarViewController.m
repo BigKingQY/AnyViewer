@@ -32,9 +32,9 @@
                                @"AMConnectViewController",
                                @"AMSettingViewController"];
     //标题数组
-    NSArray* titleArr = @[NSLocalizedString(@"DEVICE", nil),
-                          NSLocalizedString(@"CONNECT", nil),
-                          NSLocalizedString(@"SETTING", nil)];
+    NSArray* titleArr = @[@"设备",
+                          NSLocalizedString(@"ConnectButton", nil),
+                          NSLocalizedString(@"SettingsMenuBtn", nil)];
     //图片数组
     NSArray* picArr = @[@"icon_tabBar_device",
                         @"icon_tabBar_connect",

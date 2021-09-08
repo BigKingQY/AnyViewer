@@ -36,10 +36,16 @@ private:
     
     
     /// 收到连接后的回复
-    /// @param status 状态值1
-    /// @param otherStatus 状态值2
+    /// @param status 状态1
+    /// @param otherStatus 状态2
     void OnConnectResponse(const int status, const int otherStatus);
     
+    
+    
+    /// 收到发起认证后的回复
+    /// @param status 状态1
+    /// @param otherStatus 被冻结时长，单位秒
+    void OnAuthenticatResponse(const int status, const int otherStatus);
     
 };
 
@@ -50,7 +56,10 @@ enum LOCAL_MESSAGEBUS_MSG
     MSG_DEVICE_REGIST = 1001,
     
     ///设备请求连接后的回复
-    MSG_CONNECT_RESPONSE = 1002
+    MSG_CONNECT_RESPONSE = 1002,
+    
+    ///发起认证后的回复
+    MSG_AUTHENTICAT_RESPONSE = 1003,
 };
 
 ///定义全局单例对象

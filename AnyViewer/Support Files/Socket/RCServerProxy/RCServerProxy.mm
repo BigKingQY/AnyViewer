@@ -276,11 +276,15 @@ bool CRCSvrProxy::OnEventHandle(
 
     case SE_CHECK_HEART:
     {
+        double time = m_objSendingLastTime.elapsed() * 10000;
+        
+        LOG_DEBUG("-->>time : %lf", time);
+        
         //此处需要根据系统的时钟频率来计算当前的时间差
-        if (m_objSendingLastTime.elapsed() * 10000 >= HEART_TIMEOUT)
+        if (time >= HEART_TIMEOUT)
         {
             //TRACE("send heart packet\n");
-            LOG_DEBUG("==== Send heart packet ====");
+            LOG_DEBUG("==== Send heart packet :%lf ====", time);
             SendCommonRequest(RCP::MT_HEARTBEAT);
             
         }

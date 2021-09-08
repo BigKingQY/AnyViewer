@@ -6,6 +6,273 @@
   
 */
 
-"DEVICE" = "设备";
-"CONNECT" = "连接";
-"SETTING" = "设置";
+
+//[StringTable]
+"IDS_NOT_FOUND_CUSTORM" = "您输入的 ID 不存在。";
+"IDS_PROHIBITION_CONTROL" = "该设备没有开启远程访问功能。";
+"IDS_REQUST_TRL_TIPS" = "请求控制您的设备。";
+"IDS_REJECT_CONTROL" = "您的控制请求被拒绝了。";
+"IDS_INCORRECT_SECURITY_CODE" = "安全码错误，请重新输入。";
+"IDS_SAME_AS_LOCAL_ID_TIPS" = "请勿输入此设备的 ID。";
+"IDS_CONNECT_TIME_OUT" = "连接超时！";
+"IDS_UNKNOWN_ERROR" = "发生了未知错误。";
+"IDS_SRC_DEVICE_FORZEN_TIPS_MIN" = "安全码错误次数过多！请在 %d 分钟后重试。";
+"IDS_SRC_DEVICE_FORZEN_TIPS_SEC" = "安全码错误次数过多！请在 %d 秒后重试。";
+"IDS_DST_DEVICE_FORZEN_TIPS_MIN" = "对方收到的请求数过多！请在 %d 分钟后重试。";
+"IDS_DST_DEVICE_FORZEN_TIPS_SEC" = "对方收到的请求数过多！请在 %d 秒后重试。";
+"IDS_SERVER_ERROR" = "服务器错误";
+"IDS_SERVER_MSG" = "服务器消息";
+"IDS_READY_CONN_UNSUCCESSFULLY" = "接受者在准备连接时出错！";
+"IDS_INVALID_CTRL_SESSION_CONTEXT" = "会话已失效，请重新连接！";
+"IDS_ERROR" = "错误";
+"IDS_NOT_FOUND_VNC_PROXY" = "未找到 VNC 代理！";
+"IDS_INVALID_RELAING_SERVER" = "未找到中转服务器！";
+"IDS_SEND_READY_CONN_REQUEST_UNSUCCESSFULLY" = "发送控制请求准备失败！";
+"IDS_ESTABLISH_VNC_CONNECTION_UNSUCCESSFULLY" = "无法建立新的控制连接！";
+"IDS_CLEAR_ALL" = "清空";
+"IDS_CRASH_RPT" = "崩溃报告";
+"IDS_CRASH_RPT_TIPS" = "程序遇到严重问题，即将关闭。是否将崩溃报告发送给我们？";
+"IDS_INVALID_NETWORK" = "无法连接到网络，请检查网络连接。";
+"IDS_TIPE" = "提示";
+"IDS_SUBMIT_FREEDBACK_TIPS" = "反馈提交成功！";
+"IDS_CUR_VER" = "当前版本： %d.%d.%d";
+"IDS_LATEST_VERSION" = "最新版本： %d.%d.%d";
+"IDS_CUR_VER1" = "当前版本： %d.%d.%d";
+"IDS_DOWNDLOAD_INSTALL_PKG_TIPS" = "正在下载 V%d.%d.%d，请稍等… (%d%%)";
+"IDS_INVALID_EMAIL_ADDR" = "邮件地址无效！";
+"IDS_TOO_LARGER_ATTACHMENT" = "附件请勿超过  %d MB";
+"IDS_INFO" = "提示";
+"IDS_FEEDBACK" = "反馈";
+"IDS_SUBMIT_FREEDBACK_UNSUCCESSFULLY_TIPS" = "反馈提交失败！请检查网络连接。";
+"IDS_REJECT_CONTROL_BY_TIMEOUT" = "对方无应答，请稍后再试。";
+"IDS_ABNORMAL_RCSERVER_CONNECTION" = "未连接到网络";
+"IDS_VERIFYING_TIPS" = "连接中…";
+"IDS_END_VNC_TIPS" = "结束远程连接。";
+"IDS_ABNORMAL1_END_VNC_TIPS" = "无响应，远程连接已断开。";
+"IDS_ABNORMAL2_END_VNC_TIPS" = "无法连接到控制服务器，远程连接已断开。";
+"IDS_TOO_LOW_APP_VER" = "AnyViewer 版本过低，请更新到最新版。";
+"IDS_INTPUTING_IDEAS_TIPS" = "请描述你的问题或建议...";
+"IDS_UPDATE" = "更新";
+"IDS_TERMINATING_APP_TIPS" = "安装程序需要关闭当前程序，是否立即关闭？";
+"IDS_DOWNLOAD" = "下载";
+"IDS_TERMINATING_SESSION_TIPS" = "此操作需要结束远程连接，是否继续？";
+"IDS_DOWNLOAD_UNSUCCESSFULLY_TIPS" = "下载失败。请检查网络后重试，或手动下载。";
+"IDS_EMPTY_PWD" = "安全码不能为空！";
+"IDS_TOO_SHORT_PWD" = "安全码太短了！";
+"IDS_TOO_SIMPLE_PWD" = "安全码太过简单了！";
+"IDS_WARNING" = "警告";
+"IDS_INVALID_SECURITY_CODE" = "安全码无效，请重新输入！";
+"IDS_CONNECTING_RCSERVER" = "连接中";
+"IDS_CONNECTE_RCSERVER_SUCCESSFULLY" = "准备连接";
+"IDS_INVALID_PARTNER_ID" = "请输入正确的 ID";
+"IDS_REQUEST_CONTROL" = "请求控制";
+"IDS_CUSTORM_OFFLINE" = "对方不在线，或 ID 不存在。";
+"IDS_REBOOT_FOR_LANGUAGE_CHANGED" = "修改语言需要重启软件才能生效，是否立即重启软件？";
+"IDS_WINDOW_MODE" = "窗口模式";
+"IDS_FULL_SCREEN_MODE" = "全屏模式";
+"IDS_CONNECTED_CONTROLLED_SUCCESSFULLY" = "连接成功";
+"IDS_INVALID_PWD" = "安全码有错误，请重新输入:";
+"IDS_ORIGINAL_RESOLUTION" = "原始";
+"IDS_AUTO_IMG_SIZE" = "自适应";
+"IDS_SHOW_TOOLBAR" = "显示工具栏";
+"IDS_HIDE_TOOLBAR" = "隐藏工具栏";
+"IDS_LOW_VERSION_TIPS" = "接收者版本过低，更新到最新版后才能使用此功能。";
+//[CopiedTips]
+"Title" = "已复制";
+//[CrashRptDlg]
+"Title" = "崩溃报告";
+"MsgBody" = "程序遇到了严重问题，即将关闭。点击确定按钮可以将错误日志发送给我们。";
+"CancelButton" = "取消";
+"OkButton" = "确定";
+//[DesktopCtrlMenu]
+"DesktopMenuBtn" = "操作";
+"RefreshMenuBtn" = "刷新";
+"FullScreenBtn" = "全屏模式";
+"StopBtn" = "结束连接";
+"OrgImgSizeMenuBtn" = "原始";
+"AutoImgSizeMenuBtn" = "自适应";
+"ResolutionMenuBtn" = "分辨率";
+"ImgQualityMenuBtn" = "画质";
+"MinMenuBtn" = "最小化窗口";
+//[DesktopSubmenu]
+"CtrlAltDeleteMenuBtn" = "Ctrl + Alt + Delete";
+"LockMenuBtn" = "锁定";
+"LogOffMenuBtn" = "注销";
+"RestartMenuBtn" = "重启";
+"ShutDownMenuBtn" = "关机";
+"ComputerMenuBtn" = "此电脑";
+"TaskManagerMenuBtn" = "任务管理器";
+"CMDMenuBtn" = "CMD";
+//[DesktopView]
+"WndTitle" = "AnyViewer";
+"unknown1" = "即将显示远程桌面";
+"unknown10" = "即将显示远程桌面";
+"unknown19" = "即将显示远程桌面";
+"unknown28" = "即将显示远程桌面";
+"unknown37" = "即将显示远程桌面";
+"unknown46" = "即将显示远程桌面";
+"unknown55" = "即将显示远程桌面";
+"unknown64" = "即将显示远程桌面";
+//[DownloadInstallPkg]
+"ProcessTipes" = "下载";
+//[FeedBack]
+"Title" = "反馈";
+"Static1" = "您希望告诉我们...";
+"OperationProblemsRadio" = "操作遇到了问题";
+"ConnectionIssueRadio" = "连接失败或者速度很慢";
+"LanguageDescIssueRadio" = "语言或描述错误";
+"OtherProblemsRadio" = "其他错误";
+"IdeasRadio" = "给我们建议、想法、鼓励";
+"IdeasEdit" = "请具体描述问题或建议...";
+"FileLable" = "文件";
+"Attachmentbutton" = "附件";
+"EmailEdit" = "邮箱";
+"NameEdit" = "名称";
+"OkBtn" = "提交";
+//[HandleConnRequest]
+"WndTitle" = "AnyViewer";
+"ControllerNameLable" = "控制者";
+"ControllerIDLable" = "(0984196)";
+"MsgLable" = "请求控制您的设备。";
+"OkBtn" = "同意";
+"CancelBtn" = "拒绝";
+//[InputSecCodeWnd]
+"Title" = "请求控制";
+"msg" = "请输入安全码：";
+"OkBtn" = "确定";
+//[MainFram]
+"WndTitle" = "AnyViewer";
+"AcceptCtrlLable" = "接受控制";
+"LocalDevIDLable" = "此设备 ID：";
+"LocalDevIDTipeBtn" = "需要接受远程控制时，将此设备 ID 发送给伙伴。";
+"DeviceIDLable" = "123 456 789";
+"CopyDeviceIDBtn" = "复制";
+"TmpSecCodeTitleLable" = "临时安全码：";
+"RefreshTmpSecCodeBtn" = "更换";
+"CopyTmpSecCodeBtn" = "复制";
+"SettingsBtn" = "设置";
+"RemotePCLable" = "请求控制";
+"PartnerIDLable" = "伙伴 ID：";
+"ParterIDTipsBtn" = "需要控制其他伙伴设备时，请输入对方的 ID。";
+"PartnerIDDropdown" = "连接记录";
+"ConnectButton" = "连接";
+"ConnectionStatusLable" = "准备连接";
+//[MainPopupmenu]
+"SettingsMenuBtn" = "设置";
+"UpdateMenuBtn" = "更新";
+"FeedbackMenuBtn" = "反馈";
+"AboutMenuBtn" = "关于";
+"ExitMenuBtn" = "退出";
+"HelpMenuItem" = "帮助";
+"HelpCenter" = "帮助中心";
+"InvitePartnersMenuBtn" = "邀请伙伴";
+//[MsgBox]
+"Title" = "请求控制";
+"MsgBody" = "对方不在线，或 ID 不存在。";
+"CancelButton" = "取消";
+"OkButton" = "确定";
+//[SelectAuthMothedDlg]
+"Title" = "请求控制";
+"Lable1" = "选择控制伙伴设备的方式：";
+"ManualAuthRadio" = "向伙伴发送控制请求";
+"PwdAuthRadio" = "输入安全码";
+"TipsBtn" = "如果你有对方设备的安全码（或临时安全码），可以选择此项。";
+"OkBtn" = "确定";
+//[Settings]
+"WinTitleLable" = "设置";
+"RecipientOption" = "接受者";
+"ControllerOption" = "控制者";
+"BasicOption" = "基础";
+"BarTitleLable" = "接受远程控制";
+"EnableCtrlCheck" = "允许接收控制请求";
+"EnableCtrlCheckTips" = "允许其他人向我发送控制请求，由我手动确认是否接受控制。";
+"EnableTmpPwdCheck" = "允许临时安全码";
+"EnableTmpPwdCheckTips" = "允许通过输入临时安全码，直接控制此设备。需要接受远程协助时，可以将临时安全码告你的伙伴。临时安全码会在每次重启软件时变更。";
+"EnableFixPwdCheck" = "设置我的安全码";
+"EnableFixPwdCheckTips" = "允许通过输入安全码，随时控制自己的设备。请妥善保管你的安全码，不要泄露给他人。如果不慎泄露，请及时更改。";
+"SecurityCodeStatic" = "安全码：";
+"RemoteCtrlLable" = "发起远程控制";
+"DisplayNameLable" = "设备名";
+"DisplayNameTips" = "当你向伙伴发出远程控制请求时，显示此名字。";
+"ImgQualityLable" = "图像质量";
+"HighImageQualityItem" = "高画质（默认）";
+"LowImageQualityItem" = "低画质";
+"HideDesktopWallPaperCheck" = "隐藏桌面壁纸";
+"HideDeskWallpageTips" = "远程控制过程中，隐藏桌面壁纸，以提高画面流畅度。";
+"BasicSettingsLable" = "基础设置";
+"AutoStartCheck" = "开机自动运行";
+"LanguageLable" = "语言";
+"EnglishItem" = "English";
+"GermanItem" = "Deutsch";
+"FrenchItem" = "Français";
+"ItalianItem" = "Italiano";
+"SpanishItem" = "Español";
+"JapaneseItem" = "日本語";
+"ChineseItem" = "中文（简体）";
+"ChineseTWItem" = "中文（繁體）";
+"ThemeLable" = "Theme:";
+"FollowSystemItem" = "跟随系统";
+"LightModeItem" = "明亮模式";
+"DarkModeItem" = "暗黑模式";
+"ResetButton" = "全部重置";
+"OkButton" = "确定";
+"SaveSecCodeCheck" = "记住安全码";
+"SaveSecCodeTips" = "记住已输入的安全码，方便下次自动连接。";
+//[UninstallFeedback]
+"Title" = "AnyViewer 卸载向导";
+"BarTitle1" = "很遗憾，你要离开吗？";
+"Static1" = "使用过程中是否遇到了什么问题？";
+"TechnicalSupportBtn" = "技术支持";
+"BarTitle2" = "*卸载原因";
+"SlectionTipsLable" = "（请至少选择一项）";
+"ComplicatedUseRadio" = "操作太复杂";
+"SlowSpeedRadio" = "连接速度太慢了";
+"UnableConnectionRadio" = "无法建立连接";
+"UnpleasantUnterfaceRadio" = "界面设计不够美观";
+"ChosenAnotherProductRadio" = "我选择了其他产品";
+"OtherReasonsRadio" = "其他原因（请描述...）";
+"IdeasEdit" = "请描述你的问题或建议...";
+"EmailEdit" = "邮箱";
+"NameEdit" = "名称";
+"CancelBtn" = "取消";
+"OkBtn" = "卸载";
+//[Update]
+"WinTitle" = "升级";
+"CheckingStatusLable" = "正在检查最新版本...";
+"AppTitle" = "AnyViewer";
+"CurVerLable1" = "当前版本 1.1";
+"LatestVersion" = "最新版本: 1.0";
+"IgnoretheversionButton" = "忽略此版本";
+"UpdateButton" = "升级";
+"AppTile1" = "AnyViewer";
+"CurVerLable" = "当前版本 1.1";
+"CurVerTipsLable" = "当前版本已经是最新版";
+"OkButton" = "确定";
+//[About]
+"Title" = "关于";
+"AppTitle" = "AnyViewer";
+"Edition" = "Standard";
+"Version" = "V 1.1.0";
+"Copyright" = "AnyViewer 版权所有 © 2021, 保留所有版权";
+//[ControlledToolbar]
+"ControllerNameLable" = "名称";
+"ControllerIDLable" = "ID";
+"unknown2" = "允许/拒绝鼠标键盘控制";
+"EnableCtrlBtn" = "允许/拒绝鼠标键盘控制";
+"StopBtn" = "结束连接";
+"unknown0" = "允许/拒绝鼠标键盘控制";
+"unknown9" = "允许/拒绝鼠标键盘控制";
+"unknown18" = "允许/拒绝鼠标键盘控制";
+"unknown27" = "允许/拒绝鼠标键盘控制";
+"unknown36" = "允许/拒绝鼠标键盘控制";
+"unknown45" = "允许/拒绝鼠标键盘控制";
+"unknown54" = "允许/拒绝鼠标键盘控制";
+"unknown63" = "允许/拒绝鼠标键盘控制";
+//[BubbleMsgBox]
+"MsgLabel" = "Test";
+//[PictureQuality]
+"HighPictureQualityMenuBtn" = "高画质";
+"LowPictureQualityMenuBtn" = "低画质";
+"HideWallPageMenuBtn" = "隐藏壁纸";
+//[FileTransfer]
+"WndTitle" = "文件传输";

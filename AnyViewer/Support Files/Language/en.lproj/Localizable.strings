@@ -6,6 +6,264 @@
   
 */
 
-"DEVICE" = "Device";
-"CONNECT" = "Connect";
-"SETTING" = "Setting";
+
+//[StringTable]
+"IDS_NOT_FOUND_CUSTORM" = "The ID you entered does not exist.";
+"IDS_PROHIBITION_CONTROL" = "This device is not enabled to be accessed.";
+"IDS_REQUST_TRL_TIPS" = "Request to control your device.";
+"IDS_REJECT_CONTROL" = "Your control request was denied.";
+"IDS_INCORRECT_SECURITY_CODE" = "The security code is incorrect, please re-enter.";
+"IDS_SAME_AS_LOCAL_ID_TIPS" = "Please do not enter this device's ID.";
+"IDS_CONNECT_TIME_OUT" = "Connection timed out!";
+"IDS_UNKNOWN_ERROR" = "Unknown error!";
+"IDS_SRC_DEVICE_FORZEN_TIPS_MIN" = "Multiple failed logins! Please try again %d minutes later.";
+"IDS_SRC_DEVICE_FORZEN_TIPS_SEC" = "Multiple failed logins! Please try again %d seconds later.";
+"IDS_DST_DEVICE_FORZEN_TIPS_MIN" = "Too many requests! Please try again %d minutes later.";
+"IDS_DST_DEVICE_FORZEN_TIPS_SEC" = "Too many request! Please try again %d seconds later.";
+"IDS_SERVER_ERROR" = "Server error";
+"IDS_SERVER_MSG" = "Server message";
+"IDS_READY_CONN_UNSUCCESSFULLY" = "Error while the recipient prepares to connect!";
+"IDS_INVALID_CTRL_SESSION_CONTEXT" = "Your session has expired. Please reconnect!";
+"IDS_ERROR" = "Error";
+"IDS_NOT_FOUND_VNC_PROXY" = "VNC proxy not found!";
+"IDS_INVALID_RELAING_SERVER" = "The relay Server not found!";
+"IDS_SEND_READY_CONN_REQUEST_UNSUCCESSFULLY" = "Failed to prepare to send control request!";
+"IDS_ESTABLISH_VNC_CONNECTION_UNSUCCESSFULLY" = "Unable to establish a new VNC connection!";
+"IDS_CLEAR_ALL" = "Clean all";
+"IDS_CRASH_RPT" = "Crash Report";
+"IDS_CRASH_RPT_TIPS" = "The program has encountered a serious problem and needs to be close. Do you want to send us the crash report?";
+"IDS_INVALID_NETWORK" = "Unable to connect to the Server. Please check your network connection.";
+"IDS_TIPE" = "Tips";
+"IDS_SUBMIT_FREEDBACK_TIPS" = "Feedback submitted!";
+"IDS_CUR_VER" = "Current version %d.%d.%d";
+"IDS_LATEST_VERSION" = "Latest version:  %d.%d.%d";
+"IDS_CUR_VER1" = "Current version %d.%d.%d";
+"IDS_DOWNDLOAD_INSTALL_PKG_TIPS" = "Downloading V%d.%d.%d. Please wait……(%d%%)";
+"IDS_INVALID_EMAIL_ADDR" = "Invalid email address!";
+"IDS_TOO_LARGER_ATTACHMENT" = "The attachment should not exceed %d MB";
+"IDS_INFO" = "Tips";
+"IDS_FEEDBACK" = "Feedback";
+"IDS_SUBMIT_FREEDBACK_UNSUCCESSFULLY_TIPS" = "Feedback submission failed! Please check your network connection.";
+"IDS_REJECT_CONTROL_BY_TIMEOUT" = "Your request hasn’t been answered. Please try again later!";
+"IDS_ABNORMAL_RCSERVER_CONNECTION" = "Not Connected";
+"IDS_VERIFYING_TIPS" = "Connecting......";
+"IDS_END_VNC_TIPS" = "has ended the remote session.";
+"IDS_ABNORMAL1_END_VNC_TIPS" = "is not responding. The remote session was disconnected.";
+"IDS_ABNORMAL2_END_VNC_TIPS" = "Cannot connect to the control Server. The remote session was disconnected.";
+"IDS_TOO_LOW_APP_VER" = "The current version is too low. Please upgrade it.";
+"IDS_INTPUTING_IDEAS_TIPS" = "Input your questions or suggestions...";
+"IDS_UPDATE" = "Update";
+"IDS_TERMINATING_APP_TIPS" = "Need to close the current program for app installation? Do you want to close it immediately?";
+"IDS_DOWNLOAD" = "Download";
+"IDS_TERMINATING_SESSION_TIPS" = "This operation needs to end the remote connection. Do you want to continue?";
+"IDS_DOWNLOAD_UNSUCCESSFULLY_TIPS" = "Failed to download. Please check your network and try again or download manually.";
+"IDS_EMPTY_PWD" = "The security code cannot be empty!";
+"IDS_TOO_SHORT_PWD" = "The security code is too short!";
+"IDS_TOO_SIMPLE_PWD" = "The security code is too simple!";
+"IDS_WARNING" = "Warning";
+"IDS_INVALID_SECURITY_CODE" = "Invalid security code. Please re-enter!";
+"IDS_CONNECTING_RCSERVER" = "Connecting";
+"IDS_CONNECTE_RCSERVER_SUCCESSFULLY" = "Ready to connect";
+"IDS_INVALID_PARTNER_ID" = "Type a correct ID";
+"IDS_REQUEST_CONTROL" = "Request to control";
+"IDS_CUSTORM_OFFLINE" = "The recipient is offline or the ID doesn’t exist.";
+"IDS_REBOOT_FOR_LANGUAGE_CHANGED" = "Need to restart the software for language switch to take effect. Do you want to restart it immediately?";
+"IDS_WINDOW_MODE" = "Window mode";
+"IDS_FULL_SCREEN_MODE" = "Full screen mode";
+"IDS_CONNECTED_CONTROLLED_SUCCESSFULLY" = "Connection succeeded";
+"IDS_INVALID_PWD" = "Incorrect Security Code. Please try again:";
+"IDS_ORIGINAL_RESOLUTION" = "Original";
+"IDS_AUTO_IMG_SIZE" = "Adaptive";
+"IDS_SHOW_TOOLBAR" = "Show toolbar";
+"IDS_HIDE_TOOLBAR" = "Hide toolbar";
+"IDS_LOW_VERSION_TIPS" = "Recipient's version is too low. You can use this feature after updating to the latest version.";
+//[About]
+"Title" = "About";
+"AppTitle" = "AnyViewer";
+"Edition" = "Standard";
+"Version" = "V 1.1.0";
+"Copyright" = "Copyright © 2021 AnyViewer All rights reserved";
+//[ControlledToolbar]
+"ControllerNameLable" = "Name";
+"ControllerIDLable" = "ID";
+"EnableCtrlBtn" = "Allow/deny mouse and keyboard control";
+"StopBtn" = "Stop connection";
+//[CopiedTips]
+"Title" = "Copied";
+//[CrashRptDlg]
+"Title" = "Crash Report";
+"MsgBody" = "The program has encountered a serious problem and needs to close. Click the OK button to send us the error log.";
+"CancelButton" = "Cancel";
+"OkButton" = "OK";
+//[DesktopCtrlMenu]
+"DesktopMenuBtn" = "Operation";
+"RefreshMenuBtn" = "Refresh";
+"FullScreenBtn" = "Full Screen";
+"StopBtn" = "Stop Connection";
+"OrgImgSizeMenuBtn" = "Original";
+"AutoImgSizeMenuBtn" = "Adaptive";
+"ResolutionMenuBtn" = "Resolution";
+"ImgQualityMenuBtn" = "Image Quality";
+"MinMenuBtn" = "Minimize window";
+//[DesktopSubmenu]
+"CtrlAltDeleteMenuBtn" = "Ctrl + Alt + Delete";
+"LockMenuBtn" = "Lock";
+"LogOffMenuBtn" = "Logout";
+"RestartMenuBtn" = "Restart";
+"ShutDownMenuBtn" = "Shut down";
+"ComputerMenuBtn" = "This PC";
+"TaskManagerMenuBtn" = "Task Manager";
+"CMDMenuBtn" = "CMD";
+//[DesktopView]
+"WndTitle" = "AnyViewer";
+"unknown3" = "The remote desktop is displaying";
+"unknown12" = "The remote desktop is displaying";
+"unknown21" = "The remote desktop is displaying";
+"unknown30" = "The remote desktop is displaying";
+"unknown39" = "The remote desktop is displaying";
+"unknown48" = "The remote desktop is displaying";
+"unknown57" = "The remote desktop is displaying";
+"unknown66" = "The remote desktop is displaying";
+"unknown4" = "The remote desktop is displaying";
+//[DownloadInstallPkg]
+"ProcessTipes" = "Download";
+//[FeedBack]
+"Title" = "Feedback";
+"Static1" = "You want to tell us......";
+"OperationProblemsRadio" = "Operation Problems";
+"ConnectionIssueRadio" = "Failed to connect or connect slowly";
+"LanguageDescIssueRadio" = "Language or description errors";
+"OtherProblemsRadio" = "Other errors";
+"IdeasRadio" = "Send us suggestions or encouragement";
+"IdeasEdit" = "Please describe your problem or suggestion specifically";
+"FileLable" = "File";
+"Attachmentbutton" = "Attachment";
+"EmailEdit" = "Email";
+"NameEdit" = "Name";
+"OkBtn" = "Submit";
+//[HandleConnRequest]
+"WndTitle" = "AnyViewer";
+"ControllerNameLable" = "Controller";
+"ControllerIDLable" = "(0984196)";
+"MsgLable" = "Request to control your device.";
+"OkBtn" = "Allow";
+"CancelBtn" = "Deny";
+//[InputSecCodeWnd]
+"Title" = "Request to control";
+"msg" = "Please enter security code:";
+"OkBtn" = "OK";
+//[MainFram]
+"WndTitle" = "AnyViewer";
+"AcceptCtrlLable" = "Accept Control";
+"LocalDevIDLable" = "The device ID:";
+"LocalDevIDTipeBtn" = "Send your partner the device ID when the device needs to accept remote control.";
+"DeviceIDLable" = "123 456 789";
+"CopyDeviceIDBtn" = "Copy";
+"TmpSecCodeTitleLable" = "Temporary security code:";
+"RefreshTmpSecCodeBtn" = "Change";
+"CopyTmpSecCodeBtn" = "Copy";
+"SettingsBtn" = "Settings";
+"RemotePCLable" = "Request Control";
+"PartnerIDLable" = "Partner ID:";
+"ParterIDTipsBtn" = "Type the ID of the recipient to control it.";
+"PartnerIDDropdown" = "Connection records";
+"ConnectButton" = "Connect";
+"ConnectionStatusLable" = "Ready to connect";
+//[MainPopupmenu]
+"SettingsMenuBtn" = "Settings";
+"UpdateMenuBtn" = "Update";
+"FeedbackMenuBtn" = "Feedback";
+"AboutMenuBtn" = "About";
+"ExitMenuBtn" = "Exit";
+"HelpMenuItem" = "Help";
+"HelpCenter" = "Help Center";
+"InvitePartnersMenuBtn" = "Invite partners";
+//[MsgBox]
+"Title" = "Request Control";
+"MsgBody" = "The recipient is offline or the ID doesn’t exist.";
+"CancelButton" = "Cancel";
+"OkButton" = "OK";
+//[SelectAuthMothedDlg]
+"Title" = "Request Control";
+"Lable1" = "Choose the way to control the partner’s device:";
+"ManualAuthRadio" = "Send a control request to your partner";
+"PwdAuthRadio" = "Input security code";
+"TipsBtn" = "Choose the option when you have the security code (the temporary security code) of the recipient.";
+"OkBtn" = "OK";
+//[Settings]
+"WinTitleLable" = "Settings";
+"RecipientOption" = "Recipient";
+"ControllerOption" = "Controller";
+"BasicOption" = "Basic";
+"BarTitleLable" = "Accept remote control";
+"EnableCtrlCheck" = "Allow to accept remote control";
+"EnableCtrlCheckTips" = "Allow to receive a control request from another device and the request needs to be manually confirmed by myself.";
+"EnableTmpPwdCheck" = "Allow temporary security code";
+"EnableTmpPwdCheckTips" = "Allow to control this device by inputting temporary security code. You can send your partner the temporary security code for remote support. The code changes every time the software restart.";
+"EnableFixPwdCheck" = "Set my security code";
+"EnableFixPwdCheckTips" = "Allow to control my device anytime by inputting security code. Please keep your security code properly and do not disclose it to others. If it is accidentally leaked, please change it in time.";
+"SecurityCodeStatic" = "Security Code:";
+"RemoteCtrlLable" = "Remote Control";
+"DisplayNameLable" = "Device Name";
+"DisplayNameTips" = "The name will be displayed when your partner receives your remote control quest.";
+"ImgQualityLable" = "Image Quality";
+"HighImageQualityItem" = "High Image Quality (Default)";
+"LowImageQualityItem" = "Low Image Quality";
+"HideDesktopWallPaperCheck" = "Hide the desktop wallpaper";
+"HideDeskWallpageTips" = "During remote control, hide desktop wallpaper to make the display smoother.";
+"BasicSettingsLable" = "Basic Settings";
+"AutoStartCheck" = "Start AnyViewer with Windows";
+"LanguageLable" = "Language";
+"EnglishItem" = "English";
+"GermanItem" = "Deutsch";
+"FrenchItem" = "Français";
+"ItalianItem" = "Italiano";
+"SpanishItem" = "Español";
+"JapaneseItem" = "日本語";
+"ChineseItem" = "中文（简体）";
+"ChineseTWItem" = "中文（繁體）";
+"ThemeLable" = "Theme:";
+"FollowSystemItem" = "Follow the system";
+"LightModeItem" = "Light Mode";
+"DarkModeItem" = "Dark Mode";
+"ResetButton" = "Reset All";
+"OkButton" = "OK";
+"SaveSecCodeCheck" = "Save the security code";
+"SaveSecCodeTips" = "Save the entered security code for automatic connection next time.";
+//[UninstallFeedback]
+"Title" = "AnyViewer Uninstall Wizard";
+"BarTitle1" = "We're sorry to see you go.";
+"Static1" = "Have you encountered any problem?";
+"TechnicalSupportBtn" = "Technical Support";
+"BarTitle2" = "*Uninstall Reasons";
+"SlectionTipsLable" = "(select at least an item)";
+"ComplicatedUseRadio" = "It's too complicated to use";
+"SlowSpeedRadio" = "The connection speed is too slow";
+"UnableConnectionRadio" = "Unable to establish connection";
+"UnpleasantUnterfaceRadio" = "Unpleasant interface";
+"ChosenAnotherProductRadio" = "I've chosen another product";
+"OtherReasonsRadio" = "Other reasons (Please describe...)";
+"IdeasEdit" = "Please describe your problems or suggestions.";
+"EmailEdit" = "Email";
+"NameEdit" = "Name";
+"CancelBtn" = "Cancel";
+"OkBtn" = "Uninstalling";
+//[Update]
+"WinTitle" = "Update";
+"CheckingStatusLable" = "Checking the latest version...";
+"AppTitle" = "AnyViewer";
+"CurVerLable1" = "The current version 1.0.0";
+"LatestVersion" = "The latest: 1.1.0";
+"IgnoretheversionButton" = "Ignore this version";
+"UpdateButton" = "Update";
+"AppTile1" = "AnyViewer";
+"CurVerLable" = "The current version 1.1.0";
+"CurVerTipsLable" = "The current version is up to date.";
+"OkButton" = "OK";
+//[BubbleMsgBox]
+"MsgLabel" = "Test";
+//[PictureQuality]
+"HighPictureQualityMenuBtn" = "High Image Quality";
+"LowPictureQualityMenuBtn" = "Low Image Quality";
+"HideWallPageMenuBtn" = "Hide the desktop wallpaper";
+

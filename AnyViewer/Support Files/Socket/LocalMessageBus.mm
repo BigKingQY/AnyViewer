@@ -21,12 +21,28 @@ CMessageBus& GetLocalMessageBus()
 
 
 /// 注册成功后的消息回调
-/// @param devieId 本机的deviceId
-void LocalMessageBusManager::OnRegistResponse(const uint64_t devieId)
+/// @param deviceId 本机的deviceId
+void LocalMessageBusManager::OnRegistResponse(const uint64_t deviceId)
 {
-    if ([BKMessageManager.shared.delegate respondsToSelector:@selector(onRegistResponse:)])
-    {
-        [BKMessageManager.shared.delegate onRegistResponse:devieId];
+//    if ([BKMessageManager.shared.delegate respondsToSelector:@selector(onRegistResponse:)])
+//    {
+//        [BKMessageManager.shared.delegate onRegistResponse:deviceId];
+//    }
+    
+    NSLog(@"==== 已经获取到设备ID：%llu ====", deviceId);
+    
+    if (BKUserManager.shared.user) {
+        
+        BKUserManager.shared.user.deviceId = deviceId;
+        
+        [BKUserManager.shared update];
+        
+    }else {
+        
+        BKUser *user = [BKUser new];
+        user.deviceId = deviceId;
+        
+        [BKUserManager.shared updateUser:user];
     }
 }
 
@@ -38,6 +54,16 @@ void LocalMessageBusManager::OnConnectResponse(const int status, const int other
         [BKMessageManager.shared.delegate onConnectResponse:status otherStatus:otherStatus];
     }
 }
+
+
+void LocalMessageBusManager::OnAuthenticatResponse(const int status, const int otherStatus)
+{
+    if ([BKMessageManager.shared.delegate respondsToSelector:@selector(onAuthenticatResponse:otherStatus:)])
+    {
+        [BKMessageManager.shared.delegate onAuthenticatResponse:status otherStatus:otherStatus];
+    }
+}
+
 
 /// 注册所有消息
 void LocalMessageBusManager::RegistMessageBus()
@@ -51,6 +77,10 @@ void LocalMessageBusManager::RegistMessageBus()
     {
         unsigned int msgId = refMessageBus.Register(MSG_CONNECT_RESPONSE, [this](const int status, const int otherStatus)
                                                     {  OnConnectResponse(status, otherStatus); });
+    }
+    {
+        unsigned int msgId = refMessageBus.Register(MSG_AUTHENTICAT_RESPONSE, [this](const int status, const int otherStatus)
+                                                    {  OnAuthenticatResponse(status, otherStatus); });
     }
     
     

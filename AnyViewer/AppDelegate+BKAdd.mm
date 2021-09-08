@@ -10,10 +10,11 @@
 #import "AMSocketHeader.h"
 #import <AFNetworking.h>
 #import <IQKeyboardManager.h>
-#include "CNetTransactionEngine.h"
 #import <AdSupport/AdSupport.h>
 #import <SAMKeychain.h>
 #import "LocalMessageBus.h"
+
+#include "CNetTransactionEngine.h"
 
 @interface AppDelegate ()
 
@@ -63,7 +64,6 @@
     
     [[AFNetworkReachabilityManager sharedManager] startMonitoring];
     
-    
 }
 
 - (void)configSocketConnect {
@@ -112,5 +112,55 @@
     
     return deviceId;
 }
+
+
+///将多语言按格式转换
+- (void)converString {
+    
+    NSString *path = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).lastObject stringByAppendingPathComponent:@"file.txt"];
+    
+    NSString *str = [NSString stringWithContentsOfFile:path encoding:NSUTF8StringEncoding error:nil];
+    
+    NSArray *array = [str componentsSeparatedByString:@"\n"];
+    
+    NSMutableArray *tempArr = [NSMutableArray array];
+    
+    for (int i = 0; i < array.count; i++) {
+        NSString *line = array[i];
+        
+        NSArray *arr = [line componentsSeparatedByString:@"="];
+        
+        if (arr.count != 2) {
+            
+            [tempArr addObject:[NSString stringWithFormat:@"//%@", line]];
+            continue;
+        }
+        
+        NSString *s1 = arr.firstObject;
+        NSString *s2 = arr.lastObject;
+        
+        s2 = [s2 stringByReplacingOccurrencesOfString:@"\r" withString:@""];
+        
+        s1 = [NSString stringWithFormat:@"\"%@\" ", s1];
+        
+        s2 = [NSString stringWithFormat:@" \"%@\";", s2];
+        
+        arr = @[s1, s2];
+        
+        NSString *s = [arr componentsJoinedByString:@"="];
+        
+        [tempArr addObject:s];
+    }
+    
+    
+    
+    NSString *result = [tempArr componentsJoinedByString:@"\n"];
+    
+    NSString *retPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).lastObject stringByAppendingPathComponent:@"ret.txt"];
+    
+    [result writeToFile:retPath atomically:YES encoding:NSUTF8StringEncoding error:nil];
+}
+
+
 
 @end

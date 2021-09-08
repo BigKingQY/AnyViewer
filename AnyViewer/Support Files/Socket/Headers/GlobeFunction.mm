@@ -95,7 +95,7 @@ std::string getIPWithHostName(std::string hostName)
     }
     struct in_addr ip_addr;
     if (phot == NULL) {
-        return nil;
+        return "";
     }
     memcpy(&ip_addr, phot->h_addr_list[0], 4);
     char ip[20] = {0}; inet_ntop(AF_INET, &ip_addr, ip, sizeof(ip));

@@ -55,13 +55,12 @@ NSString *const kAMDeviceListTableViewCellId = @"kAMDeviceListTableViewCellId";
     self.codeLabel.frame = CGRectMake(20, self.nameLabel.bottom+10, self.nameLabel.width, 16);
 }
 
-
-- (void)setDevice:(AMDevice *)device {
-    _device = device;
+- (void)setUser:(BKUser *)user {
+    _user = user;
     
-    self.nameLabel.text = device.name;
-    self.codeLabel.text = device.code;
-
+    self.nameLabel.text = user.nickName;
+    self.codeLabel.text = [NSString stringWithFormat:@"%llu", user.deviceId];
 }
+
 
 @end

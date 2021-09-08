@@ -15,13 +15,19 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 注册后的回复，返回自己的设备ID
 /// @param deviceId 设备ID
-- (void)onRegistResponse:(const u_int64_t)deviceId;
+//- (void)onRegistResponse:(const u_int64_t)deviceId;
 
 
 /// 发送连接请求后的回调，返回两个状态码
 /// @param status 状态码
 /// @param otherStatus 其他状态码，可能没有
 - (void)onConnectResponse:(const int)status otherStatus:(const int)otherStatus;
+
+
+/// 发送认证后的回调，返回两个状态码
+/// @param status 状态码1
+/// @param otherStatus 被冻结时长，单位秒
+- (void)onAuthenticatResponse:(const int)status otherStatus:(const int)otherStatus;
 
 @end
 
@@ -34,8 +40,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (instancetype)new NS_UNAVAILABLE;
 
+- (void)setDeletegateForTarget:(id)target;
 
-@property (nonatomic, weak) id<BKMessageManagerDelegate> delegate;
+@property (nonatomic, weak, readonly) id<BKMessageManagerDelegate> delegate;
 
 @end
 

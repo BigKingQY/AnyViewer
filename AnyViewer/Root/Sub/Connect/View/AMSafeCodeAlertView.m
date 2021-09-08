@@ -26,12 +26,13 @@
     if (self = [super initWithFrame:frame]) {
         
         _backButton = [BaseButton new];
-        [_backButton setImage:BKImage(@"") forState:UIControlStateNormal];
+//        [_backButton setImage:BKImage(@"") forState:UIControlStateNormal];
+        [_backButton setTitle:@"返回" forState:UIControlStateNormal];
         [self addSubview:_backButton];
         
         _titleLabel = [UILabel new];
         _titleLabel.font = BKFont(18);
-        _titleLabel.text = @"连接";
+        _titleLabel.text = BKLocalizedString(@"ConnectButton");
         _titleLabel.textColor = UIColor.whiteColor;
         _titleLabel.textAlignment = NSTextAlignmentCenter;
         [self addSubview:_titleLabel];
@@ -68,7 +69,7 @@
         _textField = [BaseTextField new];
         _textField.font = BKFont(16);
         _textField.textColor = UIColor.whiteColor;
-        _textField.placeholder = @"输入安全码";
+        _textField.placeholder = BKLocalizedString(@"PwdAuthRadio");
         _textField.backgroundColor = BKColor(0x2e3439);
         _textField.tintColor = UIColor.whiteColor;
         _textField.keyboardType = UIKeyboardTypeNumbersAndPunctuation;
@@ -78,9 +79,10 @@
         [_bgView addSubview:_textField];
         
         _doneButton = [BaseButton new];
-        [_doneButton setTitle:@"确定" forState:UIControlStateNormal];
+        [_doneButton setTitle:BKLocalizedString(@"OkButton") forState:UIControlStateNormal];
         _doneButton.titleLabel.font = BKFont(16);
-        _doneButton.backgroundColor = BKColor(0x0085ff);
+        [_doneButton setBackgroundImage:[UIImage imageWithColor:BKColor(0x0085ff)] forState:UIControlStateNormal];
+        [_doneButton setBackgroundImage:[UIImage imageWithColor:BKColor(0x666666)] forState:UIControlStateDisabled];
         _doneButton.bk_cornerRadius = 8;
         [_bgView addSubview:_doneButton];
         
@@ -108,6 +110,8 @@
 
 - (void)addActions {
     
+    RAC(self.doneButton, enabled) =  [self.textField.rac_textSignal merge:RACObserve(self.textField, text)];
+
     [[self.backButton rac_signalForControlEvents:UIControlEventTouchUpInside] subscribeNext:^(__kindof UIControl * _Nullable x) {
        
         [self hide];

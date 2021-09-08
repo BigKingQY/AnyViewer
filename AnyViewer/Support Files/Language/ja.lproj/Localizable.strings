@@ -6,6 +6,263 @@
   
 */
 
-"DEVICE" = "設備";
-"CONNECT" = "接続";
-"SETTING" = "設定";
+//[StringTable]
+"IDS_NOT_FOUND_CUSTORM" = "入力したIDは存在しません。";
+"IDS_PROHIBITION_CONTROL" = "このデバイスへのアクセスは有効になっていません。";
+"IDS_REQUST_TRL_TIPS" = "デバイスの制御をリクエストしています。";
+"IDS_REJECT_CONTROL" = "制御リクエストが拒否されました。";
+"IDS_INCORRECT_SECURITY_CODE" = "セキュリティコードが正しくありません。再入力してください。";
+"IDS_SAME_AS_LOCAL_ID_TIPS" = "このデバイスのIDは入力しないでください。";
+"IDS_CONNECT_TIME_OUT" = "接続がタイムアウトしました！";
+"IDS_UNKNOWN_ERROR" = "不明なエラー！";
+"IDS_SRC_DEVICE_FORZEN_TIPS_MIN" = "ログインが数回失敗しました！%d分後に再試行してください。";
+"IDS_SRC_DEVICE_FORZEN_TIPS_SEC" = "ログインが数回失敗しました！%d秒後に再試行してください。";
+"IDS_DST_DEVICE_FORZEN_TIPS_MIN" = "リクエストが多すぎます！%d分後に再試行してください。";
+"IDS_DST_DEVICE_FORZEN_TIPS_SEC" = "リクエストが多すぎます！%d秒後に再試行してください。";
+"IDS_SERVER_ERROR" = "サーバーエラー";
+"IDS_SERVER_MSG" = "サーバーメッセージ";
+"IDS_READY_CONN_UNSUCCESSFULLY" = "受信者が接続の準備をしている際にエラーが発生しました。";
+"IDS_INVALID_CTRL_SESSION_CONTEXT" = "セッションの有効期限が切れました。再接続してください。";
+"IDS_ERROR" = "エラー";
+"IDS_NOT_FOUND_VNC_PROXY" = "VNCプロキシが見つかりません！";
+"IDS_INVALID_RELAING_SERVER" = "リレーサーバーが見つかりません！";
+"IDS_SEND_READY_CONN_REQUEST_UNSUCCESSFULLY" = "制御リクエストを送信する準備に失敗しました！";
+"IDS_ESTABLISH_VNC_CONNECTION_UNSUCCESSFULLY" = "新しいVNCが接続できません！";
+"IDS_CLEAR_ALL" = "すべてを削除";
+"IDS_CRASH_RPT" = "クラッシュレポート";
+"IDS_CRASH_RPT_TIPS" = "プログラムで重大な問題が発生したため、終了する必要があります。クラッシュレポートを送信しますか？";
+"IDS_INVALID_NETWORK" = "サーバーに接続できません。ネットワークの接続状況を確認してください。";
+"IDS_TIPE" = "ヒント";
+"IDS_SUBMIT_FREEDBACK_TIPS" = "フィードバックを送信しました。";
+"IDS_CUR_VER" = "現在のバージョン：%d.%d.%d";
+"IDS_LATEST_VERSION" = "最新のバージョン：%d.%d.%d";
+"IDS_CUR_VER1" = "現在のバージョン：%d.%d.%d";
+"IDS_DOWNDLOAD_INSTALL_PKG_TIPS" = "V%d.%d.%dをダウンロード中……お待ちください。（%d%%）";
+"IDS_INVALID_EMAIL_ADDR" = "無効なメールアドレス！";
+"IDS_TOO_LARGER_ATTACHMENT" = "添付ファイルは%dMBを超えてはなりません";
+"IDS_INFO" = "ヒント";
+"IDS_FEEDBACK" = "フィードバック";
+"IDS_SUBMIT_FREEDBACK_UNSUCCESSFULLY_TIPS" = "フィードバックの送信に失敗しました。ネットワークの接続状況を確認してください。";
+"IDS_REJECT_CONTROL_BY_TIMEOUT" = "リクエストには返答ありません。後でもう一度やり直してください。";
+"IDS_ABNORMAL_RCSERVER_CONNECTION" = "接続されていない";
+"IDS_VERIFYING_TIPS" = "接続中";
+"IDS_END_VNC_TIPS" = "リモート接続を終了しました。";
+"IDS_ABNORMAL1_END_VNC_TIPS" = "応答なく、リモート接続が切断されました。";
+"IDS_ABNORMAL2_END_VNC_TIPS" = "制御サーバーに接続できません。リモート接続が切断されています。";
+"IDS_TOO_LOW_APP_VER" = "現在のバージョンは低いため、アップグレードしてください。";
+"IDS_INTPUTING_IDEAS_TIPS" = "お客様の質問や提案を入力してください。";
+"IDS_UPDATE" = "更新";
+"IDS_TERMINATING_APP_TIPS" = "アプリをインストールするために現在のプログラムを閉じる必要がありますか？すぐに閉じますか？";
+"IDS_DOWNLOAD" = "ダウンロード";
+"IDS_TERMINATING_SESSION_TIPS" = "この操作により遠隔操作を中止する必要があります。よろしいでしょうか？";
+"IDS_DOWNLOAD_UNSUCCESSFULLY_TIPS" = "ダウンロードに失敗しました。ネットワークの接続状況を確認して再試行するか、または手動でダウンロードしてください。";
+"IDS_EMPTY_PWD" = "セキュリティコードを空にすることはできません！";
+"IDS_TOO_SHORT_PWD" = "セキュリティコードが短すぎます！";
+"IDS_TOO_SIMPLE_PWD" = "セキュリティコードがシンプルすぎます！";
+"IDS_WARNING" = "警告";
+"IDS_INVALID_SECURITY_CODE" = "無効なセキュリティコードです。再度入力してください！";
+"IDS_CONNECTING_RCSERVER" = "接続中";
+"IDS_CONNECTE_RCSERVER_SUCCESSFULLY" = "接続する準備ができました。";
+"IDS_INVALID_PARTNER_ID" = "正しいIDを入力してください";
+"IDS_REQUEST_CONTROL" = "遠隔操作";
+"IDS_CUSTORM_OFFLINE" = "受信者がオフラインであるか、またはIDが存在しません。";
+"IDS_REBOOT_FOR_LANGUAGE_CHANGED" = "言語切り替えを有効にするには、ソフトウェアを再起動する必要があります。すぐに再起動しますか？";
+"IDS_WINDOW_MODE" = "ウィンドウモード";
+"IDS_FULL_SCREEN_MODE" = "フルスクリーンモード";
+"IDS_CONNECTED_CONTROLLED_SUCCESSFULLY" = "接続に成功しました。";
+"IDS_INVALID_PWD" = "セキュリティコードが間違っています。再入力してください:";
+"IDS_ORIGINAL_RESOLUTION" = "オリジナル";
+"IDS_AUTO_IMG_SIZE" = "アダプティブ";
+"IDS_SHOW_TOOLBAR" = "ツールバーを表示";
+"IDS_HIDE_TOOLBAR" = "ツールバーを非表示";
+"IDS_LOW_VERSION_TIPS" = "受信者のバージョンが低すぎます。最新バージョンに更新した後、この機能を使用できます。";
+//[About]
+"Title" = "AnyViewerについて";
+"AppTitle" = "AnyViewer";
+"Edition" = "Standard";
+"Version" = "V 1.1.0";
+"Copyright" = "Copyright © 2021 AnyViewer All Rights Reserved";
+//[ControlledToolbar]
+"ControllerNameLable" = "名前";
+"ControllerIDLable" = "ID";
+"EnableCtrlBtn" = "マウスとキーボードの制御を許可/拒否";
+"StopBtn" = "接続停止";
+//[CopiedTips]
+"Title" = "コピー済";
+//[CrashRptDlg]
+"Title" = "クラッシュレポート";
+"MsgBody" = "プログラムで重大な問題が発生したため、終了する必要があります。「OK」ボタンをクリックして、エラーログを送信してください。";
+"CancelButton" = "キャンセル";
+"OkButton" = "OK";
+//[DesktopCtrlMenu]
+"DesktopMenuBtn" = "操作";
+"RefreshMenuBtn" = "リフレシュ";
+"FullScreenBtn" = "フルスクリーン";
+"StopBtn" = "接続停止";
+"OrgImgSizeMenuBtn" = "オリジナル";
+"AutoImgSizeMenuBtn" = "アダプティブ";
+"ResolutionMenuBtn" = "解像度";
+"ImgQualityMenuBtn" = "画質";
+"MinMenuBtn" = "ウィンドウを最小化";
+//[DesktopSubmenu]
+"CtrlAltDeleteMenuBtn" = "Ctrl + Alt + Delete";
+"LockMenuBtn" = "ロック";
+"LogOffMenuBtn" = "ログアウト";
+"RestartMenuBtn" = "再起動";
+"ShutDownMenuBtn" = "シャットダウン";
+"ComputerMenuBtn" = "このPC";
+"TaskManagerMenuBtn" = "タスクマネージャー";
+"CMDMenuBtn" = "CMD";
+//[DesktopView]
+"WndTitle" = "AnyViewer";
+"unknown7" = "リモートデスクトップがまもなく表示されます";
+"unknown16" = "リモートデスクトップがまもなく表示されます";
+"unknown25" = "リモートデスクトップがまもなく表示されます";
+"unknown34" = "リモートデスクトップがまもなく表示されます";
+"unknown43" = "リモートデスクトップがまもなく表示されます";
+"unknown52" = "リモートデスクトップがまもなく表示されます";
+"unknown61" = "リモートデスクトップがまもなく表示されます";
+"unknown70" = "リモートデスクトップがまもなく表示されます";
+"unknown8" = "リモートデスクトップがまもなく表示されます";
+//[DownloadInstallPkg]
+"ProcessTipes" = "ダウンロード";
+//[FeedBack]
+"Title" = "フィードバック";
+"Static1" = "弊社に伝えたい事。";
+"OperationProblemsRadio" = "操作上の問題";
+"ConnectionIssueRadio" = "接続に失敗する、または接続が遅い";
+"LanguageDescIssueRadio" = "言語または説明のエラー";
+"OtherProblemsRadio" = "その他のエラー";
+"IdeasRadio" = "弊社に提案や励ましを送ってください。";
+"IdeasEdit" = "問題や提案を具体的に説明してください。";
+"FileLable" = "ファイル";
+"Attachmentbutton" = "添付ファイル";
+"EmailEdit" = "メールアドレス";
+"NameEdit" = "名前";
+"OkBtn" = "送信";
+//[HandleConnRequest]
+"WndTitle" = "AnyViewer";
+"ControllerNameLable" = "コントローラ";
+"ControllerIDLable" = "（0984196）";
+"MsgLable" = "デバイスの遠隔操作を請求しています。";
+"OkBtn" = "許可";
+"CancelBtn" = "拒否";
+//[InputSecCodeWnd]
+"Title" = "遠隔操作";
+"msg" = "セキュリティコードを入力してください：";
+"OkBtn" = "確認";
+//[MainFram]
+"WndTitle" = "AnyViewer";
+"AcceptCtrlLable" = "コントロールの許可";
+"LocalDevIDLable" = "デバイスID：";
+"LocalDevIDTipeBtn" = "デバイスが遠隔操作を受け入れる必要がある場合は、パートナーにデバイスIDを送信してください。";
+"DeviceIDLable" = "123 456 789";
+"CopyDeviceIDBtn" = "コピー";
+"TmpSecCodeTitleLable" = "一時的なセキュリティコード：";
+"RefreshTmpSecCodeBtn" = "チェンジ";
+"CopyTmpSecCodeBtn" = "コピー";
+"SettingsBtn" = "設定";
+"RemotePCLable" = "遠隔操作";
+"PartnerIDLable" = "パートナーID：";
+"ParterIDTipsBtn" = "受信者のIDを入力して遠隔操作します。";
+"PartnerIDDropdown" = "接続記録";
+"ConnectButton" = "接続";
+"ConnectionStatusLable" = "接続する準備ができた";
+//[MainPopupmenu]
+"SettingsMenuBtn" = "設定";
+"UpdateMenuBtn" = "更新";
+"FeedbackMenuBtn" = "フィードバック";
+"AboutMenuBtn" = "バージョン情報";
+"ExitMenuBtn" = "終了";
+"HelpMenuItem" = "ヘルプ";
+"HelpCenter" = "ヘルプセンター";
+"InvitePartnersMenuBtn" = "パートナーを招待";
+//[MsgBox]
+"Title" = "遠隔操作";
+"MsgBody" = "受信者がオフラインであるか、またはIDが存在しません。";
+"CancelButton" = "キャンセル";
+"OkButton" = "OK";
+//[SelectAuthMothedDlg]
+"Title" = "遠隔操作";
+"Lable1" = "パートナーのデバイスを遠隔操作する方法を選択します:";
+"ManualAuthRadio" = "パートナーに遠隔操作のリクエストを送信します";
+"PwdAuthRadio" = "セキュリティコードを入力してください";
+"TipsBtn" = "受信者のセキュリティコード（一時的なセキュリティコード）がある場合は、このオプションを選択してください。";
+"OkBtn" = "OK";
+//[Settings]
+"WinTitleLable" = "設定";
+"RecipientOption" = "受信者";
+"ControllerOption" = "コントローラ";
+"BasicOption" = "ベーシック";
+"BarTitleLable" = "遠隔操作を受け入れる";
+"EnableCtrlCheck" = "遠隔操作の許可";
+"EnableCtrlCheckTips" = "別のデバイスからの遠隔操作の受信を許可します。リクエストは自分で手動で確認する必要があります。";
+"EnableTmpPwdCheck" = "一時的なセキュリティコードの許可";
+"EnableTmpPwdCheckTips" = "一時的なセキュリティコードを入力して、このデバイスの遠隔操作を許可します。リモートサポート用の一時的なセキュリティコードをパートナーに送信できます。一時的なセキュリティコードは、ソフトウェアが再起動するたびに変更されます。";
+"EnableFixPwdCheck" = "セキュリティコードの設定";
+"EnableFixPwdCheckTips" = "セキュリティコードを入力して、いつでもデバイスを遠隔操作できるようにします。セキュリティコードは適切に保管し、他人に開示しないでください。漏れた場合は、早めに変更してください。";
+"SecurityCodeStatic" = "セキュリティコード：";
+"RemoteCtrlLable" = "遠隔操作";
+"DisplayNameLable" = "デバイスの名前";
+"DisplayNameTips" = "パートナーが遠隔操作を受け入れると、名前が表示されます。";
+"ImgQualityLable" = "画質";
+"HighImageQualityItem" = "高画質（デフォルト）";
+"LowImageQualityItem" = "低画質";
+"HideDesktopWallPaperCheck" = "デスクトップの壁紙を非表示";
+"HideDeskWallpageTips" = "遠隔操作中では、デスクトップの壁紙を非表示にしてスムーズにできます。";
+"BasicSettingsLable" = "基本設定";
+"AutoStartCheck" = "パソコン起動時に自動実行";
+"LanguageLable" = "言語";
+"EnglishItem" = "English";
+"GermanItem" = "Deutsch";
+"FrenchItem" = "Français";
+"ItalianItem" = "Italiano";
+"SpanishItem" = "Español";
+"JapaneseItem" = "日本語";
+"ChineseItem" = "中文（简体）";
+"ChineseTWItem" = "中文（繁體）";
+"ThemeLable" = "テーマ：";
+"FollowSystemItem" = "システムに従ってください";
+"LightModeItem" = "ライトモード";
+"DarkModeItem" = "ダークモード";
+"ResetButton" = "すべてリセット";
+"OkButton" = "OK";
+"SaveSecCodeCheck" = "セキュリティコードを保存";
+"SaveSecCodeTips" = "次回の自動接続のために入力したセキュリティコードを保存します。";
+//[UninstallFeedback]
+"Title" = "AnyViewerアンインストールウィザード";
+"BarTitle1" = "ご不便をおかけして申し訳ございません。";
+"Static1" = "問題が発生しましたか？";
+"TechnicalSupportBtn" = "技術サポート";
+"BarTitle2" = "*アンインストールの理由";
+"SlectionTipsLable" = "（アイテムを選択してください）";
+"ComplicatedUseRadio" = "複雑すぎて使えない";
+"SlowSpeedRadio" = "接続速度が遅すぎる";
+"UnableConnectionRadio" = "接続できない";
+"UnpleasantUnterfaceRadio" = "インターフェースがダメ";
+"ChosenAnotherProductRadio" = "別の商品を選んだ";
+"OtherReasonsRadio" = "その他の理由（教えてください...）";
+"IdeasEdit" = "お客様の問題や提案を教えてください...";
+"EmailEdit" = "メールアドレス";
+"NameEdit" = "名前";
+"CancelBtn" = "キャンセル";
+"OkBtn" = "アンインストール";
+//[Update]
+"WinTitle" = "更新";
+"CheckingStatusLable" = "最新バージョンを確認中...";
+"AppTitle" = "AnyViewer";
+"CurVerLable1" = "現在のバージョン：1.1";
+"LatestVersion" = "最新のバージョン：1.0";
+"IgnoretheversionButton" = "このバージョンは無視してください";
+"UpdateButton" = "更新";
+"AppTile1" = "AnyViewer";
+"CurVerLable" = "現在のバージョン：1.1";
+"CurVerTipsLable" = "現在のバージョンは最新です。";
+"OkButton" = "OK";
+//[BubbleMsgBox]
+"MsgLabel" = "Test";
+//[PictureQuality]
+"HighPictureQualityMenuBtn" = "高画質";
+"LowPictureQualityMenuBtn" = "低画質";
+"HideWallPageMenuBtn" = "デスクトップの壁紙を非表示";
+//

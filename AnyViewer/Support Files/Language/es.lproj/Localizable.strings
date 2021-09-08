@@ -1,0 +1,269 @@
+/* 
+ Localizable.strings
+  AnyViewer
+
+  Created by BigKing on 2021/8/24.
+  
+*/
+
+
+//[StringTable]
+"IDS_NOT_FOUND_CUSTORM" = "La identificación que ingresó no existe.";
+"IDS_PROHIBITION_CONTROL" = "Este dispositivo no está habilitado para acceder.";
+"IDS_REQUST_TRL_TIPS" = "Solicitud para controlar su dispositivo.";
+"IDS_REJECT_CONTROL" = "Su solicitud de control fue denegada.";
+"IDS_INCORRECT_SECURITY_CODE" = "El código de seguridad es incorrecto, vuelva a ingresar.";
+"IDS_SAME_AS_LOCAL_ID_TIPS" = "No ingrese el ID de este dispositivo.";
+"IDS_CONNECT_TIME_OUT" = "¡Tiempo de conexión agotado!";
+"IDS_UNKNOWN_ERROR" = "¡Error desconocido!";
+"IDS_SRC_DEVICE_FORZEN_TIPS_MIN" = "¡Múltiples inicios de sesión fallidos! Reintentarlo %d minutos más tarde.";
+"IDS_SRC_DEVICE_FORZEN_TIPS_SEC" = "¡Múltiples inicios de sesión fallidos! Reintentarlo %d segundos más tarde.";
+"IDS_DST_DEVICE_FORZEN_TIPS_MIN" = "¡Demasiadas solicitudes! Reintentarlo %d minutos más tarde.";
+"IDS_DST_DEVICE_FORZEN_TIPS_SEC" = "¡Demasiadas solicitudes! Reintentarlo %d segundos más tarde.";
+"IDS_SERVER_ERROR" = "Error del servidor";
+"IDS_SERVER_MSG" = "Mensaje del servidor";
+"IDS_READY_CONN_UNSUCCESSFULLY" = "Error al destinatario se prepara para conectarse!";
+"IDS_INVALID_CTRL_SESSION_CONTEXT" = "Su sesión ha caducado. Por favor vuelva a conectar!";
+"IDS_ERROR" = "Error";
+"IDS_NOT_FOUND_VNC_PROXY" = "¡Proxy VNC no encontrado!";
+"IDS_INVALID_RELAING_SERVER" = "¡No se encontró el servidor de retransmisión!";
+"IDS_SEND_READY_CONN_REQUEST_UNSUCCESSFULLY" = "¡No se pudo preparar para enviar la solicitud de control!";
+"IDS_ESTABLISH_VNC_CONNECTION_UNSUCCESSFULLY" = "¡No se puede establecer una nueva conexión VNC!";
+"IDS_CLEAR_ALL" = "Limpiar todo";
+"IDS_CRASH_RPT" = "Informe del Fallo";
+"IDS_CRASH_RPT_TIPS" = "El programa ha encontrado un problema grave y debe cerrarse. ¿Quiere enviarnos el informe de fallos?";
+"IDS_INVALID_NETWORK" = "No es posible conectarse al servidor. Compruebe su conexión de red.";
+"IDS_TIPE" = "Consejos";
+"IDS_SUBMIT_FREEDBACK_TIPS" = "¡Comentarios enviados!";
+"IDS_CUR_VER" = "Versión Actual %d.%d.%d";
+"IDS_LATEST_VERSION" = "Ultima versión:  %d.%d.%d";
+"IDS_CUR_VER1" = "Versión actual %d.%d.%d";
+"IDS_DOWNDLOAD_INSTALL_PKG_TIPS" = "Descargando V%d.%d.%d. Espere por favor……(%d%%)";
+"IDS_INVALID_EMAIL_ADDR" = "¡Dirección de Email inválida!";
+"IDS_TOO_LARGER_ATTACHMENT" = "El archivo adjunto no debe exceder los %dMB";
+"IDS_INFO" = "Consejos";
+"IDS_FEEDBACK" = "Realimentación";
+"IDS_SUBMIT_FREEDBACK_UNSUCCESSFULLY_TIPS" = "Error al enviar los comentarios. Compruebe su conexión de red.";
+"IDS_REJECT_CONTROL_BY_TIMEOUT" = "Su solicitud no ha sido respondida. ¡Por favor, reinténtelo más tarde!";
+"IDS_ABNORMAL_RCSERVER_CONNECTION" = "No conectado";
+"IDS_VERIFYING_TIPS" = "Conectando......";
+"IDS_END_VNC_TIPS" = "terminó la conexión remota.";
+"IDS_ABNORMAL1_END_VNC_TIPS" = "no responde y la conexión remota se ha desconectado.";
+"IDS_ABNORMAL2_END_VNC_TIPS" = "No puede conectarse al servidor de control y la conexión remota se ha desconectado.";
+"IDS_TOO_LOW_APP_VER" = "La versión actual es demasiado baja. Actualícelo.";
+"IDS_INTPUTING_IDEAS_TIPS" = "Ingrese sus preguntas o sugerencias...";
+"IDS_UPDATE" = "Actualizar";
+"IDS_TERMINATING_APP_TIPS" = "¿Necesita cerrar el programa actual para la instalación de la aplicación? ¿Quiere cerrarlo inmediatamente?";
+"IDS_DOWNLOAD" = "Descargar";
+"IDS_TERMINATING_SESSION_TIPS" = "Esta operación debe terminar la conexión remota, ¿desea continuar?";
+"IDS_DOWNLOAD_UNSUCCESSFULLY_TIPS" = "Error al descargar. Verifique su red e intente nuevamente o descargue manualmente.";
+"IDS_EMPTY_PWD" = "¡El código de seguridad no puede estar vacío!";
+"IDS_TOO_SHORT_PWD" = "¡El código de seguridad es demasiado corto!";
+"IDS_TOO_SIMPLE_PWD" = "¡El código de seguridad es demasiado simple!";
+"IDS_WARNING" = "Advertencia";
+"IDS_INVALID_SECURITY_CODE" = "Código de seguridad invalido. ¡Vuelve a ingresar!";
+"IDS_CONNECTING_RCSERVER" = "Conectando";
+"IDS_CONNECTE_RCSERVER_SUCCESSFULLY" = "Listo para conectar";
+"IDS_INVALID_PARTNER_ID" = "Escriba una identificación correcta";
+"IDS_REQUEST_CONTROL" = "Solicitud de control";
+"IDS_CUSTORM_OFFLINE" = "El destinatario no tiene conexión o la identificación no existe.";
+"IDS_REBOOT_FOR_LANGUAGE_CHANGED" = "Es necesario reiniciar el software para que el cambio de idioma surta efecto. ¿Quiere reiniciarlo inmediatamente?";
+"IDS_WINDOW_MODE" = "Modo de Window";
+"IDS_FULL_SCREEN_MODE" = "Modo de pantalla completa";
+"IDS_CONNECTED_CONTROLLED_SUCCESSFULLY" = "Conexión exitosa";
+"IDS_INVALID_PWD" = "Hay un error en el código de seguridad, vuelva a introducirlo por favor:";
+"IDS_ORIGINAL_RESOLUTION" = "Original";
+"IDS_AUTO_IMG_SIZE" = "Adaptable";
+"IDS_SHOW_TOOLBAR" = "Mostrar la barra de herramientas";
+"IDS_HIDE_TOOLBAR" = "Esconder barra de herramientas";
+"IDS_LOW_VERSION_TIPS" = "La versión del destinatario es demasiado baja. Puede utilizar esta función después de actualizar a la última versión.";
+//[About]
+"Title" = "Sobre";
+"AppTitle" = "AnyViewer";
+"Edition" = "Standard";
+"Version" = "V 1.1.0";
+"Copyright" = "Copyright © 2021 AnyViewer Todos los derechos reservados";
+//[ControlledToolbar]
+"ControllerNameLable" = "Nombre";
+"ControllerIDLable" = "ID";
+"EnableCtrlBtn" = "Permitir / denegar el control del mouse y del teclado";
+"StopBtn" = "Detener Conexión";
+//[CopiedTips]
+"Title" = "Copiado";
+//[CrashRptDlg]
+"Title" = "Informe del Fallo";
+"MsgBody" = "El programa ha encontrado un problema grave y debe cerrarse. Haga clic en el botón Aceptar para enviarnos el registro de errores.";
+"CancelButton" = "Cancelar";
+"OkButton" = "Aceptar";
+//[DesktopCtrlMenu]
+"DesktopMenuBtn" = "Operación";
+"RefreshMenuBtn" = "Actualizar";
+"FullScreenBtn" = "Pantalla Completa";
+"StopBtn" = "Detener Conexión";
+"OrgImgSizeMenuBtn" = "Original";
+"AutoImgSizeMenuBtn" = "Adaptable";
+"ResolutionMenuBtn" = "Resolución";
+"ImgQualityMenuBtn" = "Calidad de la imagen";
+"MinMenuBtn" = "Minimizar ventana";
+//[DesktopSubmenu]
+"CtrlAltDeleteMenuBtn" = "Ctrl + Alt + Delete";
+"LockMenuBtn" = "Bloquear";
+"LogOffMenuBtn" = "Cerrar sesión";
+"RestartMenuBtn" = "Reiniciar";
+"ShutDownMenuBtn" = "Cerrar";
+"ComputerMenuBtn" = "Esta PC";
+"TaskManagerMenuBtn" = "Administrador de tareas";
+"CMDMenuBtn" = "CMD";
+//[DesktopView]
+"WndTitle" = "AnyViewer";
+"unknown5" = "El escritorio remoto aparecerá pronto";
+"unknown14" = "El escritorio remoto aparecerá pronto";
+"unknown23" = "El escritorio remoto aparecerá pronto";
+"unknown32" = "El escritorio remoto aparecerá pronto";
+"unknown41" = "El escritorio remoto aparecerá pronto";
+"unknown50" = "El escritorio remoto aparecerá pronto";
+"unknown59" = "El escritorio remoto aparecerá pronto";
+"unknown68" = "El escritorio remoto aparecerá pronto";
+"unknown6" = "El escritorio remoto aparecerá pronto";
+//[DownloadInstallPkg]
+"ProcessTipes" = "Descargar";
+//[FeedBack]
+"Title" = "Realimentación";
+"Static1" = "Quiere decirnos......";
+"OperationProblemsRadio" = "Problemas de funcionamiento";
+"ConnectionIssueRadio" = "No se pudo conectar o conectar lentamente";
+"LanguageDescIssueRadio" = "Errores de idioma o de descripción";
+"OtherProblemsRadio" = "Otros errores";
+"IdeasRadio" = "Envíenos sugerencias o aliento";
+"IdeasEdit" = "Describa su problema o sugerencia específicamente";
+"FileLable" = "Archivo";
+"Attachmentbutton" = "Adjunto archivo";
+"EmailEdit" = "Email";
+"NameEdit" = "Nombre";
+"OkBtn" = "Enviar";
+//[HandleConnRequest]
+"WndTitle" = "AnyViewer";
+"ControllerNameLable" = "Controlador";
+"ControllerIDLable" = "(0984196)";
+"MsgLable" = "Solicitud para controlar su dispositivo.";
+"OkBtn" = "Permitir";
+"CancelBtn" = "Negar";
+//[InputSecCodeWnd]
+"Title" = "Solicitud de control";
+"msg" = "Ingrese el código de seguridad:";
+"OkBtn" = "Confirmar";
+//[MainFram]
+"WndTitle" = "AnyViewer";
+"AcceptCtrlLable" = "Aceptar el control";
+"LocalDevIDLable" = "ID del dispositivo:";
+"LocalDevIDTipeBtn" = "Enviar a su socio el ID del dispositivo cuando el dispositivo necesite aceptar el control remoto.";
+"DeviceIDLable" = "123 456 789";
+"CopyDeviceIDBtn" = "Copiar";
+"TmpSecCodeTitleLable" = "Código de seguridad temporal:";
+"RefreshTmpSecCodeBtn" = "Cambio";
+"CopyTmpSecCodeBtn" = "Copiar";
+"SettingsBtn" = "Configuración";
+"RemotePCLable" = "Solicitar control";
+"PartnerIDLable" = "Identificación del socio:";
+"ParterIDTipsBtn" = "Escriba el ID del destinatario para controlarlo.";
+"PartnerIDDropdown" = "Registros de conexión";
+"ConnectButton" = "Conectar";
+"ConnectionStatusLable" = "Listo para conectar";
+//[MainPopupmenu]
+"SettingsMenuBtn" = "Configuración";
+"UpdateMenuBtn" = "Actualizar";
+"FeedbackMenuBtn" = "Realimentación";
+"AboutMenuBtn" = "Sobre";
+"ExitMenuBtn" = "Salir";
+"HelpMenuItem" = "ayuda";
+"HelpCenter" = "Centro de ayuda";
+"InvitePartnersMenuBtn" = "Invitar socios";
+//[MsgBox]
+"Title" = "Solicitar Control";
+"MsgBody" = "El destinatario no tiene conexión o la identificación no existe.";
+"CancelButton" = "Cancelar";
+"OkButton" = "Sí";
+//[SelectAuthMothedDlg]
+"Title" = "Solicitar Control";
+"Lable1" = "Elegir la forma de controlar el dispositivo del socio:";
+"ManualAuthRadio" = "Enviar una solicitud de control a su socio";
+"PwdAuthRadio" = "Ingrese el código de seguridad";
+"TipsBtn" = "Elegir la opción cuando tenga el código de seguridad (el código de seguridad temporal) del destinatario.";
+"OkBtn" = "OK";
+//[Settings]
+"WinTitleLable" = "Configuración";
+"RecipientOption" = "Destinatario";
+"ControllerOption" = "Controlador";
+"BasicOption" = "Básico";
+"BarTitleLable" = "Aceptar control remoto";
+"EnableCtrlCheck" = "Permitir aceptar control remoto";
+"EnableCtrlCheckTips" = "Permitir recibir una solicitud de control de otro dispositivo y la solicitud debe ser confirmada manualmente por mí.";
+"EnableTmpPwdCheck" = "Permitir código de seguridad temporal";
+"EnableTmpPwdCheckTips" = "Permitir controlar este dispositivo imputando un código de seguridad temporal. Puede enviarle a su socio el código de seguridad temporal para soporte remoto. El código de seguridad temporal cambiará cada vez que se reinicie el software.";
+"EnableFixPwdCheck" = "Establecer mi código de seguridad";
+"EnableFixPwdCheckTips" = "Permitir controlar mi dispositivo en cualquier momento ingresando el código de seguridad. Guarde su código de seguridad correctamente y no lo revele a otras personas. Si se filtra accidentalmente, cámbielo a tiempo.";
+"SecurityCodeStatic" = "Código de seguridad:";
+"RemoteCtrlLable" = "Control remoto";
+"DisplayNameLable" = "Nombre del dispositivo";
+"DisplayNameTips" = "El nombre se mostrará cuando su compañero reciba su misión de control remoto.";
+"ImgQualityLable" = "Calidad de la imagen";
+"HighImageQualityItem" = "Calidad de imagen alta (predeterminada)";
+"LowImageQualityItem" = "Calidad de imagen baja";
+"HideDesktopWallPaperCheck" = "Ocultar el fondo de pantalla del escritorio";
+"HideDeskWallpageTips" = "Durante el control remoto, oculte el papel tapiz del escritorio para que la pantalla sea más suave.";
+"BasicSettingsLable" = "Configuración básicas";
+"AutoStartCheck" = "Ejecutar en el arranque";
+"LanguageLable" = "Idioma";
+"EnglishItem" = "English";
+"GermanItem" = "Deutsch";
+"FrenchItem" = "Français";
+"ItalianItem" = "Italiano";
+"SpanishItem" = "Español";
+"JapaneseItem" = "日本語";
+"ChineseItem" = "中文（简体）";
+"ChineseTWItem" = "中文（繁體）";
+"ThemeLable" = "Tema:";
+"FollowSystemItem" = "Siga el sistema";
+"LightModeItem" = "Modo de Luz";
+"DarkModeItem" = "Modo Oscuro";
+"ResetButton" = "Resetear Todo";
+"OkButton" = "Sí";
+"SaveSecCodeCheck" = "Recordar el código de seguridad";
+"SaveSecCodeTips" = "Recordar el código de seguridad introducido para facilitar la conexión automática la próxima vez.";
+//[UninstallFeedback]
+"Title" = "Asistente de Desinstalación de AnyViewer";
+"BarTitle1" = "Sentimos verle partir.";
+"Static1" = "¿Ha encontrado algún problema?";
+"TechnicalSupportBtn" = "Soporte técnico";
+"BarTitle2" = "*Razones de desinstalación";
+"SlectionTipsLable" = "(Seleccionar al menos una razón)";
+"ComplicatedUseRadio" = "Es demasiado complicado para usar";
+"SlowSpeedRadio" = "La velocidad de conexión es demasiado lenta.";
+"UnableConnectionRadio" = "No se pudo establecer la conexión";
+"UnpleasantUnterfaceRadio" = "Interfaz desagradable";
+"ChosenAnotherProductRadio" = "He elegido otro producto";
+"OtherReasonsRadio" = "Otras razones (describa...)";
+"IdeasEdit" = "Describa sus problemas o sugerencias...";
+"EmailEdit" = "Email";
+"NameEdit" = "Nombre";
+"CancelBtn" = "Cancelar";
+"OkBtn" = "Desinstalando";
+//[Update]
+"WinTitle" = "Actualizar";
+"CheckingStatusLable" = "Comprobando la última versión...";
+"AppTitle" = "AnyViewer";
+"CurVerLable1" = "La versión actual 1.0";
+"LatestVersion" = "La última: 1.1";
+"IgnoretheversionButton" = "Ignorar esta versión";
+"UpdateButton" = "Actualizar";
+"AppTile1" = "AnyViewer";
+"CurVerLable" = "La versión actual 1.1";
+"CurVerTipsLable" = "La versión actual está actualizada.";
+"OkButton" = "Sí";
+//[BubbleMsgBox]
+"MsgLabel" = "Test";
+//[PictureQuality]
+"HighPictureQualityMenuBtn" = "Calidad de imagen alta";
+"LowPictureQualityMenuBtn" = "Calidad de imagen baja";
+"HideWallPageMenuBtn" = "Ocultar el fondo de pantalla del escritorio";
+//
