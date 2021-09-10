@@ -131,15 +131,15 @@ namespace RCP
     {
         CSerializeEntry::Serialize(refJsonSerializer);
 
-//        refJsonSerializer.Serialize("m11", m_strIPs);
-//        refJsonSerializer.Serialize("m12", m_strIPMasks);
+        refJsonSerializer.Serialize("m11", m_strIPs);
+        refJsonSerializer.Serialize("m12", m_strIPMasks);
         refJsonSerializer.Serialize("m13", m_strMachineCode);
         refJsonSerializer.Serialize("m14", m_nMac);
         refJsonSerializer.Serialize("m15", m_nAuthMethodMask);
         refJsonSerializer.Serialize("m16", m_strPwd);
         refJsonSerializer.Serialize("m17", m_strTmpPwd);
         refJsonSerializer.Serialize("m18", m_nDeviceID);
-//        refJsonSerializer.Serialize("m19", m_strRouteIPs);
+        refJsonSerializer.Serialize("m19", m_strRouteIPs);
         refJsonSerializer.Serialize("m20", m_nProtocolVer);
         refJsonSerializer.Serialize("m21", m_nRFBPort1);
         refJsonSerializer.Serialize("m22", m_nRFBPort2);
@@ -153,15 +153,15 @@ namespace RCP
     {
         CSerializeEntry::DeSerialize(refJsonSerializer);
 
-//        refJsonSerializer.DeSerialize("m11", m_strIPs);
-//        refJsonSerializer.DeSerialize("m12", m_strIPMasks);
+        refJsonSerializer.DeSerialize("m11", m_strIPs);
+        refJsonSerializer.DeSerialize("m12", m_strIPMasks);
         refJsonSerializer.DeSerialize("m13", m_strMachineCode);
         refJsonSerializer.DeSerialize("m14", m_nMac);
         refJsonSerializer.DeSerialize("m15", m_nAuthMethodMask);
         refJsonSerializer.DeSerialize("m16", m_strPwd);
         refJsonSerializer.DeSerialize("m17", m_strTmpPwd);
         refJsonSerializer.DeSerialize("m18", m_nDeviceID);
-//        refJsonSerializer.DeSerialize("m19", m_strRouteIPs);
+        refJsonSerializer.DeSerialize("m19", m_strRouteIPs);
         refJsonSerializer.DeSerialize("m20", m_nProtocolVer);
         refJsonSerializer.DeSerialize("m21", m_nRFBPort1);
         refJsonSerializer.DeSerialize("m22", m_nRFBPort2);

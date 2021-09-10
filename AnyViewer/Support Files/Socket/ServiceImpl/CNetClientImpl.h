@@ -386,7 +386,7 @@ private:   //下面的代码是禁止该类的拷贝构造函数和赋值操作
 protected:
     std::recursive_mutex                              m_objEndpointMutex;                        ///< 会话链表临界区
     std::map<int, PTR_ENDPOINT >  m_mapAliveEndpoints;      ///< 当前活跃的会话列表
-private:
+protected:
     DECLARE_MEMBER_AND_METHOD_V11(unsigned int,
     m_nIP,
         IP,

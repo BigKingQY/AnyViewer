@@ -143,10 +143,21 @@
 - (void)hide {
     
     [UIView animateWithDuration:0.35 animations:^{
+        
         self.alpha = 0;
+        
     } completion:^(BOOL finished) {
         
+        [self removeFromSuperview];
+        
     }];
+}
+
+- (BOOL)isShow {
+
+    UIWindow *window = UIApplication.sharedApplication.delegate.window;
+    
+    return [window.subviews containsObject:self];
 }
 
 

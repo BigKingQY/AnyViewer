@@ -8,31 +8,6 @@
 #ifndef Typedef_h
 #define Typedef_h
 
-//可能用到的库，暂时未删除
-//#pragma once
-//#include <sys/socket.h>
-//#include <netinet/in.h>
-//#include <arpa/inet.h>
-//#include <unistd.h>
-//#include <fcntl.h>
-//#include <queue>
-//#include <mutex>
-//#include <fstream>
-//#include <sstream>
-//#include <memory>
-//#include <list>
-//#include <map>
-//#include <atomic>
-//#include <condition_variable>
-//#include <chrono>
-//#include <string>
-//#include <chrono>
-//#include <errno.h>
-//#include <thread>
-//#include <assert.h>
-//#include <regex>
-//#include <stdint.h>
-
 //MARK: ---- 类型定义 ----
 
 #include <stdint.h>
@@ -118,6 +93,10 @@ typedef char                TCHAR;
 typedef unsigned char                UCHAR;
 #endif
 
+#ifndef WCHAR
+typedef  wchar_t                WCHAR;
+#endif
+
 //MARK: ---- max & min函数 ----
 
 #ifndef custom_max
@@ -150,6 +129,19 @@ typedef unsigned char                UCHAR;
 #define DEFAULT_POLL_TIMEOUT 5000
 #define DEFAULT_KEEP_ALIVE_TIMEOUT 300    ///<单位秒
 
+
+//MARK: Windows相关的宏
+#define WTS_CONSOLE_CONNECT                0x1
+#define WTS_CONSOLE_DISCONNECT             0x2
+#define WTS_REMOTE_CONNECT                 0x3
+#define WTS_REMOTE_DISCONNECT              0x4
+#define WTS_SESSION_LOGON                  0x5
+#define WTS_SESSION_LOGOFF                 0x6
+#define WTS_SESSION_LOCK                   0x7
+#define WTS_SESSION_UNLOCK                 0x8
+#define WTS_SESSION_REMOTE_CONTROL         0x9
+#define WTS_SESSION_CREATE                 0xa
+#define WTS_SESSION_TERMINATE              0xb
 
 
 //MARK: ---- memory pool 相关宏定义 ----

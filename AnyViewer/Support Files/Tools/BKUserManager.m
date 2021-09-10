@@ -24,6 +24,7 @@
         
         _deviceId = 0;
         _nickName = @"UnKnown Name";
+        _password = @"";
     }
     return self;
 }
@@ -168,9 +169,18 @@ static BKUserManager *_manager;
 /// @param user 用户对象
 - (void)addConnectHistory:(BKUser *)user {
     
-    [BKUserManager.shared.user.userConnectHistory addObject:user];
+    BKUser *model = BKUserManager.shared.user;
     
-    [BKUserManager.shared update];
+    BKUser *findUser = [self findConnectHistory:user.deviceId];
+    
+    if (findUser) {
+        findUser = user;
+    }else {
+        [model.userConnectHistory addObject:user];
+    }
+    
+    [BKUserManager.shared updateUser:model];
+
 }
 
 /// 删除某个连接记录
@@ -184,10 +194,10 @@ static BKUserManager *_manager;
 
 /// 通过设备ID来查询历史是否存在
 /// @param deviceId 设备ID
-- (BKUser *)findConnectHistory:(u_int64_t)deviceId {
+- (nullable BKUser *)findConnectHistory:(u_int64_t)deviceId {
     
     NSArray *array = BKUserManager.shared.connectHistory;
-    BKUser *user = [BKUser new];
+    BKUser *user;
     for (BKUser *history in array) {
         if (deviceId == history.deviceId) {
             user = history;

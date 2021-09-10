@@ -28,7 +28,19 @@ inline uint64_t ntohq(uint64_t nData)
         (uint64_t)*((const BYTE *)(&nData)+7));
 }
 
+inline unsigned int HTON3B(unsigned int nData)
+{
+    return ((unsigned int)*((const BYTE *)(&nData)) << 16 |
+        (unsigned int)*((const BYTE *)(&nData) + 1) << 8 |
+        (unsigned int)*((const BYTE *)(&nData) + 2));
+}
 
+inline unsigned int NTOH3B(unsigned int nData)
+{
+    return ((unsigned int)*((const BYTE *)(&nData)) << 16 |
+        (unsigned int)*((const BYTE *)(&nData) + 1) << 8 |
+        (unsigned int)*((const BYTE *)(&nData) + 2));
+}
 
 
 

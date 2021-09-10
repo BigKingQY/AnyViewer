@@ -74,6 +74,9 @@
     //初始化设置的存储路径
     GetTransactionInstance()->InitSettingFilePath(kPrjSettingPath);
     
+    //初始化线程池对象
+    GetTransactionInstance()->InitThreadPool();
+    
     //初始化APP版本
     GetTransactionInstance()->SetAppVersion([kAppVersion doubleValue]);
     

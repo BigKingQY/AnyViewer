@@ -416,8 +416,8 @@ namespace RCP
         virtual void DeSerialize(CJSONSerializer& refJsonSerializer) override;
 
     private:
-//        DECLARE_MEMBER_AND_METHOD(std::string, m_strIPs, IPs)              ///< ipµÿ÷∑£¨∂‡∏ˆµÿ÷∑”√∑÷∫≈∑÷∏Ó
-//        DECLARE_MEMBER_AND_METHOD(std::string, m_strIPMasks, IPMasks)      ///< ipµÿ÷∑∂‘”¶µƒ—⁄¬Î£¨∂‡∏ˆ—⁄¬Î”√∑÷∫≈∑÷∏Ó
+        DECLARE_MEMBER_AND_METHOD(std::string, m_strIPs, IPs)              ///< ipµÿ÷∑£¨∂‡∏ˆµÿ÷∑”√∑÷∫≈∑÷∏Ó
+        DECLARE_MEMBER_AND_METHOD(std::string, m_strIPMasks, IPMasks)      ///< ipµÿ÷∑∂‘”¶µƒ—⁄¬Î£¨∂‡∏ˆ—⁄¬Î”√∑÷∫≈∑÷∏Ó
         DECLARE_MEMBER_AND_METHOD(std::string, m_strMachineCode, MachineCode) ///< ª˙–µ¬Î
         DECLARE_MEMBER_AND_METHOD(std::string, m_strNickName,NickName) ///< √˚≥∆
         DECLARE_MEMBER_AND_METHOD_V11(U64, m_nMac, Mac, 0)                 ///< Õ¯ø®ŒÔ¿Ìµÿ÷∑
@@ -427,7 +427,7 @@ namespace RCP
         DECLARE_MEMBER_AND_METHOD(std::string, m_strPwd, Pwd); ///< πÃ∂®ø⁄¡Ó£¨”√ªß…Ë÷√
         DECLARE_MEMBER_AND_METHOD(std::string, m_strTmpPwd, TmpPwd); ///< ¡Ÿ ±ø⁄¡Ó£¨≤ª–Ë“™±£¥Ê
         DECLARE_MEMBER_AND_METHOD_V11(U64, m_nDeviceID, DeviceID,0); ///< ¥”∑˛ŒÒ∆˜ªÒ»°µƒ…Ë±∏ID£¨≤ª–Ë“™±£¥Ê
-//        DECLARE_MEMBER_AND_METHOD(std::string, m_strRouteIPs, RouteIPs)  ///< ¬∑”…ipµÿ÷∑£¨∂‡∏ˆµÿ÷∑”√∑÷∫≈∑÷∏Ó
+        DECLARE_MEMBER_AND_METHOD(std::string, m_strRouteIPs, RouteIPs)  ///< ¬∑”…ipµÿ÷∑£¨∂‡∏ˆµÿ÷∑”√∑÷∫≈∑÷∏Ó
         DECLARE_MEMBER_AND_METHOD_V11(unsigned int, m_nProtocolVer, ProtocolVer, 0); ///< øÕªß∂À÷ß≥÷µƒ–≠“È∞Ê±æ
         DECLARE_MEMBER_AND_METHOD_V11(double, m_nAppVer, AppVer, 1); ///< ”¶”√≥Ã–Ú∞Ê±æ–≈œ¢
         DECLARE_MEMBER_AND_METHOD(std::string, m_strRegion, Region);               ///< øÕªß∂ÀÀ˘‘⁄µƒ«¯”Ú

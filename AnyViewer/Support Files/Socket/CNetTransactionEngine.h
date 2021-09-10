@@ -18,6 +18,8 @@
 
 #include "RCServerProxy.h"
 #include "RCProtocol.h"
+#include "CCustomThreadPool.h"
+#include "CVNCProxy.h"
 
 #include <vector>
 #include <utility>
@@ -39,7 +41,7 @@ public:
     bool StartConnect();
     
     ///通过对方的设备ID进行连接
-    bool ConnectControlled(const U64 deviceId);
+    bool ConnectControlled(const U64 deviceId, RCP::AUTHENTICATION_METHOD contrlMethod = RCP::AM_AUTO);
     
     ///发起认证请求
     void SendAuthenticationRequest(const U64 deviceId, const char *secCode);
@@ -53,15 +55,25 @@ public:
     ///初始化设置文件存储路径
     void InitSettingFilePath(const char *path);
     
+    ///初始化线程池对象
+    void InitThreadPool();
+    
     ///设置设备唯一ID
-    ///通过调用SetDeviceUUID方法
+    ///通过调用SetDeviceUUID方法，这里注释是因为不需要申明方法
 
     ///设置APP版本号
-    ///通过调用SetAppVersion方法
+    ///通过调用SetAppVersion方法，这里注释是因为不需要申明方法
     
     //==========      END      ==========
     
-private:
+    
+public:/* 任务线程池相关 */
+    
+    ///将任务加入线程池
+    bool CreateThreadTask(const THREAD_POOL_FUN& refThreadFun, CTaskSink* pTaskSink);
+    
+    
+private:/* 消息相关 */
         
     ///消息注册到消息总线
     void RegisterMessageBus();
@@ -84,13 +96,53 @@ private:
     ///注册成功后的回复
     void OnRegistResponse(CDataPacket* pDataPacket);
     
-private:
+    ///准备连接的回复
+    void OnReadyConnRequest(CDataPacket* pPacket);
+    
+    ///收到连接的消息
+    void OnVNCConnRequest(CDataPacket* pPacket);
+    
+    ///
+    bool OnChangeCommunicationModeRequest(CDataPacket* pPacket);
+    
+    ///
+    void OnPeerAddrInfoRequest(CDataPacket* pPacket);
+    
+    
+private:/* 端点连接相关 */
+    
+    // 通过端点对象找到对应的VNC代理
+    CVNCProxyPtr LookupVNCProxy(PTR_NET_ENDPOINT_INTERFACE pEndpoint);
+    
+    // 通过设备ID来找到对应的VNC代理
+    CVNCProxyPtr LookupVNCProxybyID(const U64 nPeerID);
+    
+    //通过回话ID来查找对应的VNC代理
+    CVNCProxyPtr LookupVNCProxy(const U32 nID) const;
+
+    
+    // 删除VNC代理
+    bool RemoveVNCProxy(CVNCProxyPtr pVNCProxy);
+
+    
+private:/* 自定义属性 */
 
     ///连接代理对象
     CRCSvrProxyPtr           m_pRCSvrProxy;
     
     ///用于存储注册的消息ID和类型
     vector<MSG_PAIR>         m_MsgIDs;
+    
+    ///任务线程池
+    CCustomThreadPool           m_objThreadPool;
+    
+    ///锁
+    mutable std::recursive_mutex m_mxVNCProxy;
+
+    ///所有的远程控制
+    CVNCProxyArray           m_arrVNCProxyArray;
+
+private:/* 宏属性 */
     
     ///系统APP版本号
     DECLARE_MEMBER_AND_SET_METHOD_V11(double, m_AppVersion, AppVersion, 0);

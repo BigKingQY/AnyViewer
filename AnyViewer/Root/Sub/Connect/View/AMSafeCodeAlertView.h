@@ -20,6 +20,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)hide;
 
+- (BOOL)isShow;
+
 - (void)startLoading;
 
 

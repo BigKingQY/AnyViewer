@@ -21,6 +21,8 @@
 @property (nonatomic, strong) AMRemoteDeviceInputView *deviceView;
 @property (nonatomic, strong) AMSafeCodeAlertView *codeView;
 
+/// 判断当前是否为手动认证
+@property (nonatomic, assign) BOOL isManual;
 
 @end
 
@@ -102,20 +104,31 @@
     
     run_main_queue(^{
        
+        [MBProgressHUD hideForViewAndWindow];
+        
         switch (status)
         {
             case ES_SUCCESS:    //连接成功
-                
+//
                 [self handleConnectSuccess];
                 break;
                 
             case ES_SELECT_AUTH_METHOD: //选择认证方式
-                
-                [self handleAuthType];
+            {
+                BOOL isExsit = [self checkUserPasswordExsit];
+                if (!isExsit) {
+                    [self handleAuthType];
+                }
+            }
                 break;
                 
             case ES_NEED_PWD_AUTH:  //需要密码认证
-                [self showPasswordAlert];
+            {
+                BOOL isExsit = [self checkUserPasswordExsit];
+                if (!isExsit) {
+                    [self showPasswordAlert];
+                }
+            }
                 break;
                 
             case ES_SRC_DEVICE_FROZEN:  //源设备被冻结
@@ -128,7 +141,7 @@
                 [self handleDstDeviceError:otherStatus];
                 break;
                                 
-            case ES_INVALID_PASSWD:
+            case ES_INVALID_PASSWD:     //密码错误
                 
                 [MBProgressHUD showMessageOnWindow:BKLocalizedString(@"IDS_INCORRECT_SECURITY_CODE")];
                 break;
@@ -149,7 +162,7 @@
                 [MBProgressHUD showMessageOnWindow:BKLocalizedString(@"IDS_REJECT_CONTROL")];
                 break;
                                 
-            case ES_TIME_OUT:
+            case ES_TIME_OUT:   //超时
                 
                 [MBProgressHUD showMessageOnWindow:BKLocalizedString(@"IDS_CONNECT_TIME_OUT")];
                 break;
@@ -167,28 +180,74 @@
 ///连接成功，跳转到远程设备的显示页面
 - (void)handleConnectSuccess {
     
-    [MBProgressHUD hideForView:self.view];
-    [self.codeView hide];
-    
+    //这里处理手动认证的结果，手动认证控制端不需要发起认证，直接处理返回的结果
+    if (self.isManual) {
+        
+        [self showControlViewController];
+    }
     
 }
 
+
+///检查用户的密码是否存在，存在的话直接发起认证
+- (BOOL)checkUserPasswordExsit {
+    
+    BKUser *user = [BKUserManager.shared findConnectHistory:[self getCurrentDeviceId]];
+    
+    if (user && user.password.length > 0) {
+        
+        [self sendAuthenticationRequest:user.password];
+        
+        return YES;
+    }
+    
+    return NO;
+}
 
 
 ///弹出选择认证方式的弹窗
 - (void)handleAuthType {
+        
+    BKCellModel *manual = [BKCellModel initWithTitle:@"发送控制请求" icon:nil block:^(BKCellModel * _Nonnull model) {
+        
+        [self handleConnect:AM_MANUAL];
+      
+    }];
     
-    [MBProgressHUD hideForView:self.view];
+    BKCellModel *pwd = [BKCellModel initWithTitle:BKLocalizedString(@"PwdAuthRadio") icon:nil block:^(BKCellModel * _Nonnull model) {
+        
+        [self showPasswordAlert];
+        
+    }];
     
+    BasePickerViewController *controller = [BasePickerViewController new];
+    controller.dataSource = @[manual, pwd];
+    
+    [self bk_customDirectionalPresentViewController:controller animated:YES autoDismiss:YES];
 }
+
+
+///显示输入安全码的弹窗
+- (void)showPasswordAlert {
+        
+    run_main_queue(^{
+        
+        BKUser *user = [BKUserManager.shared findConnectHistory:[self.deviceView.deviceId unsignedLongLongValue]];
+        
+        //弹出需要输入的安全码弹框
+        [self.codeView showViewWithDeviceId:self.deviceView.deviceId nickName:user.nickName];
+        
+    });
+    
+    //测试账号：941309969， 123qwe
+}
+
 
 
 /// 处理源设备冻结的错误提示
 /// @param otherStatus 解冻时长(秒)
 - (void)handleSrcDeviceError:(const int)otherStatus {
-    
-    [MBProgressHUD hideForView:self.view];
-    
+        
     if (otherStatus > 60) {
         
         [MBProgressHUD showMessageOnWindow:[NSString stringWithFormat:BKLocalizedString(@"IDS_SRC_DEVICE_FORZEN_TIPS_MIN"), otherStatus / 60]];
@@ -202,9 +261,7 @@
 /// 处理目标设备冻结的错误提示
 /// @param otherStatus 解冻时长(秒)
 - (void)handleDstDeviceError:(const int)otherStatus {
-    
-    [MBProgressHUD hideForView:self.view];
-    
+        
     if (otherStatus > 60) {
         
         [MBProgressHUD showMessageOnWindow:[NSString stringWithFormat:BKLocalizedString(@"IDS_DST_DEVICE_FORZEN_TIPS_MIN"), otherStatus / 60]];
@@ -219,28 +276,77 @@
 /// @param otherStatus 被冻结时长，单位秒
 - (void)onAuthenticatResponse:(const int)status otherStatus:(const int)otherStatus {
     
-    //这里理论上跟连接返回的是一样的错误，只是分开了消息的发送
-    NSLog(@"==== 收到认证后返回的消息 ====");
-    [self onConnectResponse:status otherStatus:otherStatus];
-   
-}
-
-
-
-- (void)showPasswordAlert {
-        
+    NSLog(@"==== 收到认证后返回的消息: %d---%d ====", status, otherStatus);
+    
     run_main_queue(^{
+       
+        [MBProgressHUD hideForViewAndWindow];
         
-        [MBProgressHUD hideForView:self.view];
+        //自动认证成功后在此处理，因为自动认证需要发起认证请求，收到回复
+        if (status == ES_SUCCESS) {
+            
+            u_int64_t deviceId = [self getCurrentDeviceId];
+            
+            NSString *password = self.codeView.textField.text;
+            
+            run_global_queue(^{
+               
+                //有密码就保存起来
+                if (password.length > 0) {
+                    
+                    //查询历史记录中是否存在该用户
+                    BKUser *user = [BKUserManager.shared findConnectHistory:deviceId];
+                    
+                    //用户不存在时说明是第一次认证成功
+                    if (!user) {
+                        user = [BKUser new];
+                    }
+                    
+                    //更新设备ID和密码
+                    user.deviceId = deviceId;
+                    user.password = password;
+                    
+                    [BKUserManager.shared addConnectHistory:user];
+                }
+                
+            });
+            
+            [self showControlViewController];
+            
+            NSLog(@"==== 自动认证成功 ====");
+            return;
+            
+        }else if (status == ES_INVALID_PASSWD) {
+            
+            //当返回密码错误时，需要判断当前界面是否展示了密码弹窗，如果没有展示需要重新展示出来
+            //可能对方修改了密码，导致自动认证失败，还需要删除现有的密码，如果有保存过
+            if (!self.codeView.isShow) {
+                
+                [MBProgressHUD showMessageOnWindow:BKLocalizedString(@"IDS_INCORRECT_SECURITY_CODE")];
+
+                run_main_after(1.2, ^{
+                    [self showPasswordAlert];
+                });
+            }
+            
+            //清除当前的用户，防止历史记录在最近连接列表数据不正常
+            BKUser *user = [BKUserManager.shared findConnectHistory:[self getCurrentDeviceId]];
+            
+            if (user) {
+                
+                [BKUserManager.shared removeConnectHistory:user];
+            }
+            
+        }
         
-        BKUser *user = [BKUserManager.shared findConnectHistory:[self.deviceView.deviceId unsignedLongLongValue]];
         
-        //弹出需要输入的安全码弹框
-        [self.codeView showViewWithDeviceId:self.deviceView.deviceId nickName:user.nickName];
+        //其他错误消息与连接时保持一致
+        [self onConnectResponse:status otherStatus:otherStatus];
+       
+        NSLog(@"==== 自动认证失败 ====");
         
     });
     
-    //测试账号：941309969， 123qwe
 }
 
 
@@ -249,6 +355,9 @@
     
     AMDeviceControlViewController *controller = [AMDeviceControlViewController new];
     [self.navigationController pushViewController:controller animated:YES];
+    
+    //隐藏密码输入弹窗
+    [self.codeView hide];
 }
 
 
@@ -259,23 +368,8 @@
     //连接按钮点击事件
     [[self.deviceView.connButton rac_signalForControlEvents:UIControlEventTouchUpInside] subscribeNext:^(__kindof UIControl * _Nullable x) {
         
-        //当前设备还没注册成功
-        if (BKUserManager.shared.user.deviceId == 0) {
-            [MBProgressHUD showMessage:@"连接中，请稍后" onView:self.view];
-            return;
-        }
-        
-        U64 deviceId = [[self.deviceView.deviceId stringByReplacingOccurrencesOfString:@" " withString:@""] unsignedLongLongValue];
-        
-        //判断输入的是否是自己的设备ID
-        if (deviceId == BKUserManager.shared.user.deviceId) {
-            [MBProgressHUD showMessage:BKLocalizedString(@"IDS_SAME_AS_LOCAL_ID_TIPS") onView:self.view];
-            return;
-        }
-        
-        [MBProgressHUD showLoading:BKLocalizedString(@"IDS_VERIFYING_TIPS") onView:self.view];
-        
-        GetTransactionInstance()->ConnectControlled(deviceId);
+        [self.view endEditing:YES];
+        [self handleConnect:AM_AUTO];
 
     }];
     
@@ -283,14 +377,57 @@
     //输入安全码确定点击事件
     [[self.codeView.doneButton rac_signalForControlEvents:UIControlEventTouchUpInside] subscribeNext:^(__kindof UIControl * _Nullable x) {
         
-        const U64 deviceId = [[self.deviceView.deviceId stringByReplacingOccurrencesOfString:@" " withString:@""] unsignedLongLongValue];
-        
-        NSString *code = self.codeView.textField.text;
-        
-        GetTransactionInstance()->SendAuthenticationRequest(deviceId, code.UTF8String);
-        
+        [self.view endEditing:YES];
+        [self sendAuthenticationRequest:self.codeView.textField.text];
+    
     }];
     
+}
+
+
+- (void)sendAuthenticationRequest:(NSString *)code {
+    
+    [MBProgressHUD showLoadingOnWindow:BKLocalizedString(@"IDS_VERIFYING_TIPS")];
+
+    const U64 deviceId = [self getCurrentDeviceId];
+    
+    GetTransactionInstance()->SendAuthenticationRequest(deviceId, code.UTF8String);
+}
+
+
+
+/// 选择连接方式，发送控制请求，默认是auto，手动传manual
+/// @param controlMethod 控制方式
+- (void)handleConnect:(AUTHENTICATION_METHOD)controlMethod {
+    
+    self.isManual = (controlMethod == AM_MANUAL);
+    
+    //当前设备还没注册成功
+    if (BKUserManager.shared.user.deviceId == 0) {
+        [MBProgressHUD showMessage:@"连接中，请稍后" onView:self.view];
+        return;
+    }
+    
+    U64 deviceId = [self getCurrentDeviceId];
+    
+    //判断输入的是否是自己的设备ID
+    if (deviceId == BKUserManager.shared.user.deviceId) {
+        [MBProgressHUD showMessage:BKLocalizedString(@"IDS_SAME_AS_LOCAL_ID_TIPS") onView:self.view];
+        return;
+    }
+    
+    [MBProgressHUD showLoading:BKLocalizedString(@"IDS_VERIFYING_TIPS") onView:self.view];
+    
+    GetTransactionInstance()->ConnectControlled(deviceId, controlMethod);
+}
+
+
+///返回当前输入的设备号，转成U64类型
+- (U64)getCurrentDeviceId {
+    
+    U64 deviceId = [[self.deviceView.deviceId stringByReplacingOccurrencesOfString:@" " withString:@""] unsignedLongLongValue];
+    
+    return deviceId;
 }
 
 //MARK: Private Methods - 私有方法

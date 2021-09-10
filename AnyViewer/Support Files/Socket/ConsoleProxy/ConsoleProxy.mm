@@ -65,6 +65,8 @@ CConsoleProxy::CConsoleProxy(
 {
     SetIP(nIP);
     SetPort(nPort);
+    
+    m_objSendingLastTime = std::chrono::system_clock::now();
 }
 
 
@@ -531,7 +533,8 @@ bool CConsoleProxy::OnEventHandle(
 
     case SE_CHECK_HEART:
     {
-        if (m_objSendingLastTime.elapsed() >= HEART_TIMEOUT)
+        long time = getTimerElapsed();
+        if (time >= HEART_TIMEOUT)
         {
             //TRACE("send heart packet\n");
             SendCommonRequest(RCP::MT_HEARTBEAT);
@@ -552,4 +555,21 @@ bool CConsoleProxy::OnEventHandle(
     refMessageBus.SendReq<void, SERVICE_EVENT>(GetEventType(), std::forward <SERVICE_EVENT>(nEvent));
 
     return true;
+}
+
+
+// 重置Timer
+void CConsoleProxy::restartTimer()
+{
+    m_objSendingLastTime = std::chrono::system_clock::now();
+}
+
+// 获取当前时间与上次记录的时间差
+long CConsoleProxy::getTimerElapsed()
+{
+
+    std::chrono::system_clock::time_point nowTime = std::chrono::system_clock::now();
+    std::chrono::duration<int> duration = std::chrono::duration_cast<std::chrono::seconds>(nowTime - m_objSendingLastTime);
+    
+    return duration.count();
 }

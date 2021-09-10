@@ -246,7 +246,7 @@ private:
     DECLARE_MEMBER_AND_METHOD_V11(unsigned int, m_nTheme, Theme, TT_FOLLOW_SYSTEM);
 
     ///< RCøÿ÷∆∑˛ŒÒ∆˜IPµÿ÷∑
-    DECLARE_MEMBER_AND_SET_METHOD_V11(std::string, m_strServerIP, ServerIP,"controlserver.anyviewer.com");
+    DECLARE_MEMBER_AND_SET_METHOD_V11(std::string, m_strServerIP, ServerIP, "192.168.3.74");
     
     ///< RCøÿ÷∆∑˛ŒÒ∆˜∂Àø⁄
     DECLARE_MEMBER_AND_METHOD_V11(unsigned int, m_nPort, Port, 30192);

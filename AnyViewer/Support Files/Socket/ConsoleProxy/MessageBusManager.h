@@ -18,9 +18,12 @@ class MessageBusManager
 public:
     MessageBusManager();
     
-    CMessageBus m_MessageBus;
+    CMessageBus                 m_MessageBus;
     
 };
+
+
+
 
 #endif
 

@@ -13,6 +13,7 @@
 #include "Timer.h"
 #include "CDataPacket.h"
 #include "EnumHeader.h"
+#include "VNCPacket.h"
 #include <thread>
 
 
@@ -47,6 +48,18 @@ public:
     /// @param pPacket 一个指向数据包对象的指针
     /// @return  true: 成功，false: 失败
     virtual bool Send(CNetPacket* pPacket) = 0;
+    
+    // ********************************************************************************
+    /// <summary>
+    /// @brief 发送数据包
+    /// </summary>
+    /// <param name="pData">指向发送的数据指针</param>
+    /// <param name="nLen">需要发送的数据长度</param>
+    /// <returns>true: 成功，false: 失败</returns>
+    /// <created>Andy,2020/11/27</created>
+    /// <changed>Andy,2020/11/27</changed>
+    // ********************************************************************************
+    virtual bool Send(const BYTE* pData,const unsigned int nLen) = 0;
 
     /// @brief 从网络中接收数据包
     virtual void ReceiveData() = 0;
@@ -766,6 +779,13 @@ private :
     std::mutex                m_objRecevingMutex;                             ///< 接收数据线程锁
 
 };
+
+
+//using CVNCTCPEndpoint = CNetEndpoint<CNetTCPDataTransfer>;
+//using CVNCUDPEndpoint = CNetEndpoint<CDataPacket,CNetUDPDataTransfer, CDataPacket::PACKET_LEN_MAX>;
+//using CVNCTCPEndpointPtr = std::shared_ptr<CVNCTCPEndpoint>;
+//using CVNCUDPEndpointPtr = std::shared_ptr<CVNCUDPEndpoint>;
+
 
 
 

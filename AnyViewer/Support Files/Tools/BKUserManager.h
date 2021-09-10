@@ -15,7 +15,9 @@ NS_ASSUME_NONNULL_BEGIN
 ///设备ID
 @property (nonatomic, assign) u_int64_t deviceId;
 ///用户昵称
-@property (nonatomic, copy) NSString *nickName;
+@property (nonatomic, strong) NSString *nickName;
+///用户密码
+@property (nonatomic, strong) NSString *password;
 
 @end
 
@@ -59,7 +61,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 通过设备ID来查询历史是否存在
 /// @param deviceId 设备ID
-- (BKUser *)findConnectHistory:(u_int64_t)deviceId;
+- (nullable BKUser *)findConnectHistory:(u_int64_t)deviceId;
 
 /// 更新所有的连接记录
 /// @param connectHistory 历史记录

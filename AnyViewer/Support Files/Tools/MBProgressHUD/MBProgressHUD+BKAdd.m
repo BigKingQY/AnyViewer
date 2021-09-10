@@ -58,20 +58,20 @@
 }
 
 + (void)showLoadingOnWindow:(NSString *)text {
-    [self showLoading:text onView:UIApplication.sharedApplication.keyWindow];
+    [self showLoading:text onView:UIApplication.sharedApplication.delegate.window];
 }
 
 + (void)showSuccessOnWindow:(NSString *)text {
-    [self showSuccess:text onView:UIApplication.sharedApplication.keyWindow];
+    [self showSuccess:text onView:UIApplication.sharedApplication.delegate.window];
 }
 
 + (void)showMessageOnWindow:(NSString *)text {
-    [self showMessage:text onView:UIApplication.sharedApplication.keyWindow];
+    [self showMessage:text onView:UIApplication.sharedApplication.delegate.window];
 }
 
 + (void)hideForWindow {
  
-    MBProgressHUD *windowHUD = [MBProgressHUD HUDForView:UIApplication.sharedApplication.keyWindow];
+    MBProgressHUD *windowHUD = [MBProgressHUD HUDForView:UIApplication.sharedApplication.delegate.window];
     if (windowHUD) {
         [windowHUD hideAnimated:YES];
     }
@@ -86,7 +86,7 @@
 }
 
 + (UIView *)rootView {
-    UIViewController *topController = [UIApplication sharedApplication].keyWindow.rootViewController;
+    UIViewController *topController = UIApplication.sharedApplication.delegate.window.rootViewController;
     UIViewController *vc = [topController gk_visibleViewControllerIfExist];
     return vc.view;
 }

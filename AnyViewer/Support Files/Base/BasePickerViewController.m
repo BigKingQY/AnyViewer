@@ -72,6 +72,10 @@
             }else {
                 model = self.dataSource.firstObject;
             }
+            //两种方式的block均可
+            if (model.block) {
+                model.block(model);
+            }
             if (self.selectedBlock) {
                 self.selectedBlock(model);
             }

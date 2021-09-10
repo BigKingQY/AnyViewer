@@ -12,6 +12,8 @@
 //#include "RCProtocol.h"
 #include "ConsoleProxy.h"
 
+#include <chrono>
+
 #include <boost/timer.hpp>
 
 
@@ -61,7 +63,11 @@ private:
     //DECLARE_MEMBER_AND_METHOD(CString, m_strAccount, Account)      ///< ’À∫≈
     DECLARE_MEMBER_AND_METHOD(I64, m_nID, ID);
     DECLARE_MEMBER_AND_METHOD(unsigned int, m_nType, Type);  ///<@see COST_CLIENT_TYPE
-    boost::timer               m_objSendingLastTime;
+    
+//    int                         m_objSendingLastTime;
+    
+    std::chrono::system_clock::time_point       m_objSendingLastTime;
+//    boost::timer               m_objSendingLastTime;
 };
 
 using CRCSvrProxyPtr = std::shared_ptr<CRCSvrProxy>;

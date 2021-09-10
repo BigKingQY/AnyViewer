@@ -69,8 +69,42 @@
 		185C7DEA26E5A1BE008F4E4C /* BKIPRegionTool.m in Sources */ = {isa = PBXBuildFile; fileRef = 185C7DE926E5A1BE008F4E4C /* BKIPRegionTool.m */; };
 		185C7DEC26E5AE8C008F4E4C /* AdSupport.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 185C7DEB26E5AE8C008F4E4C /* AdSupport.framework */; };
 		185C7DF026E5F538008F4E4C /* LocalMessageBus.mm in Sources */ = {isa = PBXBuildFile; fileRef = 185C7DEF26E5F538008F4E4C /* LocalMessageBus.mm */; };
+		185CFED626E9ACA800043859 /* CVNCProxy.mm in Sources */ = {isa = PBXBuildFile; fileRef = 185CFED526E9ACA800043859 /* CVNCProxy.mm */; };
+		185CFF5F26E9DA0000043859 /* VNCClient.mm in Sources */ = {isa = PBXBuildFile; fileRef = 185CFF5E26E9DA0000043859 /* VNCClient.mm */; };
+		185CFF6226E9DD1000043859 /* Ax3Event.mm in Sources */ = {isa = PBXBuildFile; fileRef = 185CFF6126E9DD1000043859 /* Ax3Event.mm */; };
+		185CFF6526E9E04100043859 /* VNCProtocol.mm in Sources */ = {isa = PBXBuildFile; fileRef = 185CFF6426E9E04100043859 /* VNCProtocol.mm */; };
+		185CFF6826E9E86300043859 /* VNCPacket.mm in Sources */ = {isa = PBXBuildFile; fileRef = 185CFF6726E9E86300043859 /* VNCPacket.mm */; };
+		185CFF6B26E9EC5C00043859 /* PixelFormat.mm in Sources */ = {isa = PBXBuildFile; fileRef = 185CFF6A26E9EC5B00043859 /* PixelFormat.mm */; };
+		185CFF6E26E9F7E000043859 /* VNCEndpointT.mm in Sources */ = {isa = PBXBuildFile; fileRef = 185CFF6D26E9F7E000043859 /* VNCEndpointT.mm */; };
+		185CFF7126E9F83300043859 /* KCPEndpoint.mm in Sources */ = {isa = PBXBuildFile; fileRef = 185CFF7026E9F83300043859 /* KCPEndpoint.mm */; };
 		1863FB0526E70CC70034774C /* BKMessageManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 1863FB0426E70CC70034774C /* BKMessageManager.m */; };
 		1863FB0826E767230034774C /* AMSafeCodeAlertView.m in Sources */ = {isa = PBXBuildFile; fileRef = 1863FB0726E767230034774C /* AMSafeCodeAlertView.m */; };
+		1869927B26EB2ADC00260198 /* RemoteViewerCore.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1869927A26EB2ADC00260198 /* RemoteViewerCore.mm */; };
+		1869927F26EB2C8C00260198 /* CoreEventsAdapter.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1869927E26EB2C8C00260198 /* CoreEventsAdapter.mm */; };
+		1869928226EB2FF000260198 /* FbUpdateNotifier.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1869928126EB2FF000260198 /* FbUpdateNotifier.mm */; };
+		1869928526EB304300260198 /* UpdateRequestSender.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1869928426EB304300260198 /* UpdateRequestSender.mm */; };
+		1869928826EB30EC00260198 /* CursorPainter.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1869928726EB30EC00260198 /* CursorPainter.mm */; };
+		1869928B26EB316800260198 /* CursorShape.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1869928A26EB316800260198 /* CursorShape.mm */; };
+		1869928E26EB31C900260198 /* Region.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1869928D26EB31C900260198 /* Region.mm */; };
+		1869929126EB322900260198 /* x11region.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1869929026EB322900260198 /* x11region.mm */; };
+		186992F526EB3AE300260198 /* AVCodeHelper.mm in Sources */ = {isa = PBXBuildFile; fileRef = 186992F426EB3AE300260198 /* AVCodeHelper.mm */; };
+		186992F826EB542500260198 /* Thread.mm in Sources */ = {isa = PBXBuildFile; fileRef = 186992F726EB542500260198 /* Thread.mm */; };
+		186992F926EB55A100260198 /* FrameBuffer.h in Sources */ = {isa = PBXBuildFile; fileRef = 1869927C26EB2BDA00260198 /* FrameBuffer.h */; };
+		186992FB26EB55BA00260198 /* FrameBuffer.mm in Sources */ = {isa = PBXBuildFile; fileRef = 186992FA26EB55BA00260198 /* FrameBuffer.mm */; };
+		186992FD26EB67EF00260198 /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 186992FC26EB67EF00260198 /* libz.tbd */; };
+		186992FF26EB67F700260198 /* libbz2.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 186992FE26EB67F700260198 /* libbz2.tbd */; };
+		1869930126EB680100260198 /* libiconv.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 1869930026EB680000260198 /* libiconv.tbd */; };
+		1869930326EB6AE600260198 /* libavcodec.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 1869930226EB6AE600260198 /* libavcodec.a */; };
+		1869930A26EB6B0D00260198 /* libavformat.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 1869930426EB6B0C00260198 /* libavformat.a */; };
+		1869930B26EB6B0D00260198 /* libavutil.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 1869930526EB6B0C00260198 /* libavutil.a */; };
+		1869930C26EB6B0D00260198 /* libswresample.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 1869930626EB6B0C00260198 /* libswresample.a */; };
+		1869930D26EB6B0D00260198 /* libavfilter.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 1869930726EB6B0C00260198 /* libavfilter.a */; };
+		1869930E26EB6B0D00260198 /* libavdevice.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 1869930826EB6B0C00260198 /* libavdevice.a */; };
+		1869930F26EB6B0D00260198 /* libswscale.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 1869930926EB6B0C00260198 /* libswscale.a */; };
+		1869931126EB6C3000260198 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1869931026EB6C3000260198 /* AudioToolbox.framework */; };
+		1869931326EB6C3A00260198 /* CoreMedia.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1869931226EB6C3900260198 /* CoreMedia.framework */; };
+		1869931526EB6C4000260198 /* VideoToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1869931426EB6C4000260198 /* VideoToolbox.framework */; };
+		1869931726EB6E2900260198 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1869931626EB6E2800260198 /* AVFoundation.framework */; };
 		1873CF2326E1B60000598361 /* GlobeFunction.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1873CF2226E1B60000598361 /* GlobeFunction.mm */; };
 		1873CF2E26E1F48700598361 /* CAIMTime.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1873CF2D26E1F48700598361 /* CAIMTime.mm */; };
 		1873CF4C26E225D900598361 /* NetworkRequest.m in Sources */ = {isa = PBXBuildFile; fileRef = 1873CF4B26E225D900598361 /* NetworkRequest.m */; };
@@ -241,10 +275,68 @@
 		185C7DED26E5B2DC008F4E4C /* AnyViewer.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AnyViewer.entitlements; sourceTree = "<group>"; };
 		185C7DEE26E5F538008F4E4C /* LocalMessageBus.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = LocalMessageBus.h; sourceTree = "<group>"; };
 		185C7DEF26E5F538008F4E4C /* LocalMessageBus.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = LocalMessageBus.mm; sourceTree = "<group>"; };
+		185CFED426E9ACA800043859 /* CVNCProxy.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = CVNCProxy.h; sourceTree = "<group>"; };
+		185CFED526E9ACA800043859 /* CVNCProxy.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = CVNCProxy.mm; sourceTree = "<group>"; };
+		185CFED726E9AD1500043859 /* Dimension.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = Dimension.h; sourceTree = "<group>"; };
+		185CFED926E9AE5E00043859 /* SyncQueue.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SyncQueue.h; sourceTree = "<group>"; };
+		185CFF4826E9B14700043859 /* Rect.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = Rect.h; sourceTree = "<group>"; };
+		185CFF4926E9B15400043859 /* Point.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = Point.h; sourceTree = "<group>"; };
+		185CFF4A26E9B1CA00043859 /* CommonHeader.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = CommonHeader.h; sourceTree = "<group>"; };
+		185CFF5D26E9DA0000043859 /* VNCClient.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = VNCClient.h; sourceTree = "<group>"; };
+		185CFF5E26E9DA0000043859 /* VNCClient.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = VNCClient.mm; sourceTree = "<group>"; };
+		185CFF6026E9DD1000043859 /* Ax3Event.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = Ax3Event.h; sourceTree = "<group>"; };
+		185CFF6126E9DD1000043859 /* Ax3Event.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = Ax3Event.mm; sourceTree = "<group>"; };
+		185CFF6326E9E04100043859 /* VNCProtocol.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = VNCProtocol.h; sourceTree = "<group>"; };
+		185CFF6426E9E04100043859 /* VNCProtocol.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = VNCProtocol.mm; sourceTree = "<group>"; };
+		185CFF6626E9E86300043859 /* VNCPacket.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = VNCPacket.h; sourceTree = "<group>"; };
+		185CFF6726E9E86300043859 /* VNCPacket.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = VNCPacket.mm; sourceTree = "<group>"; };
+		185CFF6926E9EC5B00043859 /* PixelFormat.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PixelFormat.h; sourceTree = "<group>"; };
+		185CFF6A26E9EC5B00043859 /* PixelFormat.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = PixelFormat.mm; sourceTree = "<group>"; };
+		185CFF6C26E9F7E000043859 /* VNCEndpointT.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = VNCEndpointT.h; sourceTree = "<group>"; };
+		185CFF6D26E9F7E000043859 /* VNCEndpointT.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = VNCEndpointT.mm; sourceTree = "<group>"; };
+		185CFF6F26E9F83300043859 /* KCPEndpoint.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = KCPEndpoint.h; sourceTree = "<group>"; };
+		185CFF7026E9F83300043859 /* KCPEndpoint.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = KCPEndpoint.mm; sourceTree = "<group>"; };
+		185CFF7226EA0B4400043859 /* ikcp.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ikcp.h; sourceTree = "<group>"; };
 		1863FB0326E70CC70034774C /* BKMessageManager.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = BKMessageManager.h; sourceTree = "<group>"; };
 		1863FB0426E70CC70034774C /* BKMessageManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = BKMessageManager.m; sourceTree = "<group>"; };
 		1863FB0626E767230034774C /* AMSafeCodeAlertView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AMSafeCodeAlertView.h; sourceTree = "<group>"; };
 		1863FB0726E767230034774C /* AMSafeCodeAlertView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AMSafeCodeAlertView.m; sourceTree = "<group>"; };
+		1869927926EB2ADC00260198 /* RemoteViewerCore.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = RemoteViewerCore.h; sourceTree = "<group>"; };
+		1869927A26EB2ADC00260198 /* RemoteViewerCore.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = RemoteViewerCore.mm; sourceTree = "<group>"; };
+		1869927C26EB2BDA00260198 /* FrameBuffer.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = FrameBuffer.h; sourceTree = "<group>"; };
+		1869927D26EB2C8C00260198 /* CoreEventsAdapter.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = CoreEventsAdapter.h; sourceTree = "<group>"; };
+		1869927E26EB2C8C00260198 /* CoreEventsAdapter.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = CoreEventsAdapter.mm; sourceTree = "<group>"; };
+		1869928026EB2FF000260198 /* FbUpdateNotifier.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = FbUpdateNotifier.h; sourceTree = "<group>"; };
+		1869928126EB2FF000260198 /* FbUpdateNotifier.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = FbUpdateNotifier.mm; sourceTree = "<group>"; };
+		1869928326EB304300260198 /* UpdateRequestSender.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = UpdateRequestSender.h; sourceTree = "<group>"; };
+		1869928426EB304300260198 /* UpdateRequestSender.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = UpdateRequestSender.mm; sourceTree = "<group>"; };
+		1869928626EB30EC00260198 /* CursorPainter.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = CursorPainter.h; sourceTree = "<group>"; };
+		1869928726EB30EC00260198 /* CursorPainter.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = CursorPainter.mm; sourceTree = "<group>"; };
+		1869928926EB316800260198 /* CursorShape.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = CursorShape.h; sourceTree = "<group>"; };
+		1869928A26EB316800260198 /* CursorShape.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = CursorShape.mm; sourceTree = "<group>"; };
+		1869928C26EB31C900260198 /* Region.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Region.h; sourceTree = "<group>"; };
+		1869928D26EB31C900260198 /* Region.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = Region.mm; sourceTree = "<group>"; };
+		1869928F26EB322900260198 /* x11region.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = x11region.h; sourceTree = "<group>"; };
+		1869929026EB322900260198 /* x11region.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = x11region.mm; sourceTree = "<group>"; };
+		186992ED26EB381800260198 /* Thread.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = Thread.h; sourceTree = "<group>"; };
+		186992F326EB3AE300260198 /* AVCodeHelper.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AVCodeHelper.h; sourceTree = "<group>"; };
+		186992F426EB3AE300260198 /* AVCodeHelper.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = AVCodeHelper.mm; sourceTree = "<group>"; };
+		186992F726EB542500260198 /* Thread.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = Thread.mm; sourceTree = "<group>"; };
+		186992FA26EB55BA00260198 /* FrameBuffer.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = FrameBuffer.mm; sourceTree = "<group>"; };
+		186992FC26EB67EF00260198 /* libz.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.tbd; path = usr/lib/libz.tbd; sourceTree = SDKROOT; };
+		186992FE26EB67F700260198 /* libbz2.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libbz2.tbd; path = usr/lib/libbz2.tbd; sourceTree = SDKROOT; };
+		1869930026EB680000260198 /* libiconv.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libiconv.tbd; path = usr/lib/libiconv.tbd; sourceTree = SDKROOT; };
+		1869930226EB6AE600260198 /* libavcodec.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavcodec.a; path = "../../../../usr/local/lib/FFmpeg-iOS/libavcodec.a"; sourceTree = "<group>"; };
+		1869930426EB6B0C00260198 /* libavformat.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavformat.a; path = "../../../../usr/local/lib/FFmpeg-iOS/libavformat.a"; sourceTree = "<group>"; };
+		1869930526EB6B0C00260198 /* libavutil.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavutil.a; path = "../../../../usr/local/lib/FFmpeg-iOS/libavutil.a"; sourceTree = "<group>"; };
+		1869930626EB6B0C00260198 /* libswresample.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libswresample.a; path = "../../../../usr/local/lib/FFmpeg-iOS/libswresample.a"; sourceTree = "<group>"; };
+		1869930726EB6B0C00260198 /* libavfilter.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavfilter.a; path = "../../../../usr/local/lib/FFmpeg-iOS/libavfilter.a"; sourceTree = "<group>"; };
+		1869930826EB6B0C00260198 /* libavdevice.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavdevice.a; path = "../../../../usr/local/lib/FFmpeg-iOS/libavdevice.a"; sourceTree = "<group>"; };
+		1869930926EB6B0C00260198 /* libswscale.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libswscale.a; path = "../../../../usr/local/lib/FFmpeg-iOS/libswscale.a"; sourceTree = "<group>"; };
+		1869931026EB6C3000260198 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
+		1869931226EB6C3900260198 /* CoreMedia.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMedia.framework; path = System/Library/Frameworks/CoreMedia.framework; sourceTree = SDKROOT; };
+		1869931426EB6C4000260198 /* VideoToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = VideoToolbox.framework; path = System/Library/Frameworks/VideoToolbox.framework; sourceTree = SDKROOT; };
+		1869931626EB6E2800260198 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
 		1873CF2126E1B60000598361 /* GlobeFunction.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = GlobeFunction.h; sourceTree = "<group>"; };
 		1873CF2226E1B60000598361 /* GlobeFunction.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = GlobeFunction.mm; sourceTree = "<group>"; };
 		1873CF2C26E1F48700598361 /* CAIMTime.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = CAIMTime.h; sourceTree = "<group>"; };
@@ -308,6 +400,20 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1869931726EB6E2900260198 /* AVFoundation.framework in Frameworks */,
+				1869931526EB6C4000260198 /* VideoToolbox.framework in Frameworks */,
+				1869931326EB6C3A00260198 /* CoreMedia.framework in Frameworks */,
+				1869931126EB6C3000260198 /* AudioToolbox.framework in Frameworks */,
+				1869930A26EB6B0D00260198 /* libavformat.a in Frameworks */,
+				1869930B26EB6B0D00260198 /* libavutil.a in Frameworks */,
+				1869930C26EB6B0D00260198 /* libswresample.a in Frameworks */,
+				1869930D26EB6B0D00260198 /* libavfilter.a in Frameworks */,
+				1869930E26EB6B0D00260198 /* libavdevice.a in Frameworks */,
+				1869930F26EB6B0D00260198 /* libswscale.a in Frameworks */,
+				1869930326EB6AE600260198 /* libavcodec.a in Frameworks */,
+				1869930126EB680100260198 /* libiconv.tbd in Frameworks */,
+				186992FF26EB67F700260198 /* libbz2.tbd in Frameworks */,
+				186992FD26EB67EF00260198 /* libz.tbd in Frameworks */,
 				185C7DEC26E5AE8C008F4E4C /* AdSupport.framework in Frameworks */,
 				B77A38CCB1E25CE910A34D64 /* Pods_AnyViewer.framework in Frameworks */,
 			);
@@ -703,6 +809,9 @@
 				1873CF2126E1B60000598361 /* GlobeFunction.h */,
 				1873CF2226E1B60000598361 /* GlobeFunction.mm */,
 				1878E14326DF2CDE00E514EA /* MessageHeadDef.h */,
+				185CFED726E9AD1500043859 /* Dimension.h */,
+				185CFED926E9AE5E00043859 /* SyncQueue.h */,
+				185CFF7226EA0B4400043859 /* ikcp.h */,
 			);
 			path = Headers;
 			sourceTree = "<group>";
@@ -714,6 +823,23 @@
 				1823C34A26E0BC1B00B0FBDD /* RCServerProxy.mm */,
 			);
 			path = RCServerProxy;
+			sourceTree = "<group>";
+		};
+		185CFF4626E9B10700043859 /* Region */ = {
+			isa = PBXGroup;
+			children = (
+				185CFF4826E9B14700043859 /* Rect.h */,
+				185CFF4926E9B15400043859 /* Point.h */,
+			);
+			path = Region;
+			sourceTree = "<group>";
+		};
+		185CFF4726E9B11700043859 /* Util */ = {
+			isa = PBXGroup;
+			children = (
+				185CFF4A26E9B1CA00043859 /* CommonHeader.h */,
+			);
+			path = Util;
 			sourceTree = "<group>";
 		};
 		1873CF2726E1C7DC00598361 /* DataPacket */ = {
@@ -764,6 +890,44 @@
 				1878E14A26DF53FA00E514EA /* CNetIPDataTransfer.mm */,
 				1878E14C26DF580400E514EA /* CNetEndpoint.h */,
 				1878E14D26DF580400E514EA /* CNetEndpoint.mm */,
+				185CFED426E9ACA800043859 /* CVNCProxy.h */,
+				185CFED526E9ACA800043859 /* CVNCProxy.mm */,
+				185CFF5D26E9DA0000043859 /* VNCClient.h */,
+				185CFF5E26E9DA0000043859 /* VNCClient.mm */,
+				185CFF6326E9E04100043859 /* VNCProtocol.h */,
+				185CFF6426E9E04100043859 /* VNCProtocol.mm */,
+				185CFF6626E9E86300043859 /* VNCPacket.h */,
+				185CFF6726E9E86300043859 /* VNCPacket.mm */,
+				185CFF6026E9DD1000043859 /* Ax3Event.h */,
+				185CFF6126E9DD1000043859 /* Ax3Event.mm */,
+				185CFF6926E9EC5B00043859 /* PixelFormat.h */,
+				185CFF6A26E9EC5B00043859 /* PixelFormat.mm */,
+				185CFF6C26E9F7E000043859 /* VNCEndpointT.h */,
+				185CFF6D26E9F7E000043859 /* VNCEndpointT.mm */,
+				185CFF6F26E9F83300043859 /* KCPEndpoint.h */,
+				185CFF7026E9F83300043859 /* KCPEndpoint.mm */,
+				1869927926EB2ADC00260198 /* RemoteViewerCore.h */,
+				1869927A26EB2ADC00260198 /* RemoteViewerCore.mm */,
+				1869927D26EB2C8C00260198 /* CoreEventsAdapter.h */,
+				1869927E26EB2C8C00260198 /* CoreEventsAdapter.mm */,
+				1869928026EB2FF000260198 /* FbUpdateNotifier.h */,
+				1869928126EB2FF000260198 /* FbUpdateNotifier.mm */,
+				1869928326EB304300260198 /* UpdateRequestSender.h */,
+				1869928426EB304300260198 /* UpdateRequestSender.mm */,
+				1869928626EB30EC00260198 /* CursorPainter.h */,
+				1869928726EB30EC00260198 /* CursorPainter.mm */,
+				1869928926EB316800260198 /* CursorShape.h */,
+				1869928A26EB316800260198 /* CursorShape.mm */,
+				1869927C26EB2BDA00260198 /* FrameBuffer.h */,
+				186992FA26EB55BA00260198 /* FrameBuffer.mm */,
+				186992F326EB3AE300260198 /* AVCodeHelper.h */,
+				186992F426EB3AE300260198 /* AVCodeHelper.mm */,
+				186992ED26EB381800260198 /* Thread.h */,
+				186992F726EB542500260198 /* Thread.mm */,
+				1869928C26EB31C900260198 /* Region.h */,
+				1869928D26EB31C900260198 /* Region.mm */,
+				1869928F26EB322900260198 /* x11region.h */,
+				1869929026EB322900260198 /* x11region.mm */,
 				1878E14F26DF60A100E514EA /* Timer.h */,
 				1878E15026DF60A100E514EA /* Timer.mm */,
 				1878E15226DF6CE400E514EA /* CCustomThreadPool.h */,
@@ -782,6 +946,8 @@
 				185C7DEF26E5F538008F4E4C /* LocalMessageBus.mm */,
 				1863FB0326E70CC70034774C /* BKMessageManager.h */,
 				1863FB0426E70CC70034774C /* BKMessageManager.m */,
+				185CFF4726E9B11700043859 /* Util */,
+				185CFF4626E9B10700043859 /* Region */,
 				1873CF2A26E1C86800598361 /* Settings */,
 				1873CF2926E1C85100598361 /* Encode */,
 				1873CF2826E1C81200598361 /* JsonHandle */,
@@ -801,6 +967,20 @@
 		5A54F60C1753795720D82170 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				1869931626EB6E2800260198 /* AVFoundation.framework */,
+				1869931426EB6C4000260198 /* VideoToolbox.framework */,
+				1869931226EB6C3900260198 /* CoreMedia.framework */,
+				1869931026EB6C3000260198 /* AudioToolbox.framework */,
+				1869930826EB6B0C00260198 /* libavdevice.a */,
+				1869930726EB6B0C00260198 /* libavfilter.a */,
+				1869930426EB6B0C00260198 /* libavformat.a */,
+				1869930526EB6B0C00260198 /* libavutil.a */,
+				1869930626EB6B0C00260198 /* libswresample.a */,
+				1869930926EB6B0C00260198 /* libswscale.a */,
+				1869930226EB6AE600260198 /* libavcodec.a */,
+				1869930026EB680000260198 /* libiconv.tbd */,
+				186992FE26EB67F700260198 /* libbz2.tbd */,
+				186992FC26EB67EF00260198 /* libz.tbd */,
 				185C7DEB26E5AE8C008F4E4C /* AdSupport.framework */,
 				1873CF3626E219FA00598361 /* libboost_atomic.a */,
 				1873CF3B26E219FB00598361 /* libboost_chrono.a */,
@@ -956,9 +1136,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				186992FB26EB55BA00260198 /* FrameBuffer.mm in Sources */,
 				185C7DF026E5F538008F4E4C /* LocalMessageBus.mm in Sources */,
 				1823C34226E0B0AE00B0FBDD /* ConsoleProxy.mm in Sources */,
 				066A184126D3A3FA0058085F /* UIView+Frame.m in Sources */,
+				1869928E26EB31C900260198 /* Region.mm in Sources */,
 				1863FB0826E767230034774C /* AMSafeCodeAlertView.m in Sources */,
 				1863FB0526E70CC70034774C /* BKMessageManager.m in Sources */,
 				066A183F26D3A3FA0058085F /* UIScrollView+BKAdd.m in Sources */,
@@ -967,13 +1149,18 @@
 				066A184726D3A3FA0058085F /* NSString+BKAdd.m in Sources */,
 				1823C34426E0B0AE00B0FBDD /* LYCodeCvt.mm in Sources */,
 				1878E14E26DF580400E514EA /* CNetEndpoint.mm in Sources */,
+				1869928826EB30EC00260198 /* CursorPainter.mm in Sources */,
 				066A173826D3A12C0058085F /* AMDeviceViewController.mm in Sources */,
 				066A184226D3A3FA0058085F /* NSError+BKAdd.m in Sources */,
+				1869928B26EB316800260198 /* CursorShape.mm in Sources */,
+				185CFF6226E9DD1000043859 /* Ax3Event.mm in Sources */,
 				066A184D26D3A3FA0058085F /* BasePickerViewController.m in Sources */,
+				186992F926EB55A100260198 /* FrameBuffer.h in Sources */,
 				066A184A26D3A3FA0058085F /* UIImage+EXIF.m in Sources */,
 				066A173E26D3A1560058085F /* AMSettingViewController.m in Sources */,
 				06D2AEA026D73E0E0092B089 /* AMLoginViewController.m in Sources */,
 				066A184926D3A3FA0058085F /* UIButton+BKAdd.m in Sources */,
+				1869928526EB304300260198 /* UpdateRequestSender.mm in Sources */,
 				066A185026D3A3FA0058085F /* BaseTableViewCell.m in Sources */,
 				1873CF2326E1B60000598361 /* GlobeFunction.mm in Sources */,
 				06D2AE8B26D5DEAA0092B089 /* AMSettingListTableViewCell.m in Sources */,
@@ -982,9 +1169,11 @@
 				066A184026D3A3FA0058085F /* NSObject+BKAdd.m in Sources */,
 				066A173B26D3A14B0058085F /* AMConnectViewController.mm in Sources */,
 				1878E15626DF84F200E514EA /* Log.mm in Sources */,
+				185CFED626E9ACA800043859 /* CVNCProxy.mm in Sources */,
 				1823C35426E0D61000B0FBDD /* CJsonHelper.mm in Sources */,
 				066A184E26D3A3FA0058085F /* BaseEmptyDelegator.m in Sources */,
 				1823C34B26E0BC1B00B0FBDD /* RCServerProxy.mm in Sources */,
+				185CFF6B26E9EC5C00043859 /* PixelFormat.mm in Sources */,
 				066A184426D3A3FA0058085F /* NSDictionary+BKAdd.m in Sources */,
 				066A183D26D3A3FA0058085F /* UIImageView+BKAdd.m in Sources */,
 				1878E14B26DF53FA00E514EA /* CNetIPDataTransfer.mm in Sources */,
@@ -992,6 +1181,7 @@
 				066A184326D3A3FA0058085F /* NSUserDefaults+Sz.m in Sources */,
 				066A185626D3A3FA0058085F /* BaseTextField.m in Sources */,
 				1878E13926DF175A00E514EA /* CNetTransactionEngine.mm in Sources */,
+				186992F526EB3AE300260198 /* AVCodeHelper.mm in Sources */,
 				1878E13626DF0B0E00E514EA /* EccCode.mm in Sources */,
 				066A185926D3A3FA0058085F /* BaseCollectionViewController.m in Sources */,
 				066A185726D3A3FA0058085F /* BaseLabel.m in Sources */,
@@ -1011,18 +1201,28 @@
 				066A185326D3A3FA0058085F /* BaseTextView.m in Sources */,
 				066A185426D3A3FA0058085F /* BaseCollectionViewCell.m in Sources */,
 				066A186326D3A98B0058085F /* BKSearchBar.m in Sources */,
+				1869929126EB322900260198 /* x11region.mm in Sources */,
+				1869927F26EB2C8C00260198 /* CoreEventsAdapter.mm in Sources */,
 				066A184526D3A3FA0058085F /* UIViewController+Presentation.m in Sources */,
 				066A189026D5DB210058085F /* AMDevice.m in Sources */,
 				1873CF4C26E225D900598361 /* NetworkRequest.m in Sources */,
 				066A186226D3A98B0058085F /* BKCellModel.m in Sources */,
 				066A185226D3A3FA0058085F /* BaseImageView.m in Sources */,
 				066A184626D3A3FA0058085F /* UIFont+BKAdd.m in Sources */,
+				186992F826EB542500260198 /* Thread.mm in Sources */,
 				1878E15126DF60A100E514EA /* Timer.mm in Sources */,
+				185CFF7126E9F83300043859 /* KCPEndpoint.mm in Sources */,
+				185CFF6E26E9F7E000043859 /* VNCEndpointT.mm in Sources */,
 				066A173126D3A0AE0058085F /* AMTabBarViewController.m in Sources */,
+				1869927B26EB2ADC00260198 /* RemoteViewerCore.mm in Sources */,
+				185CFF6526E9E04100043859 /* VNCProtocol.mm in Sources */,
 				066A185526D3A3FA0058085F /* BaseButton.m in Sources */,
 				187DCD9526E89D58003E8C94 /* BKUserManager.m in Sources */,
 				066A187826D4DB170058085F /* AppDelegate+BKAdd.mm in Sources */,
+				1869928226EB2FF000260198 /* FbUpdateNotifier.mm in Sources */,
+				185CFF6826E9E86300043859 /* VNCPacket.mm in Sources */,
 				06D2AE9026D5E3C20092B089 /* AMDeviceControlViewController.m in Sources */,
+				185CFF5F26E9DA0000043859 /* VNCClient.mm in Sources */,
 				066A184826D3A3FA0058085F /* BKPresentationController.m in Sources */,
 				066A187526D4C1190058085F /* MBProgressHUD+BKAdd.m in Sources */,
 				066A186826D499E70058085F /* AMRemoteDeviceInputView.m in Sources */,
@@ -1213,6 +1413,7 @@
 					"\"${PODS_XCFRAMEWORKS_BUILD_DIR}/OpenSSL\"",
 					"/usr/local/include/boost-ios",
 					"/usr/local/lib/boost-ios",
+					"/usr/local/lib/FFmpeg-iOS",
 				);
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_PREFIX_HEADER = "$SRCROOT/AnyViewer/Support Files/PrefixHeader.pch";
@@ -1236,6 +1437,7 @@
 					"\"${PODS_ROOT}/Headers/Public/rapidjson\"",
 					"/usr/local/include/boost-ios",
 					"/usr/local/lib/boost-ios",
+					"/usr/local/include/FFmpeg-iOS",
 				);
 				INFOPLIST_FILE = AnyViewer/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
@@ -1247,6 +1449,7 @@
 					"$(inherited)",
 					"/usr/local/lib/boost-ios",
 					"/usr/local/lib/boost-ios/boost",
+					"/usr/local/lib/FFmpeg-iOS",
 				);
 				OTHER_LDFLAGS = (
 					"$(inherited)",
@@ -1348,6 +1551,7 @@
 					"\"${PODS_XCFRAMEWORKS_BUILD_DIR}/OpenSSL\"",
 					"/usr/local/include/boost-ios",
 					"/usr/local/lib/boost-ios",
+					"/usr/local/lib/FFmpeg-iOS",
 				);
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_PREFIX_HEADER = "$SRCROOT/AnyViewer/Support Files/PrefixHeader.pch";
@@ -1371,6 +1575,7 @@
 					"\"${PODS_ROOT}/Headers/Public/rapidjson\"",
 					"/usr/local/include/boost-ios",
 					"/usr/local/lib/boost-ios",
+					"/usr/local/include/FFmpeg-iOS",
 				);
 				INFOPLIST_FILE = AnyViewer/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
@@ -1382,6 +1587,7 @@
 					"$(inherited)",
 					"/usr/local/lib/boost-ios",
 					"/usr/local/lib/boost-ios/boost",
+					"/usr/local/lib/FFmpeg-iOS",
 				);
 				OTHER_LDFLAGS = (
 					"$(inherited)",

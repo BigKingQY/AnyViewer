@@ -62,12 +62,14 @@ enum NET_TRANSACTION_STATUS
 ///    该枚举定义通信会话可能的状态类型\n
 enum CONVERSATION_STATE
 {
+    RS_INVALID = 0,             ///< 枚举，初始状态
     RS_INIT = 1,       ///< 枚举，初始状态
     RS_ESTABLISH,            ///< 枚举，通信已经建立状态
     RS_SENDING_HEART_PACKET,  ///< 枚举，正在发送心跳数据包状态
     RS_RECONNECTING,     ///< 枚举，重新连接状态
     RS_CLOSE,                  ///< 枚举，关闭状态
 };
+
 
 ///   数据包标志枚举定义
 ///
@@ -89,7 +91,7 @@ enum LOCAL_MESSAGE_BUS_MSG
     LMBS_ESTABLISH_VNC_CONNECTION = 10004,       ///< √∂æŸ≥£¡ø£¨≥…π¶Ω®¡¢¡ÀVNC¡¨Ω”
     LMBS_CLOSE_VNC_CONNECTION = 10005,           ///< √∂æŸ≥£¡ø£¨πÿ±’VNC¡¨Ω”
     
-    LMBS_ESTABLISH_SVR_CONNECTION = 10006,   ///< √∂æŸ≥£¡ø£¨Ω®¡¢µΩ∑˛ŒÒ≥Ã–Ú–¬µƒøÿ÷∆¡¨Ω” ¬º˛
+    LMBS_ESTABLISH_SVR_EVENT = 10006,   ///< √∂æŸ≥£¡ø£¨Ω®¡¢µΩ∑˛ŒÒ≥Ã–Ú–¬µƒøÿ÷∆¡¨Ω” ¬º˛
     LMBS_RECEIVED_SVR_PACKET = 10007,        ///< √∂æŸ≥£¡ø£¨ ’µΩ∑˛ŒÒ≥Ã–Ú ˝æ›∞¸
     LMBS_CLOSE_SVR_CONNECTION = 10008,       ///< √∂æŸ≥£¡ø£¨”Î∑˛ŒÒ≥Ã–Ú∂œø™¡¨Ω” ¬º˛
     LMBS_RECONNECT_SVR_SERVER = 10009,       ///< √∂æŸ≥£¡ø£¨ ‘Õº÷ÿ–¬¡¨Ω”∑˛ŒÒ∆˜
@@ -101,6 +103,7 @@ enum LOCAL_MESSAGE_BUS_MSG
     LMBS_RECEIVED_CONSOLE_PACKET = 10021,        ///< √∂æŸ≥£¡ø£¨ ’µΩøÿ÷∆Ã® ˝æ›∞¸
     LMBS_CLOSE_CONSOLE_CONNECTION = 10022,       ///< √∂æŸ≥£¡ø£¨”ÎAVCore∑˛ŒÒ∆˜∂œø™¡¨Ω” ¬º˛
     LMBS_RECONNECT_CONSOLE_SERVER = 10023,       ///< √∂æŸ≥£¡ø£¨ ‘Õº÷ÿ–¬¡¨Ω”AVCore∑˛ŒÒ∆˜
+    LMBS_CONSOLE_CONNECTION_EVENT = 10024,       ///< √∂æŸ≥£¡ø£¨øÿ÷∆¡¨Ω” ¬º˛
 };
 
 

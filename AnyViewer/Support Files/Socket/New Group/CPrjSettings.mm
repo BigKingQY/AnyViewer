@@ -797,7 +797,8 @@ void CPrjSettings::DefaultSettings()
     //m_nTheme = TT_FOLLOW_SYSTEM;
 
 #ifdef _DEBUG
-    m_strServerIP = "controlserver.anyviewer.com";
+//    m_strServerIP = "controlserver.anyviewer.com";
+    m_strServerIP = "192.168.3.74";
 #endif
     m_nPort = 30192;
     m_nPollingInterval = 50;

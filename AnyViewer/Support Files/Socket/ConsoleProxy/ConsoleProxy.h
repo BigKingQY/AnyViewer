@@ -13,6 +13,7 @@
 #include "RCProtocol.h"
 #include "CNetClientImpl.h"
 
+#include <chrono>
 #include <boost/timer.hpp>
 
 
@@ -108,18 +109,26 @@ protected:   // ”¶¥ ˝æ›∞¸
 
     // ◊¢≤·”¶¥ ˝æ›∞¸
     void OnRegistResponse(CDataPacket* pDataPacket);
+    
+    // 重置Timer
+    void restartTimer();
+    
+    // 获取当前时间与上次记录的时间差
+    long getTimerElapsed();
 
 private:
 
     RCP::EXCEPTION_STATUS SyncSend(CDataPacket& refSend, PTR_WAIT_TASK ptrWaitTask, std::shared_ptr<CDataPacket>& refAckPacket);
-private:
-
+private:    
+    
 private:
     //DECLARE_MEMBER_AND_METHOD(CString, m_strAccount, Account)      ///< ’À∫≈
     DECLARE_MEMBER_AND_METHOD(I64, m_nID, ID);
     DECLARE_MEMBER_AND_METHOD(unsigned int, m_nType, Type);  ///<@see COST_CLIENT_TYPE
     DECLARE_MEMBER_AND_METHOD_V11(RCSVR_PROXY_STATUS, m_nConversationStatus, ConversationStatus, RPS_INVALID);  ///< ◊¥Ã¨
-    boost::timer               m_objSendingLastTime;
+    
+    std::chrono::system_clock::time_point       m_objSendingLastTime;
+//    boost::timer               m_objSendingLastTime;
 
     DECLARE_MEMBER_AND_METHOD_V11(unsigned int, m_nMsgType, MsgType, 0);
 

@@ -35,6 +35,8 @@ CRCSvrProxy::CRCSvrProxy(
     //SetIP(nIP);
     //SetPort(nPort);
     InitECCKey();
+    
+    m_objSendingLastTime = std::chrono::system_clock::now();
 }
 
 
@@ -177,7 +179,9 @@ bool CRCSvrProxy::OnPreSendPacketEventHandle(
     pDataPacket->CalculateCRC32();
     assert(pDataPacket->VerifyCRC32());
 
-    m_objSendingLastTime.restart();
+    restartTimer();
+
+//    m_objSendingLastTime.restart();
 
     return true;
 }
@@ -276,9 +280,9 @@ bool CRCSvrProxy::OnEventHandle(
 
     case SE_CHECK_HEART:
     {
-        double time = m_objSendingLastTime.elapsed() * 10000;
+//        double time = m_objSendingLastTime.elapsed() * 10000;
         
-        LOG_DEBUG("-->>time : %lf", time);
+        long time = getTimerElapsed();
         
         //此处需要根据系统的时钟频率来计算当前的时间差
         if (time >= HEART_TIMEOUT)
