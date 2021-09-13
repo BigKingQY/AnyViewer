@@ -11,6 +11,7 @@
 #pragma once
 //#include "RCProtocol.h"
 #include "ConsoleProxy.h"
+#include "CNetTimer.h"
 
 #include <chrono>
 
@@ -66,7 +67,8 @@ private:
     
 //    int                         m_objSendingLastTime;
     
-    std::chrono::system_clock::time_point       m_objSendingLastTime;
+    
+    CNetTimer                    m_objSendingLastTime;
 //    boost::timer               m_objSendingLastTime;
 };
 

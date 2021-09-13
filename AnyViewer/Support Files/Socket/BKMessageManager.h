@@ -29,6 +29,16 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param otherStatus 被冻结时长，单位秒
 - (void)onAuthenticatResponse:(const int)status otherStatus:(const int)otherStatus;
 
+
+/// 连接回调
+/// @param success 是否成功
+- (void)onVNCConnectResponse:(u_int32_t)sessionId success:(BOOL)success;
+
+
+/// 视图更新时的回调
+/// @param image 显示的图片
+- (void)onFrameBufferUpdate:(UIImage *)image;
+
 @end
 
 

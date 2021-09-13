@@ -50,7 +50,7 @@ public:
 
     CRemoteViewerCore(
         CVNCProxyPtr pVNCProxy
-        , CCoreEventsAdapter* pCoreEventsAdapter
+        , CCoreEventsAdapterPtr pCoreEventsAdapter
         , bool bSaredFlag = true);
 
     virtual ~CRemoteViewerCore();
@@ -128,7 +128,7 @@ public:
     //
     // This function Includes common initialization code used by constructors.
     //
-    bool Init(CCoreEventsAdapter *pCoreEventsAdapter);
+    bool Init(CCoreEventsAdapterPtr pCoreEventsAdapter);
 
     // ◊¢œ˙œ˚œ¢¥¶¿Ì∫Ø ˝µΩœ˚œ¢◊‹œﬂ
     void UnRegisterMsgRouting();
@@ -216,12 +216,13 @@ private:
 private:
     DECLARE_MEMBER_AND_METHOD_V11(CVNCProxyPtr, m_pVNCProxy, VNCProxy, nullptr);
 
-    CCoreEventsAdapter         *m_pCoreEventsAdapter = nullptr;
+    CCoreEventsAdapterPtr       m_spCoreEventsAdapter = nullptr;
 
 //    CWatermarksController       m_objWatermarksController;
 
 //    CFBUpdateNotifier           m_objFBUpdateNotifier;
 
+    
     // This is general frame buffer of CRemoteViewerCore to change him.
     // This frame buffer contain actual state of remote desktop.
     // Cursor painted on him before calling CCoreEventsAdapter::OnFrameBufferUpdate()
@@ -266,5 +267,6 @@ private:
     CSize                      m_objOrgFBSize;
 };
 
+using CRemoteViewerCorePtr = std::shared_ptr<CRemoteViewerCore>;
 
 #endif /* RemoteViewerCore_h */

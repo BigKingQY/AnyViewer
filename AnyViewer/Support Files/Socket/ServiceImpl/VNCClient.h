@@ -20,6 +20,7 @@
 #include "VNCPacket.h"
 #include "VNCEndpointT.h"
 #include "Log.h"
+#include "CNetTimer.h"
 
 #include <boost/timer.hpp>
 
@@ -97,13 +98,13 @@ private:
 
 
     /// 最后发送数据包时间
-    boost::timer               m_objSendingLastTime;
+    CNetTimer               m_objSendingLastTime;
 
     // 最后活动时间(收发数据包)
-    boost::timer              m_objReceivingLasttime;
+    CNetTimer              m_objReceivingLasttime;
 
     // 建立连接消耗的时间
-    boost::timer              m_objConnectionTime;
+    CNetTimer              m_objConnectionTime;
 
     CAx3Event                  m_objSysEvent;      ///< 收到同步数据包请求
 };

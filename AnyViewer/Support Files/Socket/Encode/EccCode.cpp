@@ -34,43 +34,43 @@
 int ecc_enc(unsigned char *p_x, unsigned char *p_y, unsigned char *key,
                 unsigned char *in_buf, int in_len, unsigned char *out_buf, int out_len)
 {
-    EC_KEY *b=nil;
-    BIGNUM *x_a=nil, *y_a=nil, *k=nil;
+    EC_KEY *b=nullptr;
+    BIGNUM *x_a=nullptr, *y_a=nullptr, *k=nullptr;
     int ret = -1;
     const EC_GROUP *group;
-    EC_POINT *Pm=nil, *B = nil;
+    EC_POINT *Pm=nullptr, *B = nullptr;
     unsigned char mb1[ECC_BN_DEC_LEN+4], mb2[ECC_BN_DEC_LEN+4];
     int len, ret_len = 0;
-    unsigned char *tbuf = nil;
-    BN_CTX *ctx = nil;
+    unsigned char *tbuf = nullptr;
+    BN_CTX *ctx = nullptr;
 
-    if((in_buf == nil) || (out_buf == nil)
+    if((in_buf == nullptr) || (out_buf == nullptr)
         || (in_len == 0) || (out_len == 0))
         return -1;
 
-    if ((ctx=BN_CTX_new()) == nil) goto err;
+    if ((ctx=BN_CTX_new()) == nullptr) goto err;
     
     b = EC_KEY_new_by_curve_name(NID_X9_62_prime192v1);
-    if ( b == nil) goto err;
+    if ( b == nullptr) goto err;
     
-    if ((x_a=BN_new()) == nil) goto err;
-    if ((y_a=BN_new()) == nil) goto err;
-    if ((k=BN_new()) ==nil) goto err;
+    if ((x_a=BN_new()) == nullptr) goto err;
+    if ((y_a=BN_new()) == nullptr) goto err;
+    if ((k=BN_new()) ==nullptr) goto err;
 
        group = EC_KEY_get0_group(b);
-     if(group == nil) goto err;
+     if(group == nullptr) goto err;
     
     Pm= EC_POINT_new(group);
     B = EC_POINT_new(group);
-    if((Pm == nil) || (B == nil)) goto err;
+    if((Pm == nullptr) || (B == nullptr)) goto err;
     
     /* PublicKey */
-    if(BN_bin2bn(p_x, 24, x_a) == nil) goto err;
-    if(BN_bin2bn(p_y, 24, y_a) == nil) goto err;
+    if(BN_bin2bn(p_x, 24, x_a) == nullptr) goto err;
+    if(BN_bin2bn(p_y, 24, y_a) == nullptr) goto err;
     if(!EC_KEY_set_public_key_affine_coordinates(b,x_a,y_a)) goto err;
     
     /* k */
-    if(BN_bin2bn(key, 24, k) == nil) goto err;
+    if(BN_bin2bn(key, 24, k) == nullptr) goto err;
 
     while(in_len > 0)
     {
@@ -81,7 +81,7 @@ int ecc_enc(unsigned char *p_x, unsigned char *p_y, unsigned char *key,
         memcpy(mb1, in_buf, len);
         in_len -= len;
         in_buf += len;
-        if(BN_bin2bn(mb1, ECC_BN_ENC_LEN, x_a) == nil) goto err;
+        if(BN_bin2bn(mb1, ECC_BN_ENC_LEN, x_a) == nullptr) goto err;
 
         if(in_len > 0)
         {
@@ -90,15 +90,15 @@ int ecc_enc(unsigned char *p_x, unsigned char *p_y, unsigned char *key,
 
             in_len -= len;
             in_buf += len;
-            if(BN_bin2bn(mb2, ECC_BN_ENC_LEN, y_a) == nil) goto err;
+            if(BN_bin2bn(mb2, ECC_BN_ENC_LEN, y_a) == nullptr) goto err;
         }
         else
-            if(BN_bin2bn(mb2, 0, y_a) == nil) goto err;
+            if(BN_bin2bn(mb2, 0, y_a) == nullptr) goto err;
         
         if (!EC_POINT_set_affine_coordinates_GF2m(group, Pm, x_a, y_a, ctx)) goto err;
     
         /*  B = k * public_key(b)  */
-        if (!EC_POINT_mul(group, B, nil, EC_KEY_get0_public_key(b), k, ctx)) goto err;
+        if (!EC_POINT_mul(group, B, nullptr, EC_KEY_get0_public_key(b), k, ctx)) goto err;
 
         /*  B = Pm + k * public_key(b) */
         /** Computes the sum of two EC_POINT
@@ -118,14 +118,14 @@ int ecc_enc(unsigned char *p_x, unsigned char *p_y, unsigned char *key,
         if(len > 0)
         {
             tbuf = (unsigned char *)OPENSSL_malloc(len+4);
-            if(tbuf == nil) goto err;
+            if(tbuf == nullptr) goto err;
             
             len = BN_bn2bin(x_a, tbuf);
             if(len > ECC_BN_DEC_LEN) goto err;
             
             memcpy(&mb1[ECC_BN_DEC_LEN-len], tbuf, len);
             OPENSSL_free(tbuf);
-            tbuf = nil;
+            tbuf = nullptr;
         }
 
         if(ECC_BN_DEC_LEN > out_len)
@@ -143,14 +143,14 @@ int ecc_enc(unsigned char *p_x, unsigned char *p_y, unsigned char *key,
         if(len > 0)
         {
             tbuf = (unsigned char *)OPENSSL_malloc(len+4);
-            if(tbuf == nil) goto err;
+            if(tbuf == nullptr) goto err;
             
             len = BN_bn2bin(y_a, tbuf);
             if(len > ECC_BN_DEC_LEN) goto err;
             
             memcpy(&mb1[ECC_BN_DEC_LEN-len], tbuf, len);
             OPENSSL_free(tbuf);
-            tbuf = nil;
+            tbuf = nullptr;
         }
 
         if(ECC_BN_DEC_LEN > out_len)
@@ -197,36 +197,36 @@ err:
 int ecc_dec(unsigned char *R_x, unsigned char *R_y, unsigned char *Private,
                         unsigned char *in_buf, int in_len, unsigned char *out_buf, int out_len)
 {
-    EC_KEY *b=nil;
-    BIGNUM *x_a=nil, *y_a=nil;
+    EC_KEY *b=nullptr;
+    BIGNUM *x_a=nullptr, *y_a=nullptr;
     int ret = -1;
     const EC_GROUP *group;
-    EC_POINT *R = nil, *B = nil;
+    EC_POINT *R = nullptr, *B = nullptr;
     unsigned char mb1[ECC_BN_DEC_LEN+4], mb2[ECC_BN_DEC_LEN+4];
     int len, ret_len = 0;
-    unsigned char *tbuf = nil;
-    BN_CTX *ctx=nil;
+    unsigned char *tbuf = nullptr;
+    BN_CTX *ctx=nullptr;
     
-    if((in_buf == nil) || (out_buf == nil)
+    if((in_buf == nullptr) || (out_buf == nullptr)
         || (in_len == 0) || (in_len%ECC_DEC_ALIGN) || (out_len == 0))
         return -1;
      
     b = EC_KEY_new_by_curve_name(NID_X9_62_prime192v1);
-    if ( b == nil) goto err;
+    if ( b == nullptr) goto err;
     
-    if ((x_a=BN_new()) == nil) goto err;
-    if ((y_a=BN_new()) == nil) goto err;
+    if ((x_a=BN_new()) == nullptr) goto err;
+    if ((y_a=BN_new()) == nullptr) goto err;
 
     group = EC_KEY_get0_group(b);
-    if(group == nil) goto err;
+    if(group == nullptr) goto err;
 
     R = EC_POINT_new(group);
     B = EC_POINT_new(group);
-    if((R == nil) || (B == nil))
+    if((R == nullptr) || (B == nullptr))
         goto err;
     
     /* PrivateKey */
-    if(BN_bin2bn(Private, 24, x_a) == nil) goto err;
+    if(BN_bin2bn(Private, 24, x_a) == nullptr) goto err;
 
     //…˙≥…√‹‘ø
      if(!EC_KEY_set_private_key(b,x_a)) goto err;
@@ -234,8 +234,8 @@ int ecc_dec(unsigned char *R_x, unsigned char *R_y, unsigned char *Private,
     while(in_len)
     {
         /* R */
-        if(BN_bin2bn(R_x, 24, x_a) == nil) goto err;
-        if(BN_bin2bn(R_y, 24, y_a) == nil) goto err;
+        if(BN_bin2bn(R_x, 24, x_a) == nullptr) goto err;
+        if(BN_bin2bn(R_y, 24, y_a) == nullptr) goto err;
         
         if (!EC_POINT_set_affine_coordinates_GF2m(group, R, x_a, y_a, ctx)) goto err;
 
@@ -246,11 +246,11 @@ int ecc_dec(unsigned char *R_x, unsigned char *R_y, unsigned char *Private,
         in_len -= len;
         in_buf += len;
         
-        if(BN_bin2bn(mb1, len/2, x_a) == nil) goto err;
-        if(BN_bin2bn(mb2, len-len/2, y_a) == nil) goto err;
+        if(BN_bin2bn(mb1, len/2, x_a) == nullptr) goto err;
+        if(BN_bin2bn(mb2, len-len/2, y_a) == nullptr) goto err;
         if (!EC_POINT_set_affine_coordinates_GF2m(group, B, x_a, y_a, ctx)) goto err;
 
-        if(!EC_POINT_mul(group, R, nil, R, EC_KEY_get0_private_key(b), ctx)) goto err; //R = k*G*private(b) = k*public(b)
+        if(!EC_POINT_mul(group, R, nullptr, R, EC_KEY_get0_private_key(b), ctx)) goto err; //R = k*G*private(b) = k*public(b)
    
         /** Computes the inverse of a EC_POINT
          *  @param  group  underlying EC_GROUP object
@@ -272,14 +272,14 @@ int ecc_dec(unsigned char *R_x, unsigned char *R_y, unsigned char *Private,
         if(len > 0)
         {
             tbuf = (unsigned char *)OPENSSL_malloc(len+4);
-            if(tbuf == nil) goto err;
+            if(tbuf == nullptr) goto err;
             
             len = BN_bn2bin(x_a, tbuf);
             if(len > ECC_BN_ENC_LEN) goto err;
             
             memcpy(&mb1[ECC_BN_ENC_LEN-len], tbuf, len);
             OPENSSL_free(tbuf);
-            tbuf = nil;
+            tbuf = nullptr;
         }
 
         if(ECC_BN_ENC_LEN > out_len)
@@ -297,14 +297,14 @@ int ecc_dec(unsigned char *R_x, unsigned char *R_y, unsigned char *Private,
         if(len > 0)
         {
             tbuf = (unsigned char *)OPENSSL_malloc(len+4);
-            if(tbuf == nil) goto err;
+            if(tbuf == nullptr) goto err;
             
             len = BN_bn2bin(y_a, tbuf);
             if(len > ECC_BN_ENC_LEN) goto err;
             
             memcpy(&mb1[ECC_BN_ENC_LEN-len], tbuf, len);
             OPENSSL_free(tbuf);
-            tbuf = nil;
+            tbuf = nullptr;
         }
 
         if(ECC_BN_ENC_LEN > out_len)

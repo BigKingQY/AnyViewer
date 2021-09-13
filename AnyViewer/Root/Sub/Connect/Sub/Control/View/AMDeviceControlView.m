@@ -37,7 +37,7 @@ static const NSTimeInterval kMinDoubleClickTime = 0.3;
         _contentImageView = [UIImageView new];
         _contentImageView.frame = CGRectMake(0,(kScreenHeight-KSTATUS_BAR_H-KHOME_INDICATOR_H-211)/2.f, kScreenWidth, 211);
         _contentImageView.contentMode = UIViewContentModeScaleAspectFit;
-        _contentImageView.image = BKImage(@"test");
+//        _contentImageView.image = BKImage(@"test");
         _contentImageView.userInteractionEnabled = YES;
         _contentImageView.backgroundColor = UIColor.redColor;
         [_scrollView addSubview:_contentImageView];

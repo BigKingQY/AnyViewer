@@ -6,7 +6,10 @@
 //
 
 #include "FrameBuffer.h"
+#include "StructHeader.h"
+
 #include <string.h>
+#include <fstream>
 
 CFrameBuffer::CFrameBuffer(void)
 {
@@ -822,6 +825,47 @@ bool CFrameBuffer::ResizeBuffer()
 // ********************************************************************************
 bool CFrameBuffer::SaveBitmap(const TCHAR* lpPath)
 {
+    std::ofstream objBitmapFile;
+    
+    objBitmapFile.open(lpPath, std::ios::binary | std::ios::out | std::ios::trunc);
+    
+    if (objBitmapFile.is_open())
+    {
+        // 写文件头
+        BITMAPFILEHEADER objFileHeader;
+        
+        memset(&objFileHeader, 0, sizeof(BITMAPFILEHEADER));
+//        ZeroMemory(&objFileHeader, sizeof(BITMAPFILEHEADER));
+        objFileHeader.bfType = 'MB';
+        objFileHeader.bfSize = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + GetBufferSize();
+        objFileHeader.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
+        
+        DWORD dwWritter = 0;
+        
+        objBitmapFile.write((const char*)&objFileHeader, sizeof(BITMAPFILEHEADER));
+        
+                
+        // 写文图格式
+        BITMAPINFOHEADER objInfoHeader;
+        
+        memset(&objInfoHeader, 0, sizeof(BITMAPINFOHEADER));
+
+//        ZeroMemory(&objInfoHeader, sizeof(BITMAPINFOHEADER));
+        objInfoHeader.biSize = sizeof(BITMAPINFOHEADER);
+        objInfoHeader.biSizeImage = GetBufferSize();
+        objInfoHeader.biWidth = m_objDimension.width;
+        objInfoHeader.biHeight = m_objDimension.height;
+        objInfoHeader.biBitCount = m_objPixelFormat.nBitsPerPixel;
+        
+        objBitmapFile.write((const char*)&objInfoHeader, sizeof(BITMAPINFOHEADER));
+                
+        // 写位图数据
+        objBitmapFile.write((const char*)m_pBuffer, GetBufferSize());
+        
+        objBitmapFile.close();
+        
+        return true;
+    }
 //    HANDLE hFile = CreateFile(lpPath, GENERIC_WRITE,FILE_SHARE_READ, NULL, CREATE_ALWAYS, NULL, NULL);
 //
 //    if (INVALID_HANDLE_VALUE == hFile)
@@ -857,5 +901,5 @@ bool CFrameBuffer::SaveBitmap(const TCHAR* lpPath)
 //    WriteFile(hFile, m_pBuffer, GetBufferSize(), &dwWritter, NULL);
 //    CloseHandle(hFile);
     
-    return 0;
+    return false;
 }

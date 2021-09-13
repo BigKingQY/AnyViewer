@@ -12,6 +12,7 @@
 #include "EccCode.h"
 #include "RCProtocol.h"
 #include "CNetClientImpl.h"
+#include "CNetTimer.h"
 
 #include <chrono>
 #include <boost/timer.hpp>
@@ -109,12 +110,6 @@ protected:   // ”¶¥ ˝æ›∞¸
 
     // ◊¢≤·”¶¥ ˝æ›∞¸
     void OnRegistResponse(CDataPacket* pDataPacket);
-    
-    // 重置Timer
-    void restartTimer();
-    
-    // 获取当前时间与上次记录的时间差
-    long getTimerElapsed();
 
 private:
 
@@ -127,7 +122,7 @@ private:
     DECLARE_MEMBER_AND_METHOD(unsigned int, m_nType, Type);  ///<@see COST_CLIENT_TYPE
     DECLARE_MEMBER_AND_METHOD_V11(RCSVR_PROXY_STATUS, m_nConversationStatus, ConversationStatus, RPS_INVALID);  ///< ◊¥Ã¨
     
-    std::chrono::system_clock::time_point       m_objSendingLastTime;
+    CNetTimer                   m_objSendingLastTime;
 //    boost::timer               m_objSendingLastTime;
 
     DECLARE_MEMBER_AND_METHOD_V11(unsigned int, m_nMsgType, MsgType, 0);

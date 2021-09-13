@@ -10,6 +10,8 @@
 
 #include "Typedef.h"
 
+#include <queue>
+
 /*所有的消息都有相同的消息头,定义如下,整个消息头包含6个域：
 1: 包头识别码'0XFCFDFEFF'
 2: 消息唯一的ID
@@ -212,5 +214,32 @@ typedef struct
     const char*     lpDesc;
 }ID2DESC;
 
+
+#pragma  pack (push,1)
+
+typedef struct tagBITMAPFILEHEADER {
+        WORD    bfType;
+        DWORD   bfSize;
+        WORD    bfReserved1;
+        WORD    bfReserved2;
+        DWORD   bfOffBits;
+} BITMAPFILEHEADER;
+
+
+typedef struct tagBITMAPINFOHEADER{
+        DWORD      biSize;
+        int       biWidth;
+        int       biHeight;
+        WORD       biPlanes;
+        WORD       biBitCount;
+        DWORD      biCompression;
+        DWORD      biSizeImage;
+        int       biXPelsPerMeter;
+        int       biYPelsPerMeter;
+        DWORD      biClrUsed;
+        DWORD      biClrImportant;
+} BITMAPINFOHEADER;
+
+#pragma pack(pop)
 
 #endif /* StructHeader_h */

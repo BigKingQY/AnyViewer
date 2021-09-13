@@ -183,7 +183,7 @@
     //这里处理手动认证的结果，手动认证控制端不需要发起认证，直接处理返回的结果
     if (self.isManual) {
         
-        [self showControlViewController];
+        NSLog(@"==== 手动认证成功 ====");
     }
     
 }
@@ -310,9 +310,7 @@
                 }
                 
             });
-            
-            [self showControlViewController];
-            
+                        
             NSLog(@"==== 自动认证成功 ====");
             return;
             
@@ -350,10 +348,37 @@
 }
 
 
+/// 连接回调
+/// @param success 是否成功
+- (void)onVNCConnectResponse:(U32)sessionId success:(BOOL)success {
+    
+    run_main_queue(^{
+       
+        [MBProgressHUD hideForViewAndWindow];
+        
+        if (success) {
+             
+            [self showControlViewController:sessionId];
+            
+        }else {
+            
+            [MBProgressHUD showMessageOnWindow:BKLocalizedString(@"ConnectionIssueRadio")];
+        }
+        
+    });
+
+}
+
+
 //跳转控制页面
-- (void)showControlViewController {
+- (void)showControlViewController:(U32)sessionId {
     
     AMDeviceControlViewController *controller = [AMDeviceControlViewController new];
+    //保存会话ID
+    controller.sessionId = sessionId;
+    //设置代理
+    [BKMessageManager.shared setDeletegateForTarget:controller];
+    
     [self.navigationController pushViewController:controller animated:YES];
     
     //隐藏密码输入弹窗

@@ -28,6 +28,10 @@ typedef int64_t LONGLONG;
 typedef uint64_t ULONGLONG;
 #endif
 
+#ifndef LONG
+typedef long LONG;
+#endif
+
 #ifndef WORD
 typedef uint16_t      WORD;
 #endif

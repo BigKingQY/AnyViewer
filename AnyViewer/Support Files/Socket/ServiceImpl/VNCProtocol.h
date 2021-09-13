@@ -55,58 +55,59 @@ namespace VNCP
         std::string m_strDesc;
     };
 
-    /// <summary>À˘”–µƒœ˚œ¢¿‡–Õ“ª¿¿±Ì</summary>
+/// <summary>所有的消息类型一览表</summary>
     enum  MESSAGE_TYPE
     {
         MT_UNKNOWN = 0,
 
-        // øÕªß∂À∑¢Õ˘∑˛ŒÒ∆˜µƒœ˚œ¢
-        MT_CLIENT_SET_PIXEL_FORMAT = 1,                 ///< √∂æŸ£¨…Ë÷√œÛÀÿ∏Ò Ωœ˚œ¢
-        MT_CLIENT_READY = 2,            ///< √∂æŸ≥£¡ø,øÕªß∂À“—æ≠◊º±∏
-        MT_CLIENT_FRAME_BUF_UPDATE_REQUEST = 3,         ///< √∂æŸ£¨«Î«Û÷°ª∫¥Ê∏¸–¬
-        MT_CLIENT_KEY_EVENT = 4,                         ///< √∂æŸ£¨∞¥º¸ ¬º˛
-        MT_CLIENT_POINTER_EVENT = 5,                     ///< √∂æŸ£¨ Û±Í(÷∏’Î) ¬º˛
-        MT_CLIENT_CUT_TEXT = 6,                     ///< √∂æŸ£¨øÕªß∂ÀŒƒ±æºÙ«–
-        MT_CLIENT_INIT_REQUEST = 8,                 ///< √∂æŸ£¨øÕªß∂À≥ı ºªØ«Î«Û
-        MT_CLIENT_LOCK_DESKTOP = 9,     ///< √∂æŸ≥£¡ø,À¯∂®◊¿√Ê
-        MT_CLIENT_LOGOFF = 10,     ///< √∂æŸ≥£¡ø,◊¢œ˙µ±«∞”√ªß
-        MT_CLIENT_RESTART = 11,    ///< √∂æŸ≥£¡ø,÷ÿ∆Ùº∆À„ª˙
-        MT_CLIENT_SHUTDOWN = 12,  ///< √∂æŸ≥£¡ø,πÿ±’º∆À„ª˙
-        MT_CLIENT_OPEN_COMPUTER = 13,  ///< √∂æŸ≥£¡ø,¥Úø™Œ“µƒµÁƒ‘
-        MT_CLIENT_OPEN_TASKMANAGER = 14,  ///< √∂æŸ≥£¡ø,¥Úø™»ŒŒÒπ‹¿Ì∆˜
-        MT_CLIENT_OPEN_CMD = 15,  ///< √∂æŸ≥£¡ø,¥Úø™√¸¡Ó––¥∞ø⁄
-        MT_CLIENT_VIDEO_FREEZE = 16,  ///< √∂æŸ≥£¡ø,∂≥Ω·◊¿√Êœ˚œ¢
-        MT_CLIENT_SETTING_REQUEST = 17,  ///< √∂æŸ≥£¡ø,…Ë÷√«Î«Û£®÷˜“™ «ª≠√Ê÷ ¡ø∫Õ◊¿√Ê±⁄÷Ω£©
-        MT_CLIENT_DESK_SIZE_CHANGED = 18,  ///< √∂æŸ≥£¡ø,◊Û√Ê≥ﬂ¥Á±ª≥…π¶∏ƒ±‰
-        MT_CLIENT_SIMULATE_CTRL_ALT_DEL = 19,     ///< ƒ£ƒ‚Ctrl+Alt+Delº¸
-        MT_CLIENT_CHANGE_RESOLUTION = 20,     ///< ∏ƒ±‰∑÷±Ê¬
+        // 客户端发往服务器的消息
+        MT_CLIENT_SET_PIXEL_FORMAT = 1,                 ///< 枚举，设置象素格式消息
+        MT_CLIENT_READY = 2,            ///< 枚举常量,客户端已经准备
+        MT_CLIENT_FRAME_BUF_UPDATE_REQUEST = 3,         ///< 枚举，请求帧缓存更新
+        MT_CLIENT_KEY_EVENT = 4,                         ///< 枚举，按键事件
+        MT_CLIENT_POINTER_EVENT = 5,                     ///< 枚举，鼠标(指针)事件
+        MT_CLIENT_CUT_TEXT = 6,                     ///< 枚举，客户端文本剪切
+        MT_CLIENT_INIT_REQUEST = 8,                 ///< 枚举，客户端初始化请求
+        MT_CLIENT_LOCK_DESKTOP = 9,     ///< 枚举常量,锁定桌面
+        MT_CLIENT_LOGOFF = 10,     ///< 枚举常量,注销当前用户
+        MT_CLIENT_RESTART = 11,    ///< 枚举常量,重启计算机
+        MT_CLIENT_SHUTDOWN = 12,  ///< 枚举常量,关闭计算机
+        MT_CLIENT_OPEN_COMPUTER = 13,  ///< 枚举常量,打开我的电脑
+        MT_CLIENT_OPEN_TASKMANAGER = 14,  ///< 枚举常量,打开任务管理器
+        MT_CLIENT_OPEN_CMD = 15,  ///< 枚举常量,打开命令行窗口
+        MT_CLIENT_VIDEO_FREEZE = 16,  ///< 枚举常量,冻结桌面消息
+        MT_CLIENT_SETTING_REQUEST = 17,  ///< 枚举常量,设置请求（主要是画面质量和桌面壁纸）
+        MT_CLIENT_DESK_SIZE_CHANGED = 18,  ///< 枚举常量,左面尺寸被成功改变
+        MT_CLIENT_SIMULATE_CTRL_ALT_DEL = 19,     ///< 模拟Ctrl+Alt+Del键
+        MT_CLIENT_CHANGE_RESOLUTION = 20,     ///< 改变分辨率
 
-        MT_HEARTBEAT = 95,           ///< –ƒÃ¯ ˝æ›∞¸
-        MT_CLOSE_SESSION = 96,       ///< πÿ±’ª·ª∞¡¨Ω”
-        MT_SYN = 97,                 ///< √∂æŸ≥£¡ø,Õ¨≤Ω«Î«Û£®ΩˆΩˆœﬁ”⁄UDPÕ®–≈£©
-        MT_INVALID_SESSION = 98,     ///< √∂æŸ≥£¡ø,Œﬁ–ßµƒª·ª∞
-        MT_READY = 99,               ///< √∂æŸ≥£¡ø,øÕªß∂ÀªÚ∑˛ŒÒ∆˜◊º±∏œ˚œ¢
-        MT_HELLO = 100,                 ///< √∂æŸ£¨øÕªß∂À≥ı ºªØ«Î«Û
+        MT_HEARTBEAT = 95,           ///< 心跳数据包
+        MT_CLOSE_SESSION = 96,       ///< 关闭会话连接
+        MT_SYN = 97,                 ///< 枚举常量,同步请求（仅仅限于UDP通信）
+        MT_INVALID_SESSION = 98,     ///< 枚举常量,无效的会话
+        MT_READY = 99,               ///< 枚举常量,客户端或服务器准备消息
+        MT_HELLO = 100,                 ///< 枚举，客户端初始化请求
 
-        // ∑˛ŒÒ∂À∑¢Õ˘øÕªß∂Àµƒœ˚œ¢
+        // 服务端发往客户端的消息
          
-        MT_SERVER_CURSOR_SHAPE_CHANGED = 101,     ///< √∂æŸ£¨π‚±Í–Œ◊¥“—æ≠∏ƒ±‰
-        MT_SERVER_DESKTOP_SIZE = 102,             ///< √∂æŸ£¨–¬µƒ◊¿√Ê≥ﬂ¥Á
-        MT_SERVER_BELL = 103,                     ///< √∂æŸ£¨‘⁄øÕªß∂À…œœÏ¡Â
-        MT_SERVER_CUT_TEXT = 104,                 ///< √∂æŸ£¨∑˛ŒÒ∆˜ºÙ«–Œƒ±æ
-        MT_SERVER_INIT_REQUEST = 105,             ///< √∂æŸ£¨∑˛ŒÒ∆˜≥ı ºªØ«Î«Û
-        MT_SERVER_CURSOR_POS_CHANGED = 106,         ///< √∂æŸ£¨π‚±ÍŒª÷√“—æ≠∏ƒ±‰
-        MT_SERVER_READY = 107,                   ///< √∂æŸ≥£¡ø,∑˛ŒÒ∆˜“—æ≠◊º±∏
-        MT_SERVER_ENABLE_REQUEST = 108,          ///< √∂æŸ≥£¡ø,Ω˚÷πªÚ πƒ‹”√ªß ‰»Î
-        MT_SERVER_FRAME_DATA_FRAG = 109,         ///< √∂æŸ£¨∑÷∆¨÷° ˝æ›
+        MT_SERVER_CURSOR_SHAPE_CHANGED = 101,     ///< 枚举，光标形状已经改变
+        MT_SERVER_DESKTOP_SIZE = 102,             ///< 枚举，新的桌面尺寸
+        MT_SERVER_BELL = 103,                     ///< 枚举，在客户端上响铃
+        MT_SERVER_CUT_TEXT = 104,                 ///< 枚举，服务器剪切文本
+        MT_SERVER_INIT_REQUEST = 105,             ///< 枚举，服务器初始化请求
+        MT_SERVER_CURSOR_POS_CHANGED = 106,         ///< 枚举，光标位置已经改变
+        MT_SERVER_READY = 107,                   ///< 枚举常量,服务器已经准备
+        MT_SERVER_ENABLE_REQUEST = 108,          ///< 枚举常量,禁止或使能用户输入
+        MT_SERVER_FRAME_DATA_FRAG = 109,         ///< 枚举，分片帧数据
 
-        MT_REGIST_TO_UDP_HOLE_SERVER = 109,      ///< ◊¢≤·µΩUDP¥Ú∂¥∑˛ŒÒ∆˜
+        MT_REGIST_TO_UDP_HOLE_SERVER = 109,      ///< 注册到UDP打洞服务器
 
-        MT_SERVER_DESKTOP_PIXEL_FORMAT = 111,     ///< √∂æŸ£¨∏¸–¬ª∫≥Â«¯œÒÀÿ∏Ò Ω
-        MT_SERVER_OS_INFO = 112,                 ///< √∂æŸ£¨≤Ÿ◊˜œµÕ≥–≈œ¢
-        MT_SERVER_SESSION_STATE = 113,             ///< √∂æŸ£¨∑µªÿøÿ÷∆∑˛ŒÒ∆˜µ±«∞Session◊¥Ã¨
-        MT_MAX_MSG_COUNT,                         ///< √∂æŸ£¨œ˚œ¢¿‡–Õ◊Ó¥Û ˝, ∏√÷µŒª”⁄MESSAGE_TYPE◊Ó∫Û“ªŒª
+        MT_SERVER_DESKTOP_PIXEL_FORMAT = 111,     ///< 枚举，更新缓冲区像素格式
+        MT_SERVER_OS_INFO = 112,                 ///< 枚举，操作系统信息
+        MT_SERVER_SESSION_STATE = 113,             ///< 枚举，返回控制服务器当前Session状态
+        MT_MAX_MSG_COUNT,                         ///< 枚举，消息类型最大数, 该值位于MESSAGE_TYPE最后一位
     };
+
 
 
 

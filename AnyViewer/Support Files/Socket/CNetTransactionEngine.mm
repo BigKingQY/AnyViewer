@@ -198,7 +198,7 @@ void CNetTransactionEngine::OnRegistResponse(CDataPacket* pDataPacket)
 bool CNetTransactionEngine::ConnectControlled(const U64 deviceId, RCP::AUTHENTICATION_METHOD contrlMethod)
 {
     CPrjSettings* pPrjSettings = GetPrjSettings();
-    pPrjSettings->SetDeviceID(to_string(deviceId));
+//    pPrjSettings->SetDeviceID(to_string(deviceId));
 //    CEditUI* pEditUI = static_cast<CEditUI*>(m_objPaintManager.FindControl(ID_PARTNER_ID_EDIT));
 //
 //    CHECK_POINTER_EX(pEditUI, false);
@@ -448,6 +448,8 @@ void CNetTransactionEngine::OnReadyConnRequest(CDataPacket* pPacket)
         m_arrVNCProxyArray.emplace_back(pVNCProxy);
 
         bReady = true;
+        
+        
     }
 
 
@@ -472,17 +474,34 @@ void CNetTransactionEngine::OnReadyConnRequest(CDataPacket* pPacket)
 void CNetTransactionEngine::OnVNCConnRequest(CDataPacket* pPacket)
 {
     COMMON_REQUEST* pRequestPacket = (COMMON_REQUEST*)pPacket->GetHeaderPtr();
-    CVNCProxyPtr pVNCProxy = LookupVNCProxy((U32)ntohq(pRequestPacket->nStatusCode));
+    
+    const U32 sessionId = (U32)ntohq(pRequestPacket->nStatusCode);
+    
+    CVNCProxyPtr pVNCProxy = LookupVNCProxy(sessionId);
 
     if (nullptr != pVNCProxy)
     {
 //        ShowCommunicationMode(pVNCProxy->GetCommunicationMode());
         pVNCProxy->Start();
+        
+        //初始化
+        m_spViewEvent = std::make_shared<CViewEvent>();
+        
+        m_spRemoteViewerCore = std::make_shared<CRemoteViewerCore>(pVNCProxy, m_spViewEvent);
+        
+        m_spRemoteViewerCore->Init(m_spViewEvent);
+                
     }
     else
     {
         LOG_ERROR("Don't find the VNCProxy (session id = %d)", ntohq(pRequestPacket->nStatusCode));
     }
+    
+    
+    CMessageBus& refMessageBus = GetLocalMessageBus();
+    
+    //发送一个自定义的消息到本地的消息总线
+    refMessageBus.SendReq<void, const U32, const bool>(MSG_VNC_CONNECT, std::forward <const U32>(sessionId), std::forward <const bool>(pVNCProxy != nullptr));
 
 }
 
@@ -572,7 +591,7 @@ void CNetTransactionEngine::OnReceivedRCPacket(CDataPacket *pPacket)
         //手动认证成功或者用密码认证成功后收到准备连接的消息
         case RCP::MT_READY_CONN_REQUEST:
             OnReadyConnRequest(pPacket);
-            break;;
+            break;
         case RCP::MT_VNC_CONNECT:
             OnVNCConnRequest(pPacket);
             break;
@@ -635,6 +654,14 @@ void CNetTransactionEngine::InitThreadPool()
 {
     // 启动工作线程池
     m_objThreadPool.Start(4);
+}
+
+void CNetTransactionEngine::InitScreenSize(const float nWidth, const float nHeight)
+{
+    CPrjSettings* pPrjSettings = GetPrjSettings();
+    
+    pPrjSettings->SetScreenWidth(nWidth);
+    pPrjSettings->SetScreenHeight(nHeight);
 }
 
 bool CNetTransactionEngine::CreateThreadTask(const THREAD_POOL_FUN& refThreadFun, CTaskSink* pTaskSink)
@@ -709,7 +736,27 @@ bool CNetTransactionEngine::StartConnect()
     return false;
 }
 
+void CNetTransactionEngine::CloseConnect(const U32 nID)
+{
+    CVNCProxyPtr pVNCProxy = LookupVNCProxy(nID);
 
+    CHECK_POINTER(pVNCProxy);
+    
+    if (!pVNCProxy->GetClosing())
+    {
+        m_spRemoteViewerCore->UnRegisterMsgRouting();
+        
+        pVNCProxy->SetProactiveClosing(true);
+
+        CreateThreadTask([pVNCProxy, this]()
+                         {
+            m_pRCSvrProxy->SendCommonRequest(RCP::MT_CLOSE_SESSION, pVNCProxy->GetSessionID());
+        });
+        
+    }
+    
+//    return true;
+}
 
 
 /// 通过模板实现单例

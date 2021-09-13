@@ -20,6 +20,8 @@
 #include "RCProtocol.h"
 #include "CCustomThreadPool.h"
 #include "CVNCProxy.h"
+#include "RemoteViewerCore.h"
+#include "CViewEvent.h"
 
 #include <vector>
 #include <utility>
@@ -40,6 +42,9 @@ public:
     ///开始连接控制服务器
     bool StartConnect();
     
+    ///结束连接
+    void CloseConnect(const U32 nID);
+    
     ///通过对方的设备ID进行连接
     bool ConnectControlled(const U64 deviceId, RCP::AUTHENTICATION_METHOD contrlMethod = RCP::AM_AUTO);
     
@@ -58,6 +63,8 @@ public:
     ///初始化线程池对象
     void InitThreadPool();
     
+    void InitScreenSize(const float nWidth, const float nHeight);
+    
     ///设置设备唯一ID
     ///通过调用SetDeviceUUID方法，这里注释是因为不需要申明方法
 
@@ -70,7 +77,7 @@ public:
 public:/* 任务线程池相关 */
     
     ///将任务加入线程池
-    bool CreateThreadTask(const THREAD_POOL_FUN& refThreadFun, CTaskSink* pTaskSink);
+    bool CreateThreadTask(const THREAD_POOL_FUN& refThreadFun, CTaskSink* pTaskSink = nullptr);
     
     
 private:/* 消息相关 */
@@ -117,9 +124,11 @@ private:/* 端点连接相关 */
     // 通过设备ID来找到对应的VNC代理
     CVNCProxyPtr LookupVNCProxybyID(const U64 nPeerID);
     
-    //通过回话ID来查找对应的VNC代理
+    //通过会话ID来查找对应的VNC代理
     CVNCProxyPtr LookupVNCProxy(const U32 nID) const;
 
+    //获取当前会话的VNC代理
+    CVNCProxyPtr GetCurrentVNCProxy();
     
     // 删除VNC代理
     bool RemoveVNCProxy(CVNCProxyPtr pVNCProxy);
@@ -128,20 +137,26 @@ private:/* 端点连接相关 */
 private:/* 自定义属性 */
 
     ///连接代理对象
-    CRCSvrProxyPtr           m_pRCSvrProxy;
+    CRCSvrProxyPtr                  m_pRCSvrProxy;
     
     ///用于存储注册的消息ID和类型
-    vector<MSG_PAIR>         m_MsgIDs;
+    vector<MSG_PAIR>                m_MsgIDs;
     
     ///任务线程池
-    CCustomThreadPool           m_objThreadPool;
+    CCustomThreadPool               m_objThreadPool;
     
     ///锁
-    mutable std::recursive_mutex m_mxVNCProxy;
+    mutable std::recursive_mutex    m_mxVNCProxy;
 
     ///所有的远程控制
-    CVNCProxyArray           m_arrVNCProxyArray;
+    CVNCProxyArray                  m_arrVNCProxyArray;
 
+    ///负责处理图像
+    CRemoteViewerCorePtr            m_spRemoteViewerCore;
+    
+    ///处理图像时间
+    CViewEventPtr                   m_spViewEvent;
+    
 private:/* 宏属性 */
     
     ///系统APP版本号

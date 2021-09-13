@@ -16,6 +16,10 @@ void CCoreEventsAdapter::OnBell()
 {
 }
 
+void CCoreEventsAdapter::OnError(const std::string& exception)
+{
+}
+
 void CCoreEventsAdapter::OnCutText(const std::string& /*pCutText*/)
 {
 }
@@ -38,7 +42,7 @@ void CCoreEventsAdapter::OnDisconnect(const std::string& pMsg)
 //}
 
 void CCoreEventsAdapter::OnFrameBufferUpdate(const CFrameBuffer *pFrameBuffer,
-                                            const Rect *rect)
+                                            const CRect *rect)
 {
 }
 

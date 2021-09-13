@@ -77,6 +77,9 @@
     //初始化线程池对象
     GetTransactionInstance()->InitThreadPool();
     
+    //初始化屏幕的大小
+    GetTransactionInstance()->InitScreenSize(kScreenWidth, kScreenHeight);
+    
     //初始化APP版本
     GetTransactionInstance()->SetAppVersion([kAppVersion doubleValue]);
     

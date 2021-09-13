@@ -526,14 +526,11 @@ bool CVNCProxy::SendHelloRequest()
     bool bResult = false;
     CVNCPacket objRequestPacket;
     
-//    objRequestPacket.InitialT<VNCP::VNC_MESSAGE_HEADER, VNCP::HELLO_MESSAGE_REQUEST>(
-//        VNCP::MT_HELLO
-//        , GetSessionID()
-//        , VNCP::OT_REQUEST
-//        , 0);
-
-    objRequestPacket.Initial(VNCP::MT_HELLO, GetSessionID(), VNCP::OT_REQUEST, 0);
-    
+    objRequestPacket.InitialT<VNCP::VNC_MESSAGE_HEADER, VNCP::HELLO_MESSAGE_REQUEST>(
+        VNCP::MT_HELLO
+        , GetSessionID()
+        , VNCP::OT_REQUEST
+        , 0);
 
     VNCP::HELLO_MESSAGE_REQUEST* pHelloRequest = (VNCP::HELLO_MESSAGE_REQUEST*)objRequestPacket.GetPayloadPtr<VNCP::VNC_MESSAGE_HEADER>();
     CPrjSettings* pPrjSettings = GetPrjSettings();

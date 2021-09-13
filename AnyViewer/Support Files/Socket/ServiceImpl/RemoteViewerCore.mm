@@ -35,12 +35,13 @@ CRemoteViewerCore::CRemoteViewerCore()
 
 CRemoteViewerCore::CRemoteViewerCore(
     CVNCProxyPtr pVNCProxy
-    , CCoreEventsAdapter* pCoreEventsAdapter
+    , CCoreEventsAdapterPtr pCoreEventsAdapter
     , bool bSaredFlag)
 //    : m_objFBUpdateNotifier(&m_objFrameBuffer, &m_objWatermarksController)
 : m_objUpdateRequestSender(&m_objFrameBuffer)
 {
-    m_pCoreEventsAdapter = pCoreEventsAdapter;
+    m_pVNCProxy = pVNCProxy;
+    m_spCoreEventsAdapter = pCoreEventsAdapter;
 //    m_objFBUpdateNotifier.SetCoreEventsAdapter(m_pCoreEventsAdapter);
 }
 
@@ -74,7 +75,7 @@ void CRemoteViewerCore::SendReadyRequestThread()
     do
     {
         m_pVNCProxy->SendReadyRequest();
-//        ::Sleep(3000);
+        ::sleep(3);
     } while (!m_bRecveciedReadyResponse);
      
        LOG_DEBUG("Send ready request complete (Session ID=%u)", m_pVNCProxy->GetSessionID());
@@ -105,6 +106,16 @@ bool CRemoteViewerCore::OnDecode(const unsigned char* pData, unsigned int nWidth
 
 //        m_objFBUpdateNotifier.OnUpdate(&objRect);
         //m_objFrameBuffer.SaveBitmap(_T("e:\\FrameBuffer.bmp"));
+        
+//        const char *obj_Path = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).lastObject stringByAppendingFormat:@"/FrameBuffer.bmp"].UTF8String;
+//
+//        m_objFrameBuffer.SaveBitmap(obj_Path);
+    
+        if (nullptr != m_spCoreEventsAdapter)
+        {
+            m_spCoreEventsAdapter->OnFrameBufferUpdate(&m_objFrameBuffer, &objRect);
+        }
+        
         bResult = true;
     }
     else
@@ -140,12 +151,12 @@ void CRemoteViewerCore::UnRegisterMsgRouting()
 /// <created>Andy,2020/12/3</created>
 /// <changed>Andy,2020/12/3</changed>
 // ********************************************************************************
-bool CRemoteViewerCore::Init(CCoreEventsAdapter *pCoreEventsAdapter)
+bool CRemoteViewerCore::Init(CCoreEventsAdapterPtr pCoreEventsAdapter)
 {
     CHECK_POINTER_EX(m_pVNCProxy,false);
     CHECK_POINTER_EX(pCoreEventsAdapter, false);
 
-    m_pCoreEventsAdapter = pCoreEventsAdapter;
+    m_spCoreEventsAdapter = pCoreEventsAdapter;
     m_bNewPixelFormat = false;
     m_bFreeze = false;
     m_bForceFullUpdate = false;
@@ -634,6 +645,9 @@ void CRemoteViewerCore::SetFBProperties(const CSize& refFBDimension, const CPixe
 #endif
 
     std::string strPixelFormatString;
+    
+    
+    
 
 //    strPixelFormatString.format(_T("[bits-per-pixel: %d, depth: %d, big-endian-flag: %d, ")
 //        _T("true-color-flag: is set, ") // true color always is set
@@ -653,13 +667,13 @@ void CRemoteViewerCore::SetFBProperties(const CSize& refFBDimension, const CPixe
 //    LOG_DEBUG("Frame buffer dimension: (%d, %d)", refFBDimension.width, refFBDimension.height);
 //    LOG_DEBUG("Frame buffer pixel format: %s", (char*)CT2A(strPixelFormatString.getString()));
 //
-//    if (!m_objFrameBuffer.SetProperties(refFBDimension, refPixelFormat))
-//    {
+    if (!m_objFrameBuffer.SetProperties(refFBDimension, refPixelFormat))
+    {
 //        LOG_ERROR("Failed to set property frame buffer. CSize: (%d, %d), Pixel format: %s"
 //            , refFBDimension.width
 //            , refFBDimension.height
 //            , CT2A(strPixelFormatString.getString()));
-//    }
+    }
 
     m_objFrameBuffer.SetColor(0, 0, 0);
     RefreshFrameBuffer();
@@ -756,11 +770,19 @@ void CRemoteViewerCore::OnInitRequest(PTR_NET_ENDPOINT_INTERFACE pEndpoint, CVNC
             , objServerPixelFormat.blueMax);
     }
 
-    if (nullptr != m_pCoreEventsAdapter)
+    if (nullptr != m_spCoreEventsAdapter)
     {
-        m_pCoreEventsAdapter->OnFrameBufferSizeChange(objScreenDimension.width, objScreenDimension.height);
+        m_spCoreEventsAdapter->OnFrameBufferSizeChange(objScreenDimension.width, objScreenDimension.height);
     }
 
+    //这里设置一下图片的输出宽高，根据当前设备的屏幕宽高
+    CPrjSettings* pPrjSettings = GetPrjSettings();
+    
+    float nHeight = pPrjSettings->GetScreenWidth() / objScreenDimension.width * objScreenDimension.height;
+    
+    SetOutImgSize(pPrjSettings->GetScreenWidth(), nHeight);
+    
+    
     
     DecodeCallback pCallback = std::bind(&CRemoteViewerCore::OnDecode, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
 
@@ -798,7 +820,7 @@ void CRemoteViewerCore::OnReadyReponse(PTR_NET_ENDPOINT_INTERFACE pEndpoint, CVN
 {
     VNCP::READY_REQUEST* pReadyInfo = (VNCP::READY_REQUEST*)pPacket->GetPayloadPtr<VNCP::VNC_MESSAGE_HEADER>();
 
-    m_pCoreEventsAdapter->OnConnected();
+    m_spCoreEventsAdapter->OnConnected();
 
     if (!m_bRecveciedReadyResponse)
     {
@@ -911,9 +933,9 @@ void CRemoteViewerCore::OnDeskSizeRequest(PTR_NET_ENDPOINT_INTERFACE pEndpoint, 
             , nOutWidth
             , nOutHeight);
 
-        if (nullptr != m_pCoreEventsAdapter)
+        if (nullptr != m_spCoreEventsAdapter)
         {
-            m_pCoreEventsAdapter->OnFrameBufferSizeChange(nOutWidth, nOutHeight);
+            m_spCoreEventsAdapter->OnFrameBufferSizeChange(nOutWidth, nOutHeight);
         }
         
         //{
@@ -1010,7 +1032,7 @@ void CRemoteViewerCore::OnCursorShapeChangedRequest(PTR_NET_ENDPOINT_INTERFACE p
 //        , &arrCursor
 //        , &arrBitmask);
 
-    m_pCoreEventsAdapter->OnCursorShapeChanged();
+    m_spCoreEventsAdapter->OnCursorShapeChanged();
 }
 
 // ********************************************************************************
@@ -1043,7 +1065,7 @@ void CRemoteViewerCore::OnBellRequest(PTR_NET_ENDPOINT_INTERFACE pEndpoint, CVNC
 {
     LOG_INFO("Bell!");
 
-    m_pCoreEventsAdapter->OnBell();
+    m_spCoreEventsAdapter->OnBell();
 }
 
 // ********************************************************************************
@@ -1060,7 +1082,7 @@ void CRemoteViewerCore::OnServerCutTextRequest(PTR_NET_ENDPOINT_INTERFACE pEndpo
     VNCP::CUT_TEXT_EVENT* pCutTextInfo = (VNCP::CUT_TEXT_EVENT*)pPacket->GetPayloadPtr<VNCP::VNC_MESSAGE_HEADER>();
     string strCutText((char*)pCutTextInfo->pText, pCutTextInfo->nLength);
 
-    m_pCoreEventsAdapter->OnCutText(strCutText);
+    m_spCoreEventsAdapter->OnCutText(strCutText);
 
 //    LOG_DEBUG("ServerCutText:%s",CT2A(strCutText));
 }

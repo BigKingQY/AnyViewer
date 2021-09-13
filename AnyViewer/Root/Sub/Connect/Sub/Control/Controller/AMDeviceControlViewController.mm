@@ -7,13 +7,14 @@
 
 #import "AMDeviceControlViewController.h"
 #import "AMDeviceControlView.h"
+#import "BKMessageManager.h"
+#include "CNetTransactionEngine.h"
 
 @interface AMDeviceControlViewController ()
 
 @property (nonatomic, strong) AMDeviceControlView *controlView;
 
-@property (nonatomic, strong) CADisplayLink *displayLink;
-@property (nonatomic, strong) NSThread *thread;
+@property (nonatomic, strong) UIButton *closeButton;
 
 @end
 
@@ -29,39 +30,15 @@
     [self loadData];
     [self addActions];
     
-//    [self startDisplayLink];
 }
 
-//开始使用定时器进行捕获远程设备图像数据
-- (void)startDisplayLink {
-    @weakify(self);
-    self.thread = [[NSThread alloc] initWithBlock:^{
-        @strongify(self);
-        self.displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(refreshControlView)];
-        [self.displayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
-        
-        [[NSRunLoop currentRunLoop] run];
-    }];
+- (void)viewDidAppear:(BOOL)animated {
+    [super viewDidAppear:animated];
     
-    [self.thread start];
+    //页面已经显示的时候设置代理
+    [BKMessageManager.shared setDeletegateForTarget:self];
 }
 
-//释放定时器，子线程
-- (void)invalidate {
-    [self.thread cancel];
-    self.thread = nil;
-    [self.displayLink removeFromRunLoop:[NSRunLoop currentRunLoop] forMode:NSRunLoopCommonModes];
-    [self.displayLink invalidate];
-    self.displayLink = nil;
-}
-
-//界面刷新
-- (void)refreshControlView {
-    run_main_queue(^{
-        self.controlView.contentImageView.image = BKImage(@"test");
-    });
-    NSLog(@"刷新了界面：%@", [NSDate date]);
-}
 
 //图片处理，仅供参考
 - (void)HandleImage:(UIImage *)img complite:(void(^)(UIImage *img))complite
@@ -141,6 +118,8 @@
     self.gk_navigationBar.hidden = YES;
     
     [self.view addSubview:self.controlView];
+    
+    [self.view addSubview:self.closeButton];
 }
 
 //MARK: Layout - 布局设置
@@ -149,6 +128,8 @@
     [super viewWillLayoutSubviews];
     
     self.controlView.frame = CGRectMake(0, KSTATUS_BAR_H, self.view.width, self.view.height-KHOME_INDICATOR_H-KSTATUS_BAR_H);
+    
+    self.closeButton.frame = CGRectMake(self.view.width-80, KSTATUS_NAVIGATION_H, 65, 40);
 }
 
 //MARK: Network Request - 网络请求
@@ -159,9 +140,32 @@
 
 //MARK: Delegate && DataSource - 代理
 
+
+/// 视图更新时的回调
+/// @param image CGImage
+- (void)onFrameBufferUpdate:(UIImage *)image {
+    
+    run_main_queue(^{
+        self.controlView.contentImageView.image = image;
+    });
+    
+    
+    
+}
+
 //MARK: EventResponse - 事件处理
 
-- (void)addActions {}
+- (void)addActions {
+    
+    [[self.closeButton rac_signalForControlEvents:UIControlEventTouchUpInside] subscribeNext:^(__kindof UIControl * _Nullable x) {
+       
+        GetTransactionInstance()->CloseConnect(self.sessionId);
+        
+        [self.navigationController popViewControllerAnimated:YES];
+        
+    }];
+    
+}
 
 //MARK: Private Methods - 私有方法
 
@@ -180,6 +184,15 @@
         _controlView = [AMDeviceControlView new];
     }
     return _controlView;
+}
+
+- (UIButton *)closeButton {
+    if (!_closeButton) {
+        _closeButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        [_closeButton setTitle:@"关闭连接" forState:UIControlStateNormal];
+        _closeButton.titleLabel.font = BKFont(14);
+    }
+    return _closeButton;
 }
 
 @end

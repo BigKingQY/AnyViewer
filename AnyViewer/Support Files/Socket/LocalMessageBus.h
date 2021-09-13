@@ -13,6 +13,8 @@
 #include "SDPMessageBus.h"
 #include "RCProtocol.h"
 
+#import <UIKit/UIKit.h>
+
 using namespace RCP;
 
 extern CMessageBus& GetLocalMessageBus();
@@ -47,6 +49,16 @@ private:
     /// @param otherStatus 被冻结时长，单位秒
     void OnAuthenticatResponse(const int status, const int otherStatus);
     
+    
+    /// 连接回调，需要将会话ID关联到视图，用于关闭连接
+    /// @param sessionId 会话Id
+    /// @param success 是否成功
+    void OnVNCConnectResponse(const U32 sessionId, const bool success);
+    
+    
+    /// 视图更新时的回调
+    /// @param imageRef CGImage
+    void OnFrameBufferUpdate(UIImage *image);
 };
 
 ///定义一个本地使用的注册消息的枚举
@@ -60,6 +72,14 @@ enum LOCAL_MESSAGEBUS_MSG
     
     ///发起认证后的回复
     MSG_AUTHENTICAT_RESPONSE = 1003,
+    
+    ///连接成功的消息回复
+    MSG_VNC_CONNECT = 1004,
+    
+    ///刷新界面
+    MSG_FRAME_UPDATE = 1005,
+    
+    
 };
 
 ///定义全局单例对象

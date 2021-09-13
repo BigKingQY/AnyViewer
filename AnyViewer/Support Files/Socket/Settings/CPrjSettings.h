@@ -246,7 +246,7 @@ private:
     DECLARE_MEMBER_AND_METHOD_V11(unsigned int, m_nTheme, Theme, TT_FOLLOW_SYSTEM);
 
     ///< RCøÿ÷∆∑˛ŒÒ∆˜IPµÿ÷∑
-    DECLARE_MEMBER_AND_SET_METHOD_V11(std::string, m_strServerIP, ServerIP, "192.168.3.74");
+    DECLARE_MEMBER_AND_SET_METHOD_V11(std::string, m_strServerIP, ServerIP, "controlserver.anyviewer.com");
     
     ///< RCøÿ÷∆∑˛ŒÒ∆˜∂Àø⁄
     DECLARE_MEMBER_AND_METHOD_V11(unsigned int, m_nPort, Port, 30192);
@@ -359,6 +359,10 @@ private:
 
     ///< ”¶”√≥Ã–Ú∞Ê±æ–≈œ¢
     DECLARE_MEMBER_AND_METHOD_V11(int, m_nVersion, Version, 0);
+    
+    ///< 记录当前设备屏幕的宽高
+    DECLARE_MEMBER_AND_METHOD_V11(float, n_fScreenWidth, ScreenWidth, 0);
+    DECLARE_MEMBER_AND_METHOD_V11(float, n_fScreenHeight, ScreenHeight, 0);
 
 };
 

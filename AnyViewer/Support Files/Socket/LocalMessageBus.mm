@@ -65,6 +65,23 @@ void LocalMessageBusManager::OnAuthenticatResponse(const int status, const int o
 }
 
 
+void LocalMessageBusManager::OnVNCConnectResponse(const U32 sessionId, const bool success)
+{
+    if ([BKMessageManager.shared.delegate respondsToSelector:@selector(onVNCConnectResponse:success:)])
+    {
+        [BKMessageManager.shared.delegate onVNCConnectResponse:sessionId success:success];
+    }
+}
+
+
+void LocalMessageBusManager::OnFrameBufferUpdate(UIImage *image)
+{
+    if ([BKMessageManager.shared.delegate respondsToSelector:@selector(onFrameBufferUpdate:)])
+    {
+        [BKMessageManager.shared.delegate onFrameBufferUpdate:image];
+    }
+}
+
 /// 注册所有消息
 void LocalMessageBusManager::RegistMessageBus()
 {
@@ -82,8 +99,14 @@ void LocalMessageBusManager::RegistMessageBus()
         unsigned int msgId = refMessageBus.Register(MSG_AUTHENTICAT_RESPONSE, [this](const int status, const int otherStatus)
                                                     {  OnAuthenticatResponse(status, otherStatus); });
     }
-    
-    
+    {
+        unsigned int msgId = refMessageBus.Register(MSG_VNC_CONNECT, [this](const U32 sessionId , const bool success)
+                                                    {  OnVNCConnectResponse(sessionId, success); });
+    }
+    {
+        unsigned int msgId = refMessageBus.Register(MSG_FRAME_UPDATE, [this](UIImage *image)
+                                                    {  OnFrameBufferUpdate(image); });
+    }
 }
 
 
