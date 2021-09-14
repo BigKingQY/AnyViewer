@@ -239,7 +239,6 @@
         
     });
     
-    //测试账号：941309969， 123qwe
 }
 
 
@@ -372,12 +371,10 @@
 
 //跳转控制页面
 - (void)showControlViewController:(U32)sessionId {
-    
-    AMDeviceControlViewController *controller = [AMDeviceControlViewController new];
-    //保存会话ID
-    controller.sessionId = sessionId;
+        
+    AMDeviceControlViewController *controller = [[AMDeviceControlViewController alloc] initWithDeviceId:[self getCurrentDeviceId] sessionId:sessionId];
     //设置代理
-    [BKMessageManager.shared setDeletegateForTarget:controller];
+//    [BKMessageManager.shared setDeletegateForTarget:controller];
     
     [self.navigationController pushViewController:controller animated:YES];
     
@@ -424,6 +421,7 @@
 /// 选择连接方式，发送控制请求，默认是auto，手动传manual
 /// @param controlMethod 控制方式
 - (void)handleConnect:(AUTHENTICATION_METHOD)controlMethod {
+    
     
     self.isManual = (controlMethod == AM_MANUAL);
     

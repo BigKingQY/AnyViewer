@@ -35,7 +35,7 @@ static const NSTimeInterval kMinDoubleClickTime = 0.3;
         
         //初始化的时候需要将显示的图片大小设置好
         _contentImageView = [UIImageView new];
-        _contentImageView.frame = CGRectMake(0,(kScreenHeight-KSTATUS_BAR_H-KHOME_INDICATOR_H-211)/2.f, kScreenWidth, 211);
+        _contentImageView.frame = CGRectMake(0,(kScreenHeight-KSTATUS_BAR_H-KHOME_INDICATOR_H-210)/2.f, kScreenWidth, 210);
         _contentImageView.contentMode = UIViewContentModeScaleAspectFit;
 //        _contentImageView.image = BKImage(@"test");
         _contentImageView.userInteractionEnabled = YES;
@@ -51,6 +51,33 @@ static const NSTimeInterval kMinDoubleClickTime = 0.3;
     [super layoutSubviews];
     
     self.scrollView.frame = CGRectMake(0, 0, self.width, self.height);
+}
+
+
+- (void)updateFrameWithImage:(UIImage *)image {
+    
+    run_main_queue(^{
+        
+        self.contentImageView.image = image;
+    });
+}
+
+- (void)updateFrameSize:(const unsigned int)width height:(const unsigned int)height {
+    
+    run_main_queue(^{
+        
+        if (width == 0 || height == 0) {
+            return;
+        }
+        
+        CGFloat sheight = kScreenWidth / width * height;
+        
+        [UIView animateWithDuration:0.35 animations:^{
+                
+            self.contentImageView.frame = CGRectMake(0,(kScreenHeight-KSTATUS_BAR_H-KHOME_INDICATOR_H-sheight)/2.f, kScreenWidth, sheight);
+        }];
+        
+    });
 }
 
 //MARK: Action

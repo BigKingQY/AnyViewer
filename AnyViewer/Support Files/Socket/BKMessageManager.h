@@ -39,6 +39,12 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param image 显示的图片
 - (void)onFrameBufferUpdate:(UIImage *)image;
 
+
+/// 视图大小改变时的回调
+/// @param nWidth 宽度
+/// @param nHeight 高度
+- (void)onFrameBufferSizeChange:(const unsigned int)nWidth height:(const unsigned int)nHeight;
+
 @end
 
 

@@ -51,6 +51,9 @@ public:
     ///发起认证请求
     void SendAuthenticationRequest(const U64 deviceId, const char *secCode);
     
+    ///需要刷新界面时调用
+    void SetNeedUpdateFrameBuffer();
+    
         
     //========== 必须要调用的方法 ==========
     
@@ -60,8 +63,7 @@ public:
     ///初始化设置文件存储路径
     void InitSettingFilePath(const char *path);
     
-    ///初始化线程池对象
-    void InitThreadPool();
+    
     
     void InitScreenSize(const float nWidth, const float nHeight);
     
@@ -81,6 +83,9 @@ public:/* 任务线程池相关 */
     
     
 private:/* 消息相关 */
+    
+    ///初始化线程池对象
+    void InitThreadPool();
         
     ///消息注册到消息总线
     void RegisterMessageBus();
@@ -100,6 +105,9 @@ private:/* 消息相关 */
     ///消息反注册
     bool UnRegist(const unsigned int msgId);
     
+    ///所有消息反注册
+    void UnRegistAllMessage();
+    
     ///注册成功后的回复
     void OnRegistResponse(CDataPacket* pDataPacket);
     
@@ -109,11 +117,17 @@ private:/* 消息相关 */
     ///收到连接的消息
     void OnVNCConnRequest(CDataPacket* pPacket);
     
-    ///
+    ///处理客户端改变通信模式请求
     bool OnChangeCommunicationModeRequest(CDataPacket* pPacket);
     
-    ///
+    ///收到服务器发送来的对端的地址信息请求
     void OnPeerAddrInfoRequest(CDataPacket* pPacket);
+    
+    ///预关闭会话
+    void OnPreCloseSessionRequest(CDataPacket* pPacket);
+    
+    ///关闭会话
+    void OnCloseSessionRequest(CDataPacket* pPacket);
     
     
 private:/* 端点连接相关 */
@@ -140,7 +154,7 @@ private:/* 自定义属性 */
     CRCSvrProxyPtr                  m_pRCSvrProxy;
     
     ///用于存储注册的消息ID和类型
-    vector<MSG_PAIR>                m_MsgIDs;
+    vector<MSG_PAIR>                m_arrMsgIDArray;
     
     ///任务线程池
     CCustomThreadPool               m_objThreadPool;
@@ -154,7 +168,7 @@ private:/* 自定义属性 */
     ///负责处理图像
     CRemoteViewerCorePtr            m_spRemoteViewerCore;
     
-    ///处理图像时间
+    ///处理图像事件
     CViewEventPtr                   m_spViewEvent;
     
 private:/* 宏属性 */

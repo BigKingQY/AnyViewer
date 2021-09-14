@@ -42,7 +42,7 @@ static dispatch_once_t onceToken;
     //这里记录一个字典，用来保存公网地址对应的区域，格式@{@"110.10.2.12":@"成都市锦江区"}
     NSDictionary *dic = [NSUserDefaults.standardUserDefaults objectForKey:kPublicIPKey];
     if (dic && dic[publicIP]) {
-        
+                
         NSLog(@"使用上次的查询结果：%@:%@", publicIP, dic[publicIP]);
         complete(dic[publicIP]);
 
@@ -82,10 +82,20 @@ static dispatch_once_t onceToken;
     if (self.complete) {
         [webView evaluateJavaScript:@"ip_result" completionHandler:^(NSDictionary *dic, NSError * _Nullable error) {
             
+            NSString *address;
+            
             NSString *region = [dic[@"ASN归属地"] stringByReplacingOccurrencesOfString:@" " withString:@""];
             
+            NSArray *array = dic[@"ip_c_list"];
+            if (array.count > 0) {
+                NSString *country = array.firstObject[@"ct"];
+                address = [NSString stringWithFormat:@"%@%@", country, region];
+            }else {
+                address = [NSString stringWithFormat:@"%@", region];
+            }
+            
             //保存本次的查询结果
-            [NSUserDefaults.standardUserDefaults setObject:@{self.publicIP:region} forKey:kPublicIPKey];
+            [NSUserDefaults.standardUserDefaults setObject:@{self.publicIP:address} forKey:kPublicIPKey];
             [NSUserDefaults.standardUserDefaults synchronize];
             
             self.complete(region);

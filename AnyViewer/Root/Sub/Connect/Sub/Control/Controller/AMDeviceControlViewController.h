@@ -6,12 +6,19 @@
 //
 
 #import "BaseViewController.h"
+#include "Typedef.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 @interface AMDeviceControlViewController : BaseViewController
 
-@property (nonatomic, assign) u_int32_t sessionId;
+
+- (instancetype)initWithDeviceId:(U64)deviceId sessionId:(U32)sessionId;
+
+- (instancetype)init NS_UNAVAILABLE;
+
++ (instancetype)new NS_UNAVAILABLE;
+
 
 @end
 

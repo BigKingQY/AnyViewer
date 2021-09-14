@@ -75,7 +75,7 @@
     GetTransactionInstance()->InitSettingFilePath(kPrjSettingPath);
     
     //初始化线程池对象
-    GetTransactionInstance()->InitThreadPool();
+//    GetTransactionInstance()->InitThreadPool();
     
     //初始化屏幕的大小
     GetTransactionInstance()->InitScreenSize(kScreenWidth, kScreenHeight);
@@ -85,14 +85,9 @@
     
     //设置设备唯一ID
     GetTransactionInstance()->SetDeviceUUID([self getDeviceUUID].UTF8String);
-    
-    //调用消息注册函数，用来和OC数据交互
-    GetLocalMessageBusInstance()->RegistMessageBus();
-    
+        
     //连接控制服务器
     GetTransactionInstance()->StartConnect();
-    
-    [self getDeviceUUID];
     
 }
 

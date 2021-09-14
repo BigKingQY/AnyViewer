@@ -19,6 +19,7 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <thread>
 
 using namespace std;
 
@@ -75,7 +76,8 @@ void CRemoteViewerCore::SendReadyRequestThread()
     do
     {
         m_pVNCProxy->SendReadyRequest();
-        ::sleep(3);
+//        ::sleep(3);
+        std::this_thread::sleep_for(std::chrono::milliseconds(3000));
     } while (!m_bRecveciedReadyResponse);
      
        LOG_DEBUG("Send ready request complete (Session ID=%u)", m_pVNCProxy->GetSessionID());

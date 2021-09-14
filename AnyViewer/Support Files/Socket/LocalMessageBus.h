@@ -57,8 +57,21 @@ private:
     
     
     /// 视图更新时的回调
-    /// @param imageRef CGImage
+    /// @param image image
     void OnFrameBufferUpdate(UIImage *image);
+    
+    
+    /// 视图大小改变时的回调
+    /// @param nWidth 宽度
+    /// @param nHeight 高度
+    void OnFrameBufferSizeChange(const unsigned int nWidth, const unsigned int nHeight);
+    
+    
+    /// 根据设备ID更新昵称
+    /// @param deviceId 设备ID
+    /// @param nickName 昵称
+    void OnUpdateNickName(const U64 deviceId, const std::string nickName);
+    
 };
 
 ///定义一个本地使用的注册消息的枚举
@@ -79,7 +92,11 @@ enum LOCAL_MESSAGEBUS_MSG
     ///刷新界面
     MSG_FRAME_UPDATE = 1005,
     
+    ///界面大小改变
+    MSG_FRAME_SIZE = 1006,
     
+    ///获取昵称
+    MSG_NICK_NAME = 1007,
 };
 
 ///定义全局单例对象

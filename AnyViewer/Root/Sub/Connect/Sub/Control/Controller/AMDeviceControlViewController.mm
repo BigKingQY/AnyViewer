@@ -16,11 +16,24 @@
 
 @property (nonatomic, strong) UIButton *closeButton;
 
+
+@property (nonatomic, assign) U32 sessionId;
+@property (nonatomic, assign) U64 deviceId;
+
+
 @end
 
 @implementation AMDeviceControlViewController
 
 //MARK: LifeCycle - 生命周期
+
+- (instancetype)initWithDeviceId:(U64)deviceId sessionId:(U32)sessionId {
+    if (self = [super init]) {
+        self.deviceId = deviceId;
+        self.sessionId = sessionId;
+    }
+    return self;
+}
 
 - (void)viewDidLoad {
     [super viewDidLoad];
@@ -40,75 +53,6 @@
 }
 
 
-//图片处理，仅供参考
-- (void)HandleImage:(UIImage *)img complite:(void(^)(UIImage *img))complite
-{
-    dispatch_async(dispatch_get_global_queue(0, 0), ^{
-        CGImageRef imgref = img.CGImage;
-        size_t width = CGImageGetWidth(imgref);
-        size_t height = CGImageGetHeight(imgref);
-        size_t bitsPerComponent = CGImageGetBitsPerComponent(imgref);
-        size_t bitsPerPixel = CGImageGetBitsPerPixel(imgref);
-        size_t bytesPerRow = CGImageGetBytesPerRow(imgref);
-        
-        CGColorSpaceRef colorSpace = CGImageGetColorSpace(imgref);
-        CGBitmapInfo bitmapInfo = CGImageGetBitmapInfo(imgref);
-        
-        bool shouldInterpolate = CGImageGetShouldInterpolate(imgref);
-        
-        CGColorRenderingIntent intent = CGImageGetRenderingIntent(imgref);
-        
-        CGDataProviderRef dataProvider = CGImageGetDataProvider(imgref);
-        
-        CFDataRef data = CGDataProviderCopyData(dataProvider);
-        
-        UInt8 *buffer = (UInt8*)CFDataGetBytePtr(data);//Returns a read-only pointer to the bytes of a CFData object.// 首地址
-        NSUInteger  x, y;
-        // 像素矩阵遍历，改变成自己需要的值
-        for (y = 0; y < height; y++) {
-            for (x = 0; x < width; x++) {
-                UInt8 *tmp;
-                tmp = buffer + y * bytesPerRow + x * 4;
-                UInt8 alpha;
-                alpha = *(tmp + 3);
-                if (alpha) {// 透明不处理 其他变成红色
-                    int r = arc4random() % 256;
-                    int g = arc4random() % 256;
-                    int b = arc4random() % 256;
-                    *tmp = r;//red
-                    *(tmp + 1) = g;//green
-                    *(tmp + 2) = b;// Blue
-                }
-            }
-        }
-        
-        CFDataRef effectedData = CFDataCreate(NULL, buffer, CFDataGetLength(data));
-        
-        CGDataProviderRef effectedDataProvider = CGDataProviderCreateWithCFData(effectedData);
-        // 生成一张新的位图
-        CGImageRef effectedCgImage = CGImageCreate(
-                                                   width, height,
-                                                   bitsPerComponent, bitsPerPixel, bytesPerRow,
-                                                   colorSpace, bitmapInfo, effectedDataProvider,
-                                                   NULL, shouldInterpolate, intent);
-        
-        UIImage *effectedImage = [[UIImage alloc] initWithCGImage:effectedCgImage];
-        
-        CGImageRelease(effectedCgImage);
-        
-        CFRelease(effectedDataProvider);
-        
-        CFRelease(effectedData);
-        
-        CFRelease(data);
-        dispatch_async(dispatch_get_main_queue(), ^{
-            if (complite) {
-                complite(effectedImage);
-            }
-        });
-    });
-}
-
 //MARK: Methods Override - 方法重写
 
 //MARK: UISet - 界面布局
@@ -120,6 +64,8 @@
     [self.view addSubview:self.controlView];
     
     [self.view addSubview:self.closeButton];
+    
+    GetTransactionInstance()->SetNeedUpdateFrameBuffer();
 }
 
 //MARK: Layout - 布局设置
@@ -141,17 +87,22 @@
 //MARK: Delegate && DataSource - 代理
 
 
+/// 视图大小改变时的回调
+/// @param nWidth 宽度
+/// @param nHeight 高度
+- (void)onFrameBufferSizeChange:(const unsigned int)nWidth height:(const unsigned int)nHeight {
+   
+    [self.controlView updateFrameSize:nWidth height:nHeight];
+}
+
+
 /// 视图更新时的回调
 /// @param image CGImage
 - (void)onFrameBufferUpdate:(UIImage *)image {
     
-    run_main_queue(^{
-        self.controlView.contentImageView.image = image;
-    });
-    
-    
-    
+    [self.controlView updateFrameWithImage:image];
 }
+
 
 //MARK: EventResponse - 事件处理
 

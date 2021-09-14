@@ -290,8 +290,8 @@
 //跳转控制页面
 - (void)showControlViewController {
     
-    AMDeviceControlViewController *controller = [AMDeviceControlViewController new];
-    [self.navigationController pushViewController:controller animated:YES];
+//    AMDeviceControlViewController *controller = [AMDeviceControlViewController new];
+//    [self.navigationController pushViewController:controller animated:YES];
 }
 
 //MARK: EventResponse - 事件处理

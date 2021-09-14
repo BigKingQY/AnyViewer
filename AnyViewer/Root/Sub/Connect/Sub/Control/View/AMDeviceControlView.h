@@ -13,6 +13,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, strong, readonly) UIImageView *contentImageView;
 
+- (void)updateFrameWithImage:(UIImage *)image;
+
+- (void)updateFrameSize:(const unsigned int)width height:(const unsigned int)height;
+
 @end
 
 NS_ASSUME_NONNULL_END

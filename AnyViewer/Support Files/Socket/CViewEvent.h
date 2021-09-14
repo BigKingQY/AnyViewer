@@ -22,7 +22,7 @@ private:
     
     virtual void OnFrameBufferPropChange(const CFrameBuffer* pFrameBuffer) override;
     
-//    virtual void OnFrameBufferSizeChange(const unsigned int nWidth, const unsigned int nHeight) override;
+    virtual void OnFrameBufferSizeChange(const unsigned int nWidth, const unsigned int nHeight) override;
     
     virtual void OnCutText(const std::string& pCutText) override;
     

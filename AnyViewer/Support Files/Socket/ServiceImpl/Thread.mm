@@ -8,6 +8,7 @@
 #include "Thread.h"
 #include "Log.h"
 #include <sstream>
+#include <thread>
 
 using namespace std;
 
@@ -142,7 +143,8 @@ void CThread::InitByDerived()
 void CThread::sleep(DWORD millis)
 {
 //    Sleep(millis);
-    ::sleep(millis);
+//    ::sleep(millis);
+    std::this_thread::sleep_for(std::chrono::milliseconds(millis));
 }
 
 void CThread::OnTerminate()

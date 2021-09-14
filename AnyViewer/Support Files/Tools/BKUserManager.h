@@ -29,6 +29,11 @@ NS_ASSUME_NONNULL_BEGIN
 ///获取当前用户的已连接历史记录
 @property (nullable, nonatomic, strong, readonly) NSArray<BKUser *> *connectHistory;
 
+
+//这里记录一下连接对象的屏幕宽高已经会话ID
+@property (nonatomic, assign) CGFloat sWidth;
+@property (nonatomic, assign) CGFloat sHeight;
+
 ///单例对象
 + (BKUserManager *)shared;
 

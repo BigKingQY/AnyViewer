@@ -51,10 +51,13 @@ void CViewEvent::OnFrameBufferPropChange(const CFrameBuffer* pFrameBuffer)
     
 }
 
-//void CViewEvent::OnFrameBufferSizeChange(const unsigned int nWidth, const unsigned int nHeight)
-//{
-//
-//}
+void CViewEvent::OnFrameBufferSizeChange(const unsigned int nWidth, const unsigned int nHeight)
+{
+    CMessageBus& refMessageBus = GetLocalMessageBus();
+    
+    //发送一个自定义的消息到本地的消息总线
+    refMessageBus.SendReq<void, const unsigned int, const unsigned int>(MSG_FRAME_SIZE, std::forward <const unsigned int>(nWidth), std::forward <const unsigned int>(nHeight));
+}
 
 void CViewEvent::OnCutText(const std::string& pCutText)
 {

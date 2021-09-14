@@ -7,6 +7,7 @@
 
 #include "UpdateRequestSender.h"
 
+#include <thread>
 
 CUpdateRequestSender::CUpdateRequestSender(CFrameBuffer* pFrameBuf)
     : m_bUpdateRecieved(false)

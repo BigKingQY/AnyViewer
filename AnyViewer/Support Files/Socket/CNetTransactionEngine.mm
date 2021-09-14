@@ -112,19 +112,19 @@ void CNetTransactionEngine::Regist()
 bool CNetTransactionEngine::UnRegist(const unsigned int msgId)
 {
     
-    for (int i = 0; i < m_MsgIDs.size(); i++)
+    for (int i = 0; i < m_arrMsgIDArray.size(); i++)
     {
         
-        if (msgId == m_MsgIDs[i].second)
+        if (msgId == m_arrMsgIDArray[i].second)
         {
             
             CMessageBus& refMessageBus = GetMessageBus();
             
-            vector<MSG_PAIR>::iterator it = m_MsgIDs.begin()+i;
+            vector<MSG_PAIR>::iterator it = m_arrMsgIDArray.begin()+i;
             
             refMessageBus.Unregister(it->first, it->second);
             
-            m_MsgIDs.erase(it);
+            m_arrMsgIDArray.erase(it);
             
             LOG_DEBUG("UnRegist a message~, msgId: %d", msgId);
             
@@ -135,6 +135,23 @@ bool CNetTransactionEngine::UnRegist(const unsigned int msgId)
     return false;
 }
 
+
+///所有消息反注册
+void CNetTransactionEngine::UnRegistAllMessage()
+{
+    for (int i = 0; i < m_arrMsgIDArray.size(); i++)
+    {
+        CMessageBus& refMessageBus = GetMessageBus();
+        
+        vector<MSG_PAIR>::iterator it = m_arrMsgIDArray.begin()+i;
+        
+        refMessageBus.Unregister(it->first, it->second);
+        
+        m_arrMsgIDArray.erase(it);
+        
+        LOG_DEBUG("UnRegist a message~, msgId: %d", it->second);
+    }    
+}
 
 
 /// 注册后的回复
@@ -151,7 +168,7 @@ void CNetTransactionEngine::OnRegistResponse(CDataPacket* pDataPacket)
         CMessageBus& refMessageBus = GetLocalMessageBus();
         
         //发送一个自定义的消息到本地的消息总线
-        refMessageBus.SendReq<void, const uint64_t>(MSG_DEVICE_REGIST, std::forward <const uint64_t>(nDeviceID));
+        refMessageBus.SendReq<void, const uint64_t>(MSG_DEVICE_REGIST, std::forward <const U64>(nDeviceID));
                 
         CPrjSettings* pPrjSettings = GetPrjSettings();
         pPrjSettings->SetDeviceID(to_string(nDeviceID));
@@ -468,6 +485,16 @@ void CNetTransactionEngine::OnReadyConnRequest(CDataPacket* pPacket)
         pResponsePacket->nRoleType = (I8)objReadyConnRequest.GetRoleType();
         m_pRCSvrProxy->Send(&objResponsePacket);
     }
+    
+    {
+        //更新昵称
+        CMessageBus& refMessageBus = GetLocalMessageBus();
+        
+        //发送一个自定义的消息到本地的消息总线
+        refMessageBus.SendReq<void, const U64, const std::string>(MSG_NICK_NAME, std::forward<const U64>(objReadyConnRequest.GetPeerID()),std::forward <const std::string>(objReadyConnRequest.GetNickName()));
+        
+    }
+    
 }
 
 
@@ -559,6 +586,113 @@ void CNetTransactionEngine::OnPeerAddrInfoRequest(CDataPacket* pPacket)
     }
 }
 
+
+// ********************************************************************************
+/// <summary>
+/// 收到服务器发送来的准备关闭会话请求,在该请求中关闭掉客户端，避免发起重连(因为我们的通信
+/// 客户端有自动重连功能尽管一秒钟后会收到服务器发送来的真正关闭请求，但是也不能完全避免客户端发送重连)
+/// </summary>
+/// <param name="pPacket"></param>
+/// <created>Andy,2021/3/1</created>
+/// <changed>Andy,2021/3/1</changed>
+// ********************************************************************************
+void CNetTransactionEngine::OnPreCloseSessionRequest(CDataPacket* pPacket)
+{
+    COMMON_REQUEST* pRequestPacket = (COMMON_REQUEST*)pPacket->GetHeaderPtr();
+    const U64 nSessionID = ntohq(pRequestPacket->nStatusCode);
+    CVNCProxyPtr pVNCProxy = LookupVNCProxy(U32(nSessionID));
+    
+    if (nullptr != pVNCProxy)
+    {
+        CreateThreadTask([pVNCProxy]()
+                         {
+            pVNCProxy->PreClose();
+        });
+        
+    }
+}
+
+// ********************************************************************************
+/// <summary>
+/// 处理服务器发送来的关闭会话请求或应答
+/// </summary>
+/// <param name="pPacket"></param>
+/// <created>Andy,2020/12/31</created>
+/// <changed>Andy,2020/12/31</changed>
+// ********************************************************************************
+void CNetTransactionEngine::OnCloseSessionRequest(CDataPacket* pPacket)
+{
+    const U16 uMsgFlag = (U16)pPacket->GetPacketFlag();
+    
+    if ((uMsgFlag & OT_RESPONSE) == OT_RESPONSE)
+    {
+        if (!(uMsgFlag & OR_SUCCESS))
+        {
+            //说明服务器无法完成关闭会话的请求，主要是没有找到会话记录（因为异常重启会话记录丢失）
+            //如果是这种情况，将直接发送请求到对端
+            
+            COMMON_RESPONSE* pRequestPacket = (COMMON_RESPONSE*)pPacket->GetHeaderPtr();
+            const U64 nSessionID = ntohq(pRequestPacket->nStatusCode);
+            CVNCProxyPtr pVNCProxy = LookupVNCProxy(U32(nSessionID));
+            
+            if (nullptr != pVNCProxy)
+            {
+                pVNCProxy->SendCommonRequest(VNCP::MT_CLOSE_SESSION);
+                
+                pVNCProxy->PreClose();
+//                SendMessage(CUM_CLOSE_VNC_CONNECTION_MSG);
+            }
+        }
+    }
+//    else
+//    {
+//        COMMON_REQUEST* pRequestPacket = (COMMON_REQUEST*)pPacket->GetHeaderPtr();
+//        const U64 nSessionID = ntohq(pRequestPacket->nStatusCode);
+//        CVNCProxyPtr pVNCProxy = LookupVNCProxy(U32(nSessionID));
+//
+//        if (nullptr != pVNCProxy)
+//        {
+//            SendMessage(CUM_CLOSE_VNC_CONNECTION_MSG);
+//
+//        }
+//    }
+    
+    for (std::vector<CVNCProxyPtr>::iterator it = m_arrVNCProxyArray.begin(); it != m_arrVNCProxyArray.end(); it++)
+    {
+        CVNCProxyPtr pVNCProxy = *it;
+        
+        if (pVNCProxy->GetClosing())
+        {
+            pVNCProxy = nullptr;
+        }
+    }
+    
+    //释放资源
+    {
+//        if (nullptr != m_pRCSvrProxy)
+//        {
+//            m_pRCSvrProxy = nullptr;
+//        }
+        
+        if (nullptr != m_spRemoteViewerCore)
+        {
+            m_spRemoteViewerCore = nullptr;
+        }
+        
+        if (nullptr != m_spViewEvent)
+        {
+            m_spViewEvent = nullptr;
+        }
+        
+//        m_objThreadPool.Stop();
+        
+//        UnRegistAllMessage();
+        
+        LOG_DEBUG("Release All Object And UnRegist Messages");
+    }
+    
+}
+
 /// 收到数据包后自动调用
 /// @param pPacket 数据包
 void CNetTransactionEngine::OnReceivedRCPacket(CDataPacket *pPacket)
@@ -601,6 +735,12 @@ void CNetTransactionEngine::OnReceivedRCPacket(CDataPacket *pPacket)
         case MT_PEER_ADDR_INFO:
             OnPeerAddrInfoRequest(pPacket);
             break;
+        case MT_PRE_CLOSE_SESSION:
+            OnPreCloseSessionRequest(pPacket);
+            break;
+        case MT_CLOSE_SESSION:
+            OnCloseSessionRequest(pPacket);
+            break;
         default:
             break;
             
@@ -616,7 +756,7 @@ void CNetTransactionEngine::RegisterMessageBus()
                                                 [this](CDataPacket* pPacket)
                                                 {  OnReceivedRCPacket(pPacket); });
     MSG_PAIR msgPair = make_pair(LMBS_RECEIVED_RC_PACKET, msgId);
-    m_MsgIDs.push_back(msgPair);
+    m_arrMsgIDArray.push_back(msgPair);
     
 }
 
@@ -681,6 +821,11 @@ bool CNetTransactionEngine::CreateThreadTask(const THREAD_POOL_FUN& refThreadFun
 /// 开始连接控制服务器
 bool CNetTransactionEngine::StartConnect()
 {
+    //调用消息注册函数，用来和OC数据交互
+    GetLocalMessageBusInstance()->RegistMessageBus();
+    
+    //初始化线程池
+    InitThreadPool();
     
     // 初始化连接控制服务器代码，必须在函数CreateNewTmpSecCode之后
     // 因为连接成功会发临时口令往服务器
@@ -754,10 +899,14 @@ void CNetTransactionEngine::CloseConnect(const U32 nID)
         });
         
     }
-    
-//    return true;
 }
 
+
+///需要刷新界面时调用
+void CNetTransactionEngine::SetNeedUpdateFrameBuffer()
+{
+    m_spRemoteViewerCore->RefreshFrameBuffer();
+}
 
 /// 通过模板实现单例
 CNetTransactionEngine* GetTransactionInstance()
